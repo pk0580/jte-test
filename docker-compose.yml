@@ -1,0 +1,43 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - .:/var/www/html
+    environment:
+      DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}?serverVersion=8.0"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "${MYSQL_PORT}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./dump2.sql:/docker-entrypoint-initdb.d/dump2.sql
+      - db_data:/var/lib/mysql
+
+  manticore:
+    image: manticoresearch/manticore:latest
+    ports:
+      - "${MANTICORE_PORT}:9308"
+    volumes:
+      - manticore_data:/var/lib/manticore
+
+volumes:
+  db_data:
+  manticore_data:
