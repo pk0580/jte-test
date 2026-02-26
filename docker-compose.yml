@@ -28,7 +28,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - ./dump2.sql:/docker-entrypoint-initdb.d/dump2.sql
+      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
       - db_data:/var/lib/mysql
 
   manticore:
