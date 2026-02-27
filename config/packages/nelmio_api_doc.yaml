@@ -1,0 +1,61 @@
+nelmio_api_doc:
+    areas:
+        path_patterns:
+            - ^/api(?!/doc$) # Documentation available at /api/doc
+    documentation:
+        info:
+            title: JTE Test App API
+            description: API for managing orders and checking prices.
+            version: 1.0.0
+        paths:
+            /api/v1/price:
+                get:
+                    summary: Get price for a specific item.
+                    parameters:
+                        - name: factory
+                          in: query
+                          required: true
+                          schema: { type: string }
+                        - name: collection
+                          in: query
+                          required: true
+                          schema: { type: string }
+                        - name: article
+                          in: query
+                          required: true
+                          schema: { type: string }
+            /api/v1/orders/stats:
+                get:
+                    summary: Get order statistics grouped by period.
+                    parameters:
+                        - name: group_by
+                          in: query
+                          schema: { type: string, enum: [day, month, year] }
+                        - name: page
+                          in: query
+                          schema: { type: integer, default: 1 }
+                        - name: limit
+                          in: query
+                          schema: { type: integer, default: 10 }
+            /api/v1/orders/search:
+                get:
+                    summary: Full-text search for orders.
+                    parameters:
+                        - name: query
+                          in: query
+                          required: true
+                          schema: { type: string }
+                        - name: page
+                          in: query
+                          schema: { type: integer, default: 1 }
+                        - name: limit
+                          in: query
+                          schema: { type: integer, default: 10 }
+            /api/v1/orders/{id}:
+                get:
+                    summary: Get order by ID.
+                    parameters:
+                        - name: id
+                          in: path
+                          required: true
+                          schema: { type: integer }
