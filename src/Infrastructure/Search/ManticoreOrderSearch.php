@@ -85,14 +85,18 @@ class ManticoreOrderSearch implements OrderSearchInterface
 
     public function index(Order $order): void
     {
-        $this->bulkIndexRawToIndex(self::INDEX, [[
-            'id' => $order->getId(),
+        $id = $order->getId();
+        $doc = [
             'number' => $order->getNumber() ?? '',
             'email' => $order->getEmail() ?? '',
             'client_name' => $order->getClientName() ?? '',
             'client_surname' => $order->getClientSurname() ?? '',
             'company_name' => $order->getCompanyName() ?? '',
             'description' => $order->getDescription() ?? '',
+        ];
+
+        $this->client->bulk(['body' => [
+            ['replace' => ['index' => self::INDEX, 'id' => $id, 'doc' => $doc]]
         ]]);
     }
 
@@ -132,35 +136,22 @@ class ManticoreOrderSearch implements OrderSearchInterface
             return;
         }
 
-        $baseSql = "REPLACE INTO $index (id, number, email, client_name, client_surname, company_name, description) VALUES ";
-        $currentValues = [];
-        $currentSqlLength = strlen($baseSql);
-
+        $params = [];
         foreach ($rows as $row) {
             $id = (int)$row['id'];
-            $number = $this->escape((string)($row['number'] ?? ''));
-            $email = $this->escape((string)($row['email'] ?? ''));
-            $client_name = $this->escape((string)($row['client_name'] ?? $row['clientName'] ?? ''));
-            $client_surname = $this->escape((string)($row['client_surname'] ?? $row['clientSurname'] ?? ''));
-            $company_name = $this->escape((string)($row['company_name'] ?? $row['companyName'] ?? ''));
-            $description = $this->escape((string)($row['description'] ?? ''));
+            $doc = [
+                'number' => (string)($row['number'] ?? ''),
+                'email' => (string)($row['email'] ?? ''),
+                'client_name' => (string)($row['client_name'] ?? $row['clientName'] ?? ''),
+                'client_surname' => (string)($row['client_surname'] ?? $row['clientSurname'] ?? ''),
+                'company_name' => (string)($row['company_name'] ?? $row['companyName'] ?? ''),
+                'description' => (string)($row['description'] ?? ''),
+            ];
 
-            $value = "($id, '$number', '$email', '$client_name', '$client_surname', '$company_name', '$description')";
-            $valueLength = strlen($value) + 2; // +2 for ", " separator
-
-            if (!empty($currentValues) && ($currentSqlLength + $valueLength) > self::MAX_SQL_BYTES) {
-                $this->client->sql($baseSql . implode(', ', $currentValues), true);
-                $currentValues = [];
-                $currentSqlLength = strlen($baseSql);
-            }
-
-            $currentValues[] = $value;
-            $currentSqlLength += $valueLength;
+            $params[] = ['replace' => ['index' => $index, 'id' => $id, 'doc' => $doc]];
         }
 
-        if (!empty($currentValues)) {
-            $this->client->sql($baseSql . implode(', ', $currentValues), true);
-        }
+        $this->client->bulk(['body' => $params]);
     }
 
     public function swapIndex(string $tmp, string $main): void

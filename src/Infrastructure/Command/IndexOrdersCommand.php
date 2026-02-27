@@ -42,7 +42,7 @@ class IndexOrdersCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $batchSize = (int)$input->getOption('batch');
-        $lastId = (int)$input->getOption('resume-from-id');
+        $resumeId = (int)$input->getOption('resume-from-id');
 
         if ($batchSize <= 0) {
             $io->error('Batch must be > 0');
@@ -52,40 +52,40 @@ class IndexOrdersCommand extends Command
             return Command::FAILURE;
         }
 
+        // 1. Get current max ID for "catch-up" later
+        $maxIdAtStart = (int)$this->connection->fetchOne("SELECT MAX(id) FROM orders");
+        $totalToProcess = $maxIdAtStart - $resumeId;
+
         $tmpIndex = 'orders_tmp_' . date('YmdHis');
 
         try {
-            $io->title("Creating temporary index: $tmpIndex");
+            $io->title("Reindexing orders (Max ID at start: $maxIdAtStart)");
+            $io->text("Creating temporary index: $tmpIndex");
             $this->search->createIndex($tmpIndex);
 
-            while (true) {
-                $rows = $this->connection->fetchAllAssociative(
-                    "
-                    SELECT id, number, email, client_name, client_surname,
-                           company_name, description
-                    FROM orders
-                    WHERE id > :lastId
-                    ORDER BY id ASC
-                    LIMIT :limit
-                    ",
-                    [
-                        'lastId' => $lastId,
-                        'limit' => $batchSize,
-                    ],
-                    [
-                        'limit' => ParameterType::INTEGER,
-                    ]
-                );
+            if ($totalToProcess > 0) {
+                $io->progressStart($totalToProcess);
+            } else {
+                $io->note("No new orders to process for the main pass.");
+            }
+
+            $lastId = $resumeId;
+            while ($lastId < $maxIdAtStart) {
+                $rows = $this->fetchBatch($lastId, $batchSize, $maxIdAtStart);
 
                 if (!$rows) {
                     break;
                 }
 
-                $this->retryBulk($tmpIndex, $rows);
+                $this->retryBulk($tmpIndex, $rows, $io);
 
-                $lastId = (int)end($rows)['id'];
+                $batchLastId = (int)end($rows)['id'];
+                $processedCount = count($rows);
+                $lastId = $batchLastId;
 
-                $io->write("\rIndexed up to ID: $lastId");
+                if ($totalToProcess > 0) {
+                    $io->progressAdvance($processedCount);
+                }
 
                 // Throttling to avoid overloading Manticore
                 if (self::THROTTLE_US > 0) {
@@ -93,9 +93,24 @@ class IndexOrdersCommand extends Command
                 }
             }
 
-            $io->newLine();
-            $io->text("Swapping indexes...");
+            if ($totalToProcess > 0) {
+                $io->progressFinish();
+            }
 
+            // 2. Catch-up pass for orders created during the main pass
+            $io->section("Catch-up pass (syncing concurrent changes)");
+            $catchUpLastId = $maxIdAtStart;
+            while (true) {
+                $rows = $this->fetchBatch($catchUpLastId, $batchSize);
+                if (!$rows) {
+                    break;
+                }
+                $this->retryBulk($tmpIndex, $rows, $io);
+                $catchUpLastId = (int)end($rows)['id'];
+                $io->text("Indexed new orders up to ID: $catchUpLastId");
+            }
+
+            $io->text("Swapping indexes...");
             $this->search->swapIndex($tmpIndex, 'orders');
 
             $io->success('Reindex complete (zero-downtime).');
@@ -108,7 +123,24 @@ class IndexOrdersCommand extends Command
         }
     }
 
-    private function retryBulk(string $index, array $rows): void
+    private function fetchBatch(int $lastId, int $limit, ?int $maxId = null): array
+    {
+        $sql = "SELECT id, number, email, client_name, client_surname, company_name, description
+                FROM orders WHERE id > :lastId";
+        $params = ['lastId' => $lastId, 'limit' => $limit];
+        $types = ['limit' => ParameterType::INTEGER];
+
+        if ($maxId !== null) {
+            $sql .= " AND id <= :maxId";
+            $params['maxId'] = $maxId;
+        }
+
+        $sql .= " ORDER BY id ASC LIMIT :limit";
+
+        return $this->connection->fetchAllAssociative($sql, $params, $types);
+    }
+
+    private function retryBulk(string $index, array $rows, SymfonyStyle $io): void
     {
         $attempt = 0;
 
@@ -118,13 +150,20 @@ class IndexOrdersCommand extends Command
                 return;
             } catch (Throwable $e) {
                 $attempt++;
+                $io->warning(sprintf(
+                    "Batch failed (ID %d - %d), attempt %d/%d: %s",
+                    $rows[0]['id'],
+                    end($rows)['id'],
+                    $attempt,
+                    self::RETRIES,
+                    $e->getMessage()
+                ));
+
                 if ($attempt >= self::RETRIES) {
                     throw $e;
                 }
                 usleep(500000 * $attempt);
             }
         }
-
-        throw new \RuntimeException('Bulk failed after retries');
     }
 }

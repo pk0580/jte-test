@@ -21,7 +21,11 @@ readonly class OrderSearchSubscriber
     {
         $entity = $args->getObject();
         if ($entity instanceof Order) {
-            $this->orderSearch->index($entity);
+            try {
+                $this->orderSearch->index($entity);
+            } catch (\Throwable) {
+                // Ignore errors in subscriber to not break the transaction
+            }
         }
     }
 
@@ -29,7 +33,11 @@ readonly class OrderSearchSubscriber
     {
         $entity = $args->getObject();
         if ($entity instanceof Order) {
-            $this->orderSearch->index($entity);
+            try {
+                $this->orderSearch->index($entity);
+            } catch (\Throwable) {
+                // Ignore errors in subscriber to not break the transaction
+            }
         }
     }
 
@@ -37,7 +45,11 @@ readonly class OrderSearchSubscriber
     {
         $entity = $args->getObject();
         if ($entity instanceof Order) {
-            $this->orderSearch->delete($entity->getId());
+            try {
+                $this->orderSearch->delete($entity->getId());
+            } catch (\Throwable) {
+                // Ignore errors in subscriber to not break the transaction
+            }
         }
     }
 }
