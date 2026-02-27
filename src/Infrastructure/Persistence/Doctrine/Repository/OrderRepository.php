@@ -7,6 +7,7 @@ use App\Domain\Entity\OrderArticle;
 use App\Domain\Repository\OrderRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\ResultSetMappingBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -23,6 +24,21 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
     public function findById(int $id): ?Order
     {
         return $this->find($id);
+    }
+
+    public function findByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('o')
+            ->select('o', 'a')
+            ->leftJoin('o.articles', 'a')
+            ->where('o.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
     }
 
     public function save(Order $order): void
@@ -93,5 +109,24 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             ], $items),
             'total' => $total,
         ];
+    }
+
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('o')
+            ->select('COUNT(o.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function findForIndexing(int $offset, int $limit): array
+    {
+        return $this->createQueryBuilder('o')
+            ->select('o.id, o.number, o.email, o.clientName, o.clientSurname, o.companyName, o.description')
+            ->orderBy('o.id', 'ASC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getArrayResult();
     }
 }

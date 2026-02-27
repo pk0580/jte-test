@@ -2,9 +2,11 @@
 
 namespace App\Controller\Api\v1;
 
+use App\Application\Dto\OrderSearchRequestDto;
 use App\Application\Dto\OrderStatsRequestDto;
 use App\Application\UseCase\GetOrderStatsUseCase;
 use App\Application\UseCase\GetOrderUseCase;
+use App\Application\UseCase\SearchOrdersUseCase;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -50,6 +52,36 @@ class OrderController extends AbstractController
                     'total_pages' => $stats->totalPages,
                 ]
             ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/api/v1/orders/search', name: 'api_v1_orders_search', methods: ['GET'])]
+    public function search(
+        Request $request,
+        SearchOrdersUseCase $useCase,
+        ValidatorInterface $validator
+    ): JsonResponse {
+        $dto = OrderSearchRequestDto::fromRequest($request);
+        $violations = $validator->validate($dto);
+
+        if (count($violations) > 0) {
+            $errors = [];
+            foreach ($violations as $violation) {
+                $errors[] = $violation->getMessage();
+            }
+
+            return new JsonResponse([
+                'error' => implode(', ', $errors)
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $results = $useCase->execute($dto->query, $dto->page, $dto->limit);
+            return $this->json($results);
         } catch (\Exception $e) {
             return new JsonResponse([
                 'error' => $e->getMessage()

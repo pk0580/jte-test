@@ -26,3 +26,11 @@ services:
 
     App\Domain\Repository\OrderRepositoryInterface:
         alias: App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository
+
+    App\Domain\Repository\OrderSearchInterface:
+        alias: App\Infrastructure\Search\ManticoreOrderSearch
+
+    App\Infrastructure\Search\ManticoreOrderSearch:
+        arguments:
+            $host: '%env(MANTICORE_HOST)%'
+            $port: '%env(int:MANTICORE_PORT)%'
