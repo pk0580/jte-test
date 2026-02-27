@@ -4,6 +4,7 @@ namespace App\Controller\Api\v1;
 
 use App\Application\Dto\OrderStatsRequestDto;
 use App\Application\UseCase\GetOrderStatsUseCase;
+use App\Application\UseCase\GetOrderUseCase;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -54,5 +55,13 @@ class OrderController extends AbstractController
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    #[Route('/api/v1/orders/{id}', name: 'api_v1_order_get', methods: ['GET'])]
+    public function getOrder(int $id, GetOrderUseCase $useCase): JsonResponse
+    {
+        $dto = $useCase->execute($id);
+
+        return $this->json($dto);
     }
 }

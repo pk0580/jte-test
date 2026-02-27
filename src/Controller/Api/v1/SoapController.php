@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\Api\v1;
 
 use App\Application\Service\SoapOrderService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
