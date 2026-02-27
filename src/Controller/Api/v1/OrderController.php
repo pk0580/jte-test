@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -92,8 +93,11 @@ class OrderController extends AbstractController
     #[Route('/api/v1/orders/{id}', name: 'api_v1_order_get', methods: ['GET'])]
     public function getOrder(int $id, GetOrderUseCase $useCase): JsonResponse
     {
-        $dto = $useCase->execute($id);
-
-        return $this->json($dto);
+        try {
+            $dto = $useCase->execute($id);
+            return $this->json($dto);
+        } catch (NotFoundHttpException $e) {
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
+        }
     }
 }

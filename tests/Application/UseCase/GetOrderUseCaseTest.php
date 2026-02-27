@@ -47,7 +47,7 @@ class GetOrderUseCaseTest extends TestCase
 
     public function testExecuteNotFound(): void
     {
-        $repository = $this->createMock(OrderRepositoryInterface::class);
+        $repository = $this->createStub(OrderRepositoryInterface::class);
         $repository->method('findById')->willReturn(null);
 
         $useCase = new GetOrderUseCase($repository);
