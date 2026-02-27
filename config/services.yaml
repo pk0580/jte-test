@@ -23,3 +23,6 @@ services:
     # please note that last definitions always *replace* previous ones
     App\Domain\Service\PriceParserInterface:
         alias: App\Infrastructure\Parser\PriceParser
+
+    App\Domain\Repository\OrderRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository
