@@ -309,6 +309,18 @@ class Order
         return $this;
     }
 
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): self
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
     public function getVatType(): int
     {
         return $this->vatType;
@@ -372,6 +384,30 @@ class Order
     public function setDeliveryType(?int $deliveryType): self
     {
         $this->deliveryType = $deliveryType;
+        return $this;
+    }
+
+    public function getDeliveryTimeMin(): ?\DateTimeInterface
+    {
+        return $this->deliveryTimeMin;
+    }
+
+    public function setDeliveryTimeMin(?\DateTimeInterface $deliveryTimeMin): self
+    {
+        $this->deliveryTimeMin = $deliveryTimeMin;
+
+        return $this;
+    }
+
+    public function getDeliveryTimeMax(): ?\DateTimeInterface
+    {
+        return $this->deliveryTimeMax;
+    }
+
+    public function setDeliveryTimeMax(?\DateTimeInterface $deliveryTimeMax): self
+    {
+        $this->deliveryTimeMax = $deliveryTimeMax;
+
         return $this;
     }
 

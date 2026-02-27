@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="OrderService"
+             targetNamespace="http://localhost:8000/soap"
+             xmlns:tns="http://localhost:8000/soap"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+             xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+    <types>
+        <xsd:schema targetNamespace="http://localhost:8000/soap">
+            <xsd:complexType name="OrderArticle">
+                <xsd:sequence>
+                    <xsd:element name="article_id" type="xsd:integer"/>
+                    <xsd:element name="amount" type="xsd:decimal"/>
+                    <xsd:element name="price" type="xsd:decimal"/>
+                    <xsd:element name="weight" type="xsd:decimal"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="OrderArticleList">
+                <xsd:sequence>
+                    <xsd:element name="item" type="tns:OrderArticle" minOccurs="1" maxOccurs="unbounded"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:element name="CreateOrderRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="client_name" type="xsd:string"/>
+                        <xsd:element name="client_surname" type="xsd:string"/>
+                        <xsd:element name="email" type="xsd:string"/>
+                        <xsd:element name="pay_type" type="xsd:integer"/>
+                        <xsd:element name="articles" type="tns:OrderArticleList"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="CreateOrderResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="success" type="xsd:boolean"/>
+                        <xsd:element name="order_id" type="xsd:integer" minOccurs="0"/>
+                        <xsd:element name="message" type="xsd:string" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </types>
+
+    <message name="CreateOrderRequestMessage">
+        <part name="parameters" element="tns:CreateOrderRequest"/>
+    </message>
+    <message name="CreateOrderResponseMessage">
+        <part name="parameters" element="tns:CreateOrderResponse"/>
+    </message>
+
+    <portType name="OrderPortType">
+        <operation name="createOrder">
+            <input message="tns:CreateOrderRequestMessage"/>
+            <output message="tns:CreateOrderResponseMessage"/>
+        </operation>
+    </portType>
+
+    <binding name="OrderBinding" type="tns:OrderPortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="createOrder">
+            <soap:operation soapAction="createOrder"/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+        </operation>
+    </binding>
+
+    <service name="OrderService">
+        <port name="OrderPort" binding="tns:OrderBinding">
+            <soap:address location="http://localhost:8000/soap"/>
+        </port>
+    </service>
+</definitions>
