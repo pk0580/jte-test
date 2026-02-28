@@ -1,7 +1,8 @@
 nelmio_api_doc:
     areas:
-        path_patterns:
-            - ^/api(?!/doc$) # Documentation available at /api/doc
+        default:
+            path_patterns:
+                - ^/api(?!/doc$)
     documentation:
         info:
             title: JTE Test App API
