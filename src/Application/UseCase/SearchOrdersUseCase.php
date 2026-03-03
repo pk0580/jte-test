@@ -4,6 +4,7 @@ namespace App\Application\UseCase;
 
 use App\Application\Dto\OrderArticleResponseDto;
 use App\Application\Dto\OrderResponseDto;
+use App\Application\Dto\SearchResultDto;
 use App\Domain\Repository\OrderSearchInterface;
 
 readonly class SearchOrdersUseCase
@@ -16,13 +17,15 @@ readonly class SearchOrdersUseCase
      * @param string $query
      * @param int $page
      * @param int $limit
-     * @return OrderResponseDto[]
+     * @param int|null $lastId
+     * @param int|null $status
+     * @return SearchResultDto
      */
-    public function execute(string $query, int $page = 1, int $limit = 10): array
+    public function execute(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResultDto
     {
-        $orders = $this->orderSearch->search($query, $page, $limit);
+        $searchResult = $this->orderSearch->search($query, $page, $limit, $lastId, $status);
 
-        return array_map(function ($order) {
+        $items = array_map(function ($order) {
             $articles = [];
             foreach ($order->getArticles() as $article) {
                 $articles[] = new OrderArticleResponseDto(
@@ -43,6 +46,8 @@ readonly class SearchOrdersUseCase
                 $order->getCreateDate()->format('Y-m-d H:i:s'),
                 $articles
             );
-        }, $orders);
+        }, $searchResult->items);
+
+        return new SearchResultDto($items, $searchResult->total);
     }
 }

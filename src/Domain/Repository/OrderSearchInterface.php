@@ -10,9 +10,10 @@ interface OrderSearchInterface
      * @param string $query
      * @param int $page
      * @param int $limit
-     * @return Order[]
+     * @param int|null $lastId
+     * @return SearchResult<Order>
      */
-    public function search(string $query, int $page = 1, int $limit = 10): array;
+    public function search(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResult;
 
     /**
      * @param Order $order
@@ -31,4 +32,9 @@ interface OrderSearchInterface
     public function bulkIndexRawToIndex(string $index, array $rows): void;
 
     public function swapIndex(string $tmp, string $main): void;
+
+    /**
+     * @return bool
+     */
+    public function ping(): bool;
 }

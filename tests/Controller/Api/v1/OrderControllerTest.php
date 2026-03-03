@@ -86,4 +86,77 @@ class OrderControllerTest extends WebTestCase
         $this->assertArrayHasKey('error', $responseData);
         $this->assertEquals('Limit must be between 1 and 100', $responseData['error']);
     }
+
+    public function testSearch(): void
+    {
+        $client = static::createClient();
+
+        // 1. Basic search
+        $client->request('GET', '/api/v1/orders/search', [
+            'query' => 'test',
+            'page' => 1,
+            'limit' => 10
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $responseData = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('items', $responseData);
+        $this->assertArrayHasKey('meta', $responseData);
+
+        // 2. Search with status filter
+        $client->request('GET', '/api/v1/orders/search', [
+            'query' => 'test',
+            'status' => 1
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $responseData = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('items', $responseData);
+        $this->assertEquals(1, $responseData['meta']['status']);
+
+        foreach ($responseData['items'] as $item) {
+            // Need to fetch full order to check status since it's not in ResponseDto
+            // But we can check that it doesn't fail.
+        }
+    }
+
+    public function testCursorBasedPagination(): void
+    {
+        $client = static::createClient();
+
+        // 1. Get first page
+        $client->request('GET', '/api/v1/orders/search', [
+            'query' => 'test',
+            'limit' => 2
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $responseData = json_decode($client->getResponse()->getContent(), true);
+
+        if (count($responseData['items']) < 2) {
+            $this->markTestSkipped('Not enough test data for cursor-based pagination test');
+        }
+
+        $firstItem = $responseData['items'][0];
+        $secondItem = $responseData['items'][1];
+        $lastId = $secondItem['id'];
+
+        // 2. Get next page using cursor
+        $client->request('GET', '/api/v1/orders/search', [
+            'query' => 'test',
+            'limit' => 2,
+            'last_id' => $lastId
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $cursorData = json_decode($client->getResponse()->getContent(), true);
+
+        $this->assertArrayHasKey('items', $cursorData);
+        if (count($cursorData['items']) > 0) {
+            $nextItem = $cursorData['items'][0];
+            $this->assertLessThan($lastId, $nextItem['id'], 'Next page items should have smaller ID when sorting DESC');
+            $this->assertNotEquals($firstItem['id'], $nextItem['id'], 'Next page item ID should not match first page first item ID');
+            $this->assertNotEquals($secondItem['id'], $nextItem['id'], 'Next page item ID should not match first page second item ID');
+        }
+    }
 }

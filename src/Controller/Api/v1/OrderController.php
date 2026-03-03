@@ -81,8 +81,17 @@ class OrderController extends AbstractController
         }
 
         try {
-            $results = $useCase->execute($dto->query, $dto->page, $dto->limit);
-            return $this->json($results);
+            $results = $useCase->execute($dto->query, $dto->page, $dto->limit, $dto->lastId, $dto->status);
+            return $this->json([
+                'items' => $results->items,
+                'meta' => [
+                    'total' => $results->total,
+                    'page' => $dto->page,
+                    'limit' => $dto->limit,
+                    'last_id' => $dto->lastId,
+                    'status' => $dto->status,
+                ]
+            ]);
         } catch (\Exception $e) {
             return new JsonResponse([
                 'error' => $e->getMessage()

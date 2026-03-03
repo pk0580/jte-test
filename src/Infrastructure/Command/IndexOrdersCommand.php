@@ -145,7 +145,7 @@ class IndexOrdersCommand extends Command
 
     private function fetchBatch(int $lastId, int $limit, ?int $maxId = null): array
     {
-        $sql = "SELECT id, number, email, client_name, client_surname, company_name, description
+        $sql = "SELECT id, number, email, client_name, client_surname, company_name, description, status
                 FROM orders WHERE id > :lastId";
         $params = ['lastId' => $lastId, 'limit' => $limit];
         $types = ['limit' => ParameterType::INTEGER];

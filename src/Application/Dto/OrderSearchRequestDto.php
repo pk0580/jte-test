@@ -17,14 +17,25 @@ readonly class OrderSearchRequestDto
 
         #[Assert\Range(min: 1, max: 100, notInRangeMessage: 'Limit must be between 1 and 100')]
         public int    $limit = 10,
+
+        #[Assert\Type(type: 'integer', message: 'Last ID must be an integer')]
+        public ?int   $lastId = null,
+
+        #[Assert\Type(type: 'integer', message: 'Status must be an integer')]
+        public ?int   $status = null,
     ) {}
 
     public static function fromRequest(Request $request): self
     {
+        $lastId = $request->query->get('last_id');
+        $status = $request->query->get('status');
+
         return new self(
             query: $request->query->get('query', ''),
             page: $request->query->getInt('page', 1),
             limit: $request->query->getInt('limit', 10),
+            lastId: $lastId !== null ? (int)$lastId : null,
+            status: $status !== null ? (int)$status : null,
         );
     }
 }
