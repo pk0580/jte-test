@@ -9,7 +9,7 @@ use App\Domain\Repository\SearchResult;
 use Manticoresearch\Client;
 use Psr\Log\LoggerInterface;
 
-class ManticoreOrderSearch implements OrderSearchInterface
+class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterface
 {
     private const string INDEX = 'orders';
     private const int MAX_SQL_BYTES = 4000000; // 4MB safe chunk

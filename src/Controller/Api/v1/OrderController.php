@@ -2,7 +2,7 @@
 
 namespace App\Controller\Api\v1;
 
-use App\Application\Dto\OrderSearchRequestDto;
+use App\Application\Dto\Search\OrderSearchRequestDto;
 use App\Application\Dto\OrderStatsRequestDto;
 use App\Application\UseCase\GetOrderStatsUseCase;
 use App\Application\UseCase\GetOrderUseCase;

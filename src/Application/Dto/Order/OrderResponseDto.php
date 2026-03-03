@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Application\Dto;
+namespace App\Application\Dto\Order;
 
 class OrderResponseDto
 {

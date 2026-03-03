@@ -2,8 +2,8 @@
 
 namespace App\Application\UseCase;
 
-use App\Application\Dto\OrderArticleResponseDto;
-use App\Application\Dto\OrderResponseDto;
+use App\Application\Dto\Order\OrderArticleResponseDto;
+use App\Application\Dto\Order\OrderResponseDto;
 use App\Domain\Repository\OrderRepositoryInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 

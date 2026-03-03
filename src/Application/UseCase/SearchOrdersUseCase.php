@@ -2,9 +2,9 @@
 
 namespace App\Application\UseCase;
 
-use App\Application\Dto\OrderArticleResponseDto;
-use App\Application\Dto\OrderResponseDto;
-use App\Application\Dto\SearchResultDto;
+use App\Application\Dto\Order\OrderArticleResponseDto;
+use App\Application\Dto\Order\OrderResponseDto;
+use App\Application\Dto\Search\SearchResultDto;
 use App\Domain\Repository\OrderSearchInterface;
 
 readonly class SearchOrdersUseCase

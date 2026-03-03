@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Application\Dto;
+namespace App\Application\Dto\Search;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Constraints as Assert;
