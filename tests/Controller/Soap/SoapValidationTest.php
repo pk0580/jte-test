@@ -78,4 +78,88 @@ XML;
         $this->assertStringContainsString('client_name', $content);
         $this->assertStringContainsString('client_surname', $content);
     }
+
+    public function testCreateOrderWithNonExistentArticle(): void
+    {
+        $client = static::createClient();
+
+        $xml = <<<XML
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap="http://localhost:8000/soap">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <soap:CreateOrderRequest>
+         <client_name>John</client_name>
+         <client_surname>Doe</client_surname>
+         <email>john.doe@example.com</email>
+         <pay_type>1</pay_type>
+         <articles>
+            <item>
+               <article_id>999999</article_id>
+               <amount>2.5</amount>
+               <price>100.00</price>
+               <weight>1.2</weight>
+            </item>
+         </articles>
+      </soap:CreateOrderRequest>
+   </soapenv:Body>
+</soapenv:Envelope>
+XML;
+
+        $client->request(
+            'POST',
+            '/soap',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'text/xml', 'HTTP_SOAPAction' => 'createOrder'],
+            $xml
+        );
+
+        $this->assertEquals(200, $client->getResponse()->getStatusCode());
+        $content = $client->getResponse()->getContent();
+        $this->assertStringContainsString('Validation failed', $content);
+        $this->assertStringContainsString('article_id', $content);
+        $this->assertStringContainsString('does not exist', $content);
+    }
+
+    public function testCreateOrderWithInvalidPayType(): void
+    {
+        $client = static::createClient();
+
+        $xml = <<<XML
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap="http://localhost:8000/soap">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <soap:CreateOrderRequest>
+         <client_name>John</client_name>
+         <client_surname>Doe</client_surname>
+         <email>john.doe@example.com</email>
+         <pay_type>999999</pay_type>
+         <articles>
+            <item>
+               <article_id>1</article_id>
+               <amount>2.5</amount>
+               <price>100.00</price>
+               <weight>1.2</weight>
+            </item>
+         </articles>
+      </soap:CreateOrderRequest>
+   </soapenv:Body>
+</soapenv:Envelope>
+XML;
+
+        $client->request(
+            'POST',
+            '/soap',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'text/xml', 'HTTP_SOAPAction' => 'createOrder'],
+            $xml
+        );
+
+        $this->assertEquals(200, $client->getResponse()->getStatusCode());
+        $content = $client->getResponse()->getContent();
+        $this->assertStringContainsString('Validation failed', $content);
+        $this->assertStringContainsString('pay_type', $content);
+        $this->assertStringContainsString('Invalid payment type', $content);
+    }
 }
