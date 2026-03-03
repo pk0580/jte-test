@@ -26,11 +26,6 @@ interface OrderSearchInterface
 
     public function recreateIndex(): void;
 
-    /**
-     * @param array $documents Each doc: ['id' => int, 'number' => string, ...]
-     */
-    public function bulkIndexRaw(array $documents): void;
-
     public function createIndex(string $index): void;
 
     public function bulkIndexRawToIndex(string $index, array $rows): void;

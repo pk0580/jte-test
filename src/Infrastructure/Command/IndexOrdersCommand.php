@@ -40,87 +40,107 @@ class IndexOrdersCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-
         $batchSize = (int)$input->getOption('batch');
         $resumeId = (int)$input->getOption('resume-from-id');
 
-        if ($batchSize <= 0) {
-            $io->error('Batch must be > 0');
-            return Command::FAILURE;
-        } elseif ($batchSize > 10000) {
-            $io->error('Batch too large. Max allowed: 10000');
+        if (!$this->validateBatchSize($batchSize, $io)) {
             return Command::FAILURE;
         }
 
-        // 1. Get current max ID for "catch-up" later
-        $maxIdAtStart = (int)$this->connection->fetchOne("SELECT MAX(id) FROM orders");
-        $totalToProcess = $maxIdAtStart - $resumeId;
-
-        $tmpIndex = 'orders_tmp_' . date('YmdHis');
-
         try {
-            $io->title("Reindexing orders (Max ID at start: $maxIdAtStart)");
-            $io->text("Creating temporary index: $tmpIndex");
-            $this->search->createIndex($tmpIndex);
+            $maxIdAtStart = (int)$this->connection->fetchOne("SELECT MAX(id) FROM orders");
+            $tmpIndex = 'orders_tmp_' . date('YmdHis');
 
-            if ($totalToProcess > 0) {
-                $io->progressStart($totalToProcess);
-            } else {
-                $io->note("No new orders to process for the main pass.");
-            }
+            $this->initReindex($tmpIndex, $maxIdAtStart, $io);
 
-            $lastId = $resumeId;
-            while ($lastId < $maxIdAtStart) {
-                $rows = $this->fetchBatch($lastId, $batchSize, $maxIdAtStart);
+            $this->runMainPass($tmpIndex, $resumeId, $maxIdAtStart, $batchSize, $io);
 
-                if (!$rows) {
-                    break;
-                }
+            $this->runCatchUpPass($tmpIndex, $maxIdAtStart, $batchSize, $io);
 
-                $this->retryBulk($tmpIndex, $rows, $io);
-
-                $batchLastId = (int)end($rows)['id'];
-                $processedCount = count($rows);
-                $lastId = $batchLastId;
-
-                if ($totalToProcess > 0) {
-                    $io->progressAdvance($processedCount);
-                }
-
-                // Throttling to avoid overloading Manticore
-                if (self::THROTTLE_US > 0) {
-                    usleep(self::THROTTLE_US);
-                }
-            }
-
-            if ($totalToProcess > 0) {
-                $io->progressFinish();
-            }
-
-            // 2. Catch-up pass for orders created during the main pass
-            $io->section("Catch-up pass (syncing concurrent changes)");
-            $catchUpLastId = $maxIdAtStart;
-            while (true) {
-                $rows = $this->fetchBatch($catchUpLastId, $batchSize);
-                if (!$rows) {
-                    break;
-                }
-                $this->retryBulk($tmpIndex, $rows, $io);
-                $catchUpLastId = (int)end($rows)['id'];
-                $io->text("Indexed new orders up to ID: $catchUpLastId");
-            }
-
-            $io->text("Swapping indexes...");
-            $this->search->swapIndex($tmpIndex, 'orders');
-
-            $io->success('Reindex complete (zero-downtime).');
+            $this->finalizeReindex($tmpIndex, $io);
 
             return Command::SUCCESS;
-
         } catch (Throwable $e) {
             $io->error($e->getMessage());
             return Command::FAILURE;
         }
+    }
+
+    private function validateBatchSize(int $batchSize, SymfonyStyle $io): bool
+    {
+        if ($batchSize <= 0) {
+            $io->error('Batch must be > 0');
+            return false;
+        }
+        if ($batchSize > 10000) {
+            $io->error('Batch too large. Max allowed: 10000');
+            return false;
+        }
+        return true;
+    }
+
+    private function initReindex(string $tmpIndex, int $maxIdAtStart, SymfonyStyle $io): void
+    {
+        $io->title("Reindexing orders (Max ID at start: $maxIdAtStart)");
+        $io->text("Creating temporary index: $tmpIndex");
+        $this->search->createIndex($tmpIndex);
+    }
+
+    private function runMainPass(string $tmpIndex, int $resumeId, int $maxIdAtStart, int $batchSize, SymfonyStyle $io): void
+    {
+        $totalToProcess = $maxIdAtStart - $resumeId;
+
+        if ($totalToProcess <= 0) {
+            $io->note("No new orders to process for the main pass.");
+            return;
+        }
+
+        $io->progressStart($totalToProcess);
+
+        $lastId = $resumeId;
+        while ($lastId < $maxIdAtStart) {
+            $rows = $this->fetchBatch($lastId, $batchSize, $maxIdAtStart);
+            if (!$rows) {
+                break;
+            }
+
+            $this->retryBulk($tmpIndex, $rows, $io);
+
+            $batchLastId = (int)end($rows)['id'];
+            $processedCount = count($rows);
+            $lastId = $batchLastId;
+
+            $io->progressAdvance($processedCount);
+
+            if (self::THROTTLE_US > 0) {
+                usleep(self::THROTTLE_US);
+            }
+        }
+
+        $io->progressFinish();
+    }
+
+    private function runCatchUpPass(string $tmpIndex, int $maxIdAtStart, int $batchSize, SymfonyStyle $io): void
+    {
+        $io->section("Catch-up pass (syncing concurrent changes)");
+        $catchUpLastId = $maxIdAtStart;
+
+        while (true) {
+            $rows = $this->fetchBatch($catchUpLastId, $batchSize);
+            if (!$rows) {
+                break;
+            }
+            $this->retryBulk($tmpIndex, $rows, $io);
+            $catchUpLastId = (int)end($rows)['id'];
+            $io->text("Indexed new orders up to ID: $catchUpLastId");
+        }
+    }
+
+    private function finalizeReindex(string $tmpIndex, SymfonyStyle $io): void
+    {
+        $io->text("Swapping indexes...");
+        $this->search->swapIndex($tmpIndex, 'orders');
+        $io->success('Reindex complete (zero-downtime).');
     }
 
     private function fetchBatch(int $lastId, int $limit, ?int $maxId = null): array

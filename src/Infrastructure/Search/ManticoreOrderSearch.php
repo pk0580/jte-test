@@ -112,9 +112,15 @@ class ManticoreOrderSearch implements OrderSearchInterface
 
     public function createIndex(string $index): void
     {
-        $this->client->sql("DROP TABLE IF EXISTS $index", true);
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $index)) {
+            throw new \InvalidArgumentException('Invalid index name');
+        }
+
+        $this->client->sql("DROP TABLE IF EXISTS `$index`", true);
+
         $this->client->sql("
-            CREATE TABLE $index (
+            CREATE TABLE `$index` (
+                id bigint,
                 number text,
                 email text,
                 client_name text,
@@ -123,11 +129,6 @@ class ManticoreOrderSearch implements OrderSearchInterface
                 description text
             ) min_infix_len='3'
         ", true);
-    }
-
-    public function bulkIndexRaw(array $documents): void
-    {
-        $this->bulkIndexRawToIndex(self::INDEX, $documents);
     }
 
     public function bulkIndexRawToIndex(string $index, array $rows): void
