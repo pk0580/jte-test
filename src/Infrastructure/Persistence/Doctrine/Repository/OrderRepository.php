@@ -3,12 +3,9 @@
 namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
 use App\Domain\Entity\Order;
-use App\Domain\Entity\OrderArticle;
 use App\Domain\Repository\OrderRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ParameterType;
-use Doctrine\ORM\Query;
-use Doctrine\ORM\Query\ResultSetMappingBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**

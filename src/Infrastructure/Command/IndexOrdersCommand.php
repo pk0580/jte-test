@@ -3,7 +3,7 @@
 namespace App\Infrastructure\Command;
 
 use Doctrine\DBAL\Connection;
-use App\Infrastructure\Search\ManticoreOrderSearch;
+use App\Domain\Repository\OrderSearchInterface;
 use Doctrine\DBAL\ParameterType;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -25,7 +25,7 @@ class IndexOrdersCommand extends Command
 
     public function __construct(
         private readonly Connection $connection,
-        private readonly ManticoreOrderSearch $search,
+        private readonly OrderSearchInterface $search,
     ) {
         parent::__construct();
     }
