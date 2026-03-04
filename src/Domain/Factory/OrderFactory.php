@@ -3,7 +3,11 @@
 namespace App\Domain\Factory;
 
 use App\Domain\Entity\PayType;
-use App\Domain\ValueObject\CustomerInfo;
+use App\Domain\ValueObject\DeliveryAddress;
+use App\Domain\ValueObject\DeliveryConfig;
+use App\Domain\ValueObject\DeliveryTerms;
+use App\Domain\ValueObject\FinancialTerms;
+use App\Domain\ValueObject\ManagerInfo;
 use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
@@ -21,7 +25,15 @@ class OrderFactory
         $order = new Order(
             payType: $payType,
             name: 'Order from SOAP',
-            customerInfo: $customerInfo
+            locale: 'en',
+            currency: 'EUR',
+            measure: 'unit',
+            customerInfo: $customerInfo,
+            deliveryAddress: new DeliveryAddress(),
+            deliveryTerms: new DeliveryTerms(),
+            managerInfo: new ManagerInfo(),
+            financialTerms: new FinancialTerms(),
+            deliveryConfig: new DeliveryConfig()
         );
 
         foreach ($articlesData as $data) {
