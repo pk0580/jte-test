@@ -11,6 +11,9 @@ use App\Domain\ValueObject\DeliveryConfig;
 use App\Domain\ValueObject\OrderDates;
 use App\Domain\ValueObject\OrderMetadata;
 use App\Domain\ValueObject\OrderReview;
+use App\Domain\Trait\AggregateRootTrait;
+use App\Domain\Event\OrderCreatedEvent;
+use App\Domain\Event\OrderUpdatedEvent;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -23,6 +26,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(columns: ['status'], name: 'idx_orders_status')]
 class Order
 {
+    use AggregateRootTrait;
+
     public const STATUS_NEW = 1;
     public const STATUS_PROCESSING = 2;
     public const STATUS_SHIPPED = 3;
@@ -50,6 +55,7 @@ class Order
     public function setInternalStatus(int $status): void
     {
         $this->status = $status;
+        $this->recordEvent(new OrderUpdatedEvent($this));
     }
 
     public function setDates(OrderDates $dates): void
@@ -163,6 +169,8 @@ class Order
         $this->financialTerms = $financialTerms;
         $this->deliveryConfig = $deliveryConfig;
         $this->status = self::STATUS_NEW;
+
+        $this->recordEvent(new OrderCreatedEvent($this));
     }
 
     public function getCustomerInfo(): CustomerInfo

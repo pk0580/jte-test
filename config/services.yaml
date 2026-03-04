@@ -19,6 +19,16 @@ services:
     App\:
         resource: '../src/'
 
+    App\Infrastructure\Persistence\Doctrine\Listener\DomainEventListener:
+        tags:
+            - { name: 'doctrine.event_listener', event: 'onFlush' }
+
+    App\Infrastructure\Persistence\Doctrine\Repository\OrderSearchIndexerRepository:
+        arguments: []
+
+    App\Domain\Repository\OrderSearchIndexerRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\OrderSearchIndexerRepository
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
     # Wrap PriceParser with cache and circuit breaker

@@ -18,5 +18,4 @@ interface OrderRepositoryInterface
     public function remove(Order $order): void;
 
     public function countAll(): int;
-    public function findForIndexing(int $offset, int $limit): array;
 }

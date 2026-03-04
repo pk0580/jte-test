@@ -60,15 +60,4 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
-
-    public function findForIndexing(int $offset, int $limit): array
-    {
-        return $this->createQueryBuilder('o')
-            ->select('o.id, o.number, o.customerInfo.email as email, o.customerInfo.name as clientName, o.customerInfo.surname as clientSurname, o.customerInfo.companyName as companyName, o.description')
-            ->orderBy('o.id', 'ASC')
-            ->setFirstResult($offset)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getArrayResult();
-    }
 }

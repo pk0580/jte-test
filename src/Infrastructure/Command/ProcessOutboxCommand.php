@@ -11,6 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -29,8 +30,14 @@ class ProcessOutboxCommand extends Command
         parent::__construct();
     }
 
+    protected function configure(): void
+    {
+        $this->addOption('limit', 'l', InputOption::VALUE_OPTIONAL, 'Limit the number of events to process', 100);
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $limit = (int) $input->getOption('limit');
         $lockKey = 'outbox_process_lock';
         $lock = $this->lockFactory->createLock($lockKey);
 
@@ -49,7 +56,7 @@ class ProcessOutboxCommand extends Command
                 ->setParameter('maxAttempts', 10)
                 ->setParameter('now', new \DateTimeImmutable())
                 ->orderBy('e.scheduledAt', 'ASC')
-                ->setMaxResults(100);
+                ->setMaxResults($limit);
 
             $events = $queryBuilder->getQuery()->getResult();
 
