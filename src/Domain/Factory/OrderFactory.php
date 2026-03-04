@@ -13,16 +13,25 @@ use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
 
+use App\Domain\Repository\ArticleRepositoryInterface;
+use App\Domain\Repository\PayTypeRepositoryInterface;
 use App\Domain\Service\OrderPriceCalculator;
 
 class OrderFactory
 {
     public function __construct(
-        private readonly OrderPriceCalculator $priceCalculator
+        private readonly OrderPriceCalculator $priceCalculator,
+        private readonly ArticleRepositoryInterface $articleRepository,
+        private readonly PayTypeRepositoryInterface $payTypeRepository
     ) {}
 
-    public function createFromSoapRequest(CreateOrderSoapRequestDto $request, PayType $payType, array $articlesData): Order
+    public function createFromSoapRequest(CreateOrderSoapRequestDto $request): Order
     {
+        $payType = $this->payTypeRepository->findById($request->payType);
+        if (!$payType) {
+            throw new \App\Domain\Exception\ArticleNotFoundException(sprintf('Payment type with ID %d not found', $request->payType));
+        }
+
         $customerInfo = new CustomerInfo(
             name: $request->clientName,
             surname: $request->clientSurname,
@@ -43,13 +52,15 @@ class OrderFactory
             measure: 'unit'
         );
 
-        foreach ($articlesData as $data) {
-            $articleEntity = $data['entity'];
-            $articleDto = $data['dto'];
+        foreach ($request->articles as $articleDto) {
+            $article = $this->articleRepository->findById($articleDto->articleId);
+            if (!$article) {
+                throw new \App\Domain\Exception\ArticleNotFoundException(sprintf('Article with ID %d not found', $articleDto->articleId));
+            }
 
             $orderArticle = new OrderArticle(
                 order: $order,
-                article: $articleEntity,
+                article: $article,
                 amount: (string)$articleDto->amount,
                 price: (string)$articleDto->price,
                 weight: (string)$articleDto->weight,

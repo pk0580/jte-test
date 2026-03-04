@@ -83,32 +83,8 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
                 'exception' => $e
             ]);
 
-            // Fallback to DB search
-            return $this->fallbackSearchInDb($query, $page, $limit, $lastId, $status);
+            throw $e;
         }
-    }
-
-    /**
-     * @return SearchResult<SearchOrderDto>
-     */
-    private function fallbackSearchInDb(string $query, int $page, int $limit, ?int $lastId, ?int $status): SearchResult
-    {
-        $dbResult = $this->orderRepository->search($query, $page, $limit, $lastId, $status);
-
-        $dtos = array_map(function (Order $order) {
-            return new SearchOrderDto(
-                id: $order->getId(),
-                number: $order->getNumber() ?? '',
-                email: $order->getEmail() ?? '',
-                clientName: $order->getClientName() ?? '',
-                clientSurname: $order->getClientSurname() ?? '',
-                companyName: $order->getCompanyName() ?? '',
-                description: $order->getDescription() ?? '',
-                status: $order->getStatus(),
-            );
-        }, $dbResult->items);
-
-        return new SearchResult($dtos, $dbResult->total);
     }
 
     private function fetchIds(\Manticoresearch\ResultSet $resultSet): array

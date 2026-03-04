@@ -44,6 +44,9 @@ services:
     App\Domain\Repository\OrderSearchInterface:
         alias: App\Infrastructure\Search\CombinedSearchProvider
 
+    App\Domain\Repository\OrderStatsProviderInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\OrderStatsProvider
+
     App\Infrastructure\Search\CombinedSearchProvider:
         arguments:
             $primarySearch: '@App\Infrastructure\Search\ManticoreOrderSearch'
@@ -72,6 +75,9 @@ services:
             $referenceCache: '@app.reference_cache'
 
     App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository:
+        arguments: []
+
+    App\Infrastructure\Persistence\Doctrine\Repository\OrderStatsProvider:
         arguments:
             $statsCache: '@app.stats_cache'
 

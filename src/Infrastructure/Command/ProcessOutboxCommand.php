@@ -40,18 +40,15 @@ class ProcessOutboxCommand extends Command
         }
 
         try {
-            $repository = $this->entityManager->getRepository(OutboxEvent::class);
-
-            // Получаем необработанные события.
-            // Мы не можем легко отфильтровать по backoff в findBy,
-            // поэтому возьмем пачку и отфильтруем в PHP или используем QueryBuilder.
             $queryBuilder = $this->entityManager->createQueryBuilder();
             $queryBuilder->select('e')
                 ->from(OutboxEvent::class, 'e')
                 ->where('e.processedAt IS NULL')
                 ->andWhere('e.attempts < :maxAttempts')
+                ->andWhere('e.scheduledAt <= :now')
                 ->setParameter('maxAttempts', 10)
-                ->orderBy('e.createdAt', 'ASC')
+                ->setParameter('now', new \DateTimeImmutable())
+                ->orderBy('e.scheduledAt', 'ASC')
                 ->setMaxResults(100);
 
             $events = $queryBuilder->getQuery()->getResult();
@@ -60,19 +57,7 @@ class ProcessOutboxCommand extends Command
                 return Command::SUCCESS;
             }
 
-            $now = new \DateTimeImmutable();
-
             foreach ($events as $index => $event) {
-                // Exponential Backoff: delay = 2^attempts * 60 seconds
-                if ($event->getAttempts() > 0) {
-                    $delaySeconds = (2 ** ($event->getAttempts() - 1)) * 60;
-                    $nextAttemptAt = $event->getCreatedAt()->modify(sprintf('+%d seconds', $delaySeconds));
-
-                    if ($nextAttemptAt > $now) {
-                        continue;
-                    }
-                }
-
                 try {
                     $event->incrementAttempts();
 
@@ -88,18 +73,24 @@ class ProcessOutboxCommand extends Command
 
                     $event->setProcessedAt(new \DateTimeImmutable());
                     $event->setLastError(null);
-
-                    // Flush every 20 events
-                    if (($index + 1) % 20 === 0) {
-                        $this->entityManager->flush();
-                    }
                 } catch (\Exception $e) {
                     $event->setLastError($e->getMessage());
-                    $output->writeln(sprintf('Error processing event %d (attempt %d): %s',
+
+                    // Update scheduledAt for retry with exponential backoff
+                    $delaySeconds = (2 ** ($event->getAttempts() - 1)) * 60;
+                    $event->setScheduledAt((new \DateTimeImmutable())->modify(sprintf('+%d seconds', $delaySeconds)));
+
+                    $output->writeln(sprintf('Error processing event %d (attempt %d): %s. Rescheduled for %s',
                         $event->getId(),
                         $event->getAttempts(),
-                        $e->getMessage()
+                        $e->getMessage(),
+                        $event->getScheduledAt()->format('Y-m-d H:i:s')
                     ));
+                }
+
+                // Batch flush
+                if (($index + 1) % 50 === 0) {
+                    $this->entityManager->flush();
                 }
             }
 

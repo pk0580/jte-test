@@ -15,8 +15,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 class OrderRepository extends ServiceEntityRepository implements OrderRepositoryInterface
 {
     public function __construct(
-        ManagerRegistry $registry,
-        private readonly CacheInterface $statsCache
+        ManagerRegistry $registry
     ) {
         parent::__construct($registry, Order::class);
     }
@@ -52,43 +51,6 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
         $em = $this->getEntityManager();
         $em->remove($order);
         $em->flush();
-    }
-
-    public function getStats(string $groupBy, int $page, int $limit): array
-    {
-        $cacheKey = sprintf('stats_%s_%d_%d', $groupBy, $page, $limit);
-
-        return $this->statsCache->get($cacheKey, function (ItemInterface $item) use ($groupBy, $page, $limit) {
-            $item->expiresAfter(600); // 10 minutes cache for stats
-
-            $qb = $this->getEntityManager()->createQueryBuilder();
-            $qb->select('s')
-                ->from(\App\Domain\Entity\OrderStats::class, 's')
-                ->where('s.groupBy = :groupBy')
-                ->setParameter('groupBy', $groupBy)
-                ->orderBy('s.period', 'DESC')
-                ->setFirstResult(($page - 1) * $limit)
-                ->setMaxResults($limit);
-
-            $stats = $qb->getQuery()->getResult();
-
-            $countQb = $this->getEntityManager()->createQueryBuilder();
-            $countQb->select('COUNT(s.id)')
-                ->from(\App\Domain\Entity\OrderStats::class, 's')
-                ->where('s.groupBy = :groupBy')
-                ->setParameter('groupBy', $groupBy);
-
-            $total = (int)$countQb->getQuery()->getSingleScalarResult();
-
-            return [
-                'items' => array_map(fn(\App\Domain\Entity\OrderStats $item) => [
-                    'period' => $item->getPeriod(),
-                    'orderCount' => $item->getOrderCount(),
-                    'totalAmount' => (float)$item->getTotalAmount(),
-                ], $stats),
-                'total' => $total,
-            ];
-        });
     }
 
     public function countAll(): int

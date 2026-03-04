@@ -10,6 +10,7 @@ use App\Domain\Dto\Outbox\OrderEventPayloadDto;
 #[ORM\Entity]
 #[ORM\Table(name: 'outbox_events')]
 #[ORM\Index(columns: ['processed_at', 'attempts'], name: 'idx_outbox_process_lookup')]
+#[ORM\Index(columns: ['scheduled_at'], name: 'idx_outbox_scheduled_at')]
 #[ORM\Index(columns: ['created_at'], name: 'idx_outbox_created_at')]
 class OutboxEvent
 {
@@ -27,6 +28,9 @@ class OutboxEvent
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $scheduledAt;
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $processedAt = null;
 
@@ -41,6 +45,7 @@ class OutboxEvent
         $this->eventType = $eventType;
         $this->payload = $payloadDto->toArray();
         $this->createdAt = new \DateTimeImmutable();
+        $this->scheduledAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -61,6 +66,17 @@ class OutboxEvent
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function getScheduledAt(): \DateTimeImmutable
+    {
+        return $this->scheduledAt;
+    }
+
+    public function setScheduledAt(\DateTimeImmutable $scheduledAt): self
+    {
+        $this->scheduledAt = $scheduledAt;
+        return $this;
     }
 
     public function getProcessedAt(): ?\DateTimeImmutable
