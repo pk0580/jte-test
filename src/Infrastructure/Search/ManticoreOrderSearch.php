@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Search;
 
+use App\Domain\Dto\Search\SearchOrderDto;
 use App\Domain\Entity\Order;
 use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\Repository\OrderSearchInterface;
@@ -31,7 +32,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
      * @param int $limit
      * @param int|null $lastId
      * @param int|null $status
-     * @return SearchResult<Order>
+     * @return SearchResult<SearchOrderDto>
      */
     public function search(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResult
     {
@@ -56,15 +57,22 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
                 ->limit($queryDto->limit)
                 ->get();
 
-            $ids = $this->fetchIds($resultSet);
-
-            if (empty($ids)) {
-                return new SearchResult([], 0);
+            $results = [];
+            foreach ($resultSet as $hit) {
+                $data = $hit->getData();
+                $results[] = new SearchOrderDto(
+                    id: (int)$hit->getId(),
+                    number: (string)($data['number'] ?? ''),
+                    email: (string)($data['email'] ?? ''),
+                    clientName: (string)($data['client_name'] ?? ''),
+                    clientSurname: (string)($data['client_surname'] ?? ''),
+                    companyName: (string)($data['company_name'] ?? ''),
+                    description: (string)($data['description'] ?? ''),
+                    status: (int)($data['status'] ?? 0),
+                );
             }
 
-            $sortedOrders = $this->hydrateOrders($ids);
-
-            return new SearchResult($sortedOrders, $resultSet->getTotal());
+            return new SearchResult($results, $resultSet->getTotal());
         } catch (\Throwable $e) {
             $this->logger->error('Manticore Search failed: ' . $e->getMessage(), [
                 'query' => $query,
@@ -76,8 +84,31 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             ]);
 
             // Fallback to DB search
-            return $this->orderRepository->search($query, $page, $limit, $lastId, $status);
+            return $this->fallbackSearchInDb($query, $page, $limit, $lastId, $status);
         }
+    }
+
+    /**
+     * @return SearchResult<SearchOrderDto>
+     */
+    private function fallbackSearchInDb(string $query, int $page, int $limit, ?int $lastId, ?int $status): SearchResult
+    {
+        $dbResult = $this->orderRepository->search($query, $page, $limit, $lastId, $status);
+
+        $dtos = array_map(function (Order $order) {
+            return new SearchOrderDto(
+                id: $order->getId(),
+                number: $order->getNumber() ?? '',
+                email: $order->getEmail() ?? '',
+                clientName: $order->getClientName() ?? '',
+                clientSurname: $order->getClientSurname() ?? '',
+                companyName: $order->getCompanyName() ?? '',
+                description: $order->getDescription() ?? '',
+                status: $order->getStatus(),
+            );
+        }, $dbResult->items);
+
+        return new SearchResult($dtos, $dbResult->total);
     }
 
     private function fetchIds(\Manticoresearch\ResultSet $resultSet): array

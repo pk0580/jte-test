@@ -8,6 +8,9 @@ use App\Domain\ValueObject\DeliveryTerms;
 use App\Domain\ValueObject\ManagerInfo;
 use App\Domain\ValueObject\FinancialTerms;
 use App\Domain\ValueObject\DeliveryConfig;
+use App\Domain\ValueObject\OrderDates;
+use App\Domain\ValueObject\OrderMetadata;
+use App\Domain\ValueObject\OrderReview;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -24,33 +27,33 @@ class Order
     public const STATUS_DELIVERED = 4;
     public const STATUS_CANCELLED = 5;
 
-    private static array $allowedTransitions = [
-        self::STATUS_NEW => [self::STATUS_PROCESSING, self::STATUS_CANCELLED],
-        self::STATUS_PROCESSING => [self::STATUS_SHIPPED, self::STATUS_CANCELLED],
-        self::STATUS_SHIPPED => [self::STATUS_DELIVERED],
-        self::STATUS_DELIVERED => [],
-        self::STATUS_CANCELLED => [],
-    ];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 32)]
-    private string $hash;
+    #[ORM\Embedded(class: OrderMetadata::class)]
+    private OrderMetadata $metadata;
 
     #[ORM\Column(nullable: true)]
     private ?int $userId = null;
-
-    #[ORM\Column(length: 64)]
-    private string $token;
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $number = null;
 
     #[ORM\Column(type: 'smallint', options: ['unsigned' => true, 'default' => 1])]
     private int $status = 1;
+
+    public function setInternalStatus(int $status): void
+    {
+        $this->status = $status;
+    }
+
+    public function setDates(OrderDates $dates): void
+    {
+        $this->dates = $dates;
+    }
 
     #[ORM\Embedded(class: CustomerInfo::class)]
     private CustomerInfo $customerInfo;
@@ -71,20 +74,11 @@ class Order
     #[ORM\JoinColumn(name: 'pay_type_id', referencedColumnName: 'id', nullable: false)]
     private PayType $payType;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $payDateExecution = null;
-
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $offsetDate = null;
+    #[ORM\Embedded(class: OrderDates::class)]
+    private OrderDates $dates;
 
     #[ORM\Column(type: 'smallint', nullable: true, options: ['unsigned' => true])]
     private ?int $offsetReason = null;
-
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $proposedDate = null;
-
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $shipDate = null;
 
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $trackingNumber = null;
@@ -92,32 +86,14 @@ class Order
     #[ORM\Embedded(class: ManagerInfo::class)]
     private ManagerInfo $managerInfo;
 
-    #[ORM\Column(length: 5)]
-    private string $locale;
-
     #[ORM\Column(length: 255)]
     private string $name;
-
-    #[ORM\Column(length: 3, options: ['default' => 'EUR'])]
-    private string $currency = 'EUR';
-
-    #[ORM\Column(length: 10, options: ['default' => 'unit'])]
-    private string $measure = 'unit';
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(type: 'datetime_immutable', options: ['default' => 'CURRENT_TIMESTAMP'])]
-    private \DateTimeImmutable $createDate;
-
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $updateDate = null;
-
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $warehouseData = null;
-
-    #[ORM\Column(type: 'smallint', options: ['unsigned' => true, 'default' => 1])]
-    private int $step = 1;
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $addressEqual = true;
@@ -128,26 +104,11 @@ class Order
     #[ORM\Column(type: 'boolean', nullable: true)]
     private ?bool $acceptPay = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $cancelDate = null;
-
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    private ?bool $productReview = null;
-
-    #[ORM\Column(type: 'smallint', nullable: true, options: ['unsigned' => true])]
-    private ?int $mirror = null;
-
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    private ?bool $process = null;
-
-    #[ORM\Column(type: 'smallint', nullable: true, options: ['unsigned' => true])]
-    private ?int $entranceReview = null;
+    #[ORM\Embedded(class: OrderReview::class)]
+    private OrderReview $review;
 
     #[ORM\Column(type: 'boolean', nullable: true)]
     private ?bool $specPrice = null;
-
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    private ?bool $showMsg = null;
 
     #[ORM\Column(type: 'decimal', precision: 12, scale: 2, nullable: true)]
     private ?string $deliveryPriceEuro = null;
@@ -182,15 +143,17 @@ class Order
         ?string $hash = null,
         ?string $token = null,
     ) {
-        $this->hash = $hash ?? bin2hex(random_bytes(16));
-        $this->token = $token ?? bin2hex(random_bytes(32));
+        $this->metadata = new OrderMetadata(
+            hash: $hash ?? bin2hex(random_bytes(16)),
+            token: $token ?? bin2hex(random_bytes(32)),
+            locale: $locale,
+            measure: $measure
+        );
+        $this->dates = new OrderDates();
+        $this->review = new OrderReview();
         $this->articles = new ArrayCollection();
-        $this->createDate = new \DateTimeImmutable();
         $this->payType = $payType;
         $this->name = $name;
-        $this->locale = $locale;
-        $this->currency = $currency;
-        $this->measure = $measure;
         $this->customerInfo = $customerInfo;
         $this->deliveryAddress = $deliveryAddress;
         $this->deliveryTerms = $deliveryTerms;
@@ -267,6 +230,21 @@ class Order
         return $this;
     }
 
+    public function getMetadata(): OrderMetadata
+    {
+        return $this->metadata;
+    }
+
+    public function getDates(): OrderDates
+    {
+        return $this->dates;
+    }
+
+    public function getReview(): OrderReview
+    {
+        return $this->review;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -274,12 +252,12 @@ class Order
 
     public function getHash(): string
     {
-        return $this->hash;
+        return $this->metadata->hash;
     }
 
     public function getToken(): string
     {
-        return $this->token;
+        return $this->metadata->token;
     }
 
     public function getFinancialTerms(): FinancialTerms
@@ -333,20 +311,7 @@ class Order
 
     public function changeStatus(int $newStatus): self
     {
-        if ($this->status === $newStatus) {
-            return $this;
-        }
-
-        if (!isset(self::$allowedTransitions[$this->status]) || !in_array($newStatus, self::$allowedTransitions[$this->status], true)) {
-            throw \App\Domain\Exception\InvalidOrderStateException::transitionNotAllowed($this->status, $newStatus);
-        }
-
-        $this->status = $newStatus;
-        $this->updateDate = new \DateTime();
-
-        if ($newStatus === self::STATUS_CANCELLED) {
-            $this->cancelDate = new \DateTime();
-        }
+        (new \App\Domain\Service\OrderStatusManager())->changeStatus($this, $newStatus);
 
         return $this;
     }
@@ -406,23 +371,41 @@ class Order
 
     public function getPayDateExecution(): ?\DateTimeInterface
     {
-        return $this->payDateExecution;
+        return $this->dates->payDateExecution;
     }
 
     public function setPayDateExecution(?\DateTimeInterface $payDateExecution): self
     {
-        $this->payDateExecution = $payDateExecution;
+        $this->dates = new OrderDates(
+            $this->dates->createAt,
+            $this->dates->updateAt,
+            $payDateExecution,
+            $this->dates->offsetDate,
+            $this->dates->proposedDate,
+            $this->dates->shipDate,
+            $this->dates->cancelDate,
+            $this->dates->fullPaymentDate
+        );
         return $this;
     }
 
     public function getOffsetDate(): ?\DateTimeInterface
     {
-        return $this->offsetDate;
+        return $this->dates->offsetDate;
     }
 
     public function setOffsetDate(?\DateTimeInterface $offsetDate): self
     {
-        $this->offsetDate = $offsetDate;
+        $this->dates = new OrderDates(
+            $this->dates->createAt,
+            $this->dates->updateAt,
+            $this->dates->payDateExecution,
+            $offsetDate,
+            $this->dates->proposedDate,
+            $this->dates->shipDate,
+            $this->dates->cancelDate,
+            $this->dates->fullPaymentDate
+        );
         return $this;
     }
 
@@ -439,23 +422,41 @@ class Order
 
     public function getProposedDate(): ?\DateTimeInterface
     {
-        return $this->proposedDate;
+        return $this->dates->proposedDate;
     }
 
     public function setProposedDate(?\DateTimeInterface $proposedDate): self
     {
-        $this->proposedDate = $proposedDate;
+        $this->dates = new OrderDates(
+            $this->dates->createAt,
+            $this->dates->updateAt,
+            $this->dates->payDateExecution,
+            $this->dates->offsetDate,
+            $proposedDate,
+            $this->dates->shipDate,
+            $this->dates->cancelDate,
+            $this->dates->fullPaymentDate
+        );
         return $this;
     }
 
     public function getShipDate(): ?\DateTimeInterface
     {
-        return $this->shipDate;
+        return $this->dates->shipDate;
     }
 
     public function setShipDate(?\DateTimeInterface $shipDate): self
     {
-        $this->shipDate = $shipDate;
+        $this->dates = new OrderDates(
+            $this->dates->createAt,
+            $this->dates->updateAt,
+            $this->dates->payDateExecution,
+            $this->dates->offsetDate,
+            $this->dates->proposedDate,
+            $shipDate,
+            $this->dates->cancelDate,
+            $this->dates->fullPaymentDate
+        );
         return $this;
     }
 
@@ -497,12 +498,21 @@ class Order
 
     public function getLocale(): string
     {
-        return $this->locale;
+        return $this->metadata->locale;
     }
 
     protected function setLocale(string $locale): self
     {
-        $this->locale = $locale;
+        $this->metadata = new OrderMetadata(
+            $this->metadata->hash,
+            $this->metadata->token,
+            $locale,
+            $this->metadata->measure,
+            $this->metadata->step,
+            $this->metadata->mirror,
+            $this->metadata->process,
+            $this->metadata->showMsg
+        );
         return $this;
     }
 
@@ -518,12 +528,21 @@ class Order
 
     public function getMeasure(): string
     {
-        return $this->measure;
+        return $this->metadata->measure;
     }
 
     protected function setMeasure(string $measure): self
     {
-        $this->measure = $measure;
+        $this->metadata = new OrderMetadata(
+            $this->metadata->hash,
+            $this->metadata->token,
+            $this->metadata->locale,
+            $measure,
+            $this->metadata->step,
+            $this->metadata->mirror,
+            $this->metadata->process,
+            $this->metadata->showMsg
+        );
         return $this;
     }
 
@@ -551,18 +570,18 @@ class Order
 
     public function getCreateDate(): \DateTimeImmutable
     {
-        return $this->createDate;
+        return $this->dates->createAt;
     }
 
 
     public function getUpdateDate(): ?\DateTimeInterface
     {
-        return $this->updateDate;
+        return $this->dates->updateAt;
     }
 
     public function setUpdateDate(?\DateTimeInterface $updateDate): self
     {
-        $this->updateDate = $updateDate;
+        $this->dates = $this->dates->withUpdateAt($updateDate);
         return $this;
     }
 
@@ -579,12 +598,21 @@ class Order
 
     public function getStep(): int
     {
-        return $this->step;
+        return $this->metadata->step;
     }
 
     public function setStep(int $step): self
     {
-        $this->step = $step;
+        $this->metadata = new OrderMetadata(
+            $this->metadata->hash,
+            $this->metadata->token,
+            $this->metadata->locale,
+            $this->metadata->measure,
+            $step,
+            $this->metadata->mirror,
+            $this->metadata->process,
+            $this->metadata->showMsg
+        );
         return $this;
     }
 
@@ -623,12 +651,21 @@ class Order
 
     public function getCancelDate(): ?\DateTimeInterface
     {
-        return $this->cancelDate;
+        return $this->dates->cancelDate;
     }
 
     public function setCancelDate(?\DateTimeInterface $cancelDate): self
     {
-        $this->cancelDate = $cancelDate;
+        $this->dates = new OrderDates(
+            $this->dates->createAt,
+            $this->dates->updateAt,
+            $this->dates->payDateExecution,
+            $this->dates->offsetDate,
+            $this->dates->proposedDate,
+            $this->dates->shipDate,
+            $cancelDate,
+            $this->dates->fullPaymentDate
+        );
         return $this;
     }
 
@@ -639,34 +676,55 @@ class Order
 
     public function getProductReview(): ?bool
     {
-        return $this->productReview;
+        return $this->review->productReview;
     }
 
     public function setProductReview(?bool $productReview): self
     {
-        $this->productReview = $productReview;
+        $this->review = new OrderReview(
+            $productReview,
+            $this->review->entranceReview
+        );
         return $this;
     }
 
     public function getMirror(): ?int
     {
-        return $this->mirror;
+        return $this->metadata->mirror;
     }
 
     public function setMirror(?int $mirror): self
     {
-        $this->mirror = $mirror;
+        $this->metadata = new OrderMetadata(
+            $this->metadata->hash,
+            $this->metadata->token,
+            $this->metadata->locale,
+            $this->metadata->measure,
+            $this->metadata->step,
+            $mirror,
+            $this->metadata->process,
+            $this->metadata->showMsg
+        );
         return $this;
     }
 
     public function getProcess(): ?bool
     {
-        return $this->process;
+        return $this->metadata->process;
     }
 
     public function setProcess(?bool $process): self
     {
-        $this->process = $process;
+        $this->metadata = new OrderMetadata(
+            $this->metadata->hash,
+            $this->metadata->token,
+            $this->metadata->locale,
+            $this->metadata->measure,
+            $this->metadata->step,
+            $this->metadata->mirror,
+            $process,
+            $this->metadata->showMsg
+        );
         return $this;
     }
 
@@ -677,12 +735,15 @@ class Order
 
     public function getEntranceReview(): ?int
     {
-        return $this->entranceReview;
+        return $this->review->entranceReview;
     }
 
     public function setEntranceReview(?int $entranceReview): self
     {
-        $this->entranceReview = $entranceReview;
+        $this->review = new OrderReview(
+            $this->review->productReview,
+            $entranceReview
+        );
         return $this;
     }
 
@@ -704,12 +765,21 @@ class Order
 
     public function getShowMsg(): ?bool
     {
-        return $this->showMsg;
+        return $this->metadata->showMsg;
     }
 
     public function setShowMsg(?bool $showMsg): self
     {
-        $this->showMsg = $showMsg;
+        $this->metadata = new OrderMetadata(
+            $this->metadata->hash,
+            $this->metadata->token,
+            $this->metadata->locale,
+            $this->metadata->measure,
+            $this->metadata->step,
+            $this->metadata->mirror,
+            $this->metadata->process,
+            $showMsg
+        );
         return $this;
     }
 
@@ -747,12 +817,21 @@ class Order
 
     public function getFullPaymentDate(): ?\DateTimeInterface
     {
-        return $this->fullPaymentDate;
+        return $this->dates->fullPaymentDate;
     }
 
     public function setFullPaymentDate(?\DateTimeInterface $fullPaymentDate): self
     {
-        $this->fullPaymentDate = $fullPaymentDate;
+        $this->dates = new OrderDates(
+            $this->dates->createAt,
+            $this->dates->updateAt,
+            $this->dates->payDateExecution,
+            $this->dates->offsetDate,
+            $this->dates->proposedDate,
+            $this->dates->shipDate,
+            $this->dates->cancelDate,
+            $fullPaymentDate
+        );
         return $this;
     }
 
@@ -775,19 +854,15 @@ class Order
     }
 
 
-    public function recalculateTotals(): self
+    public function setTotalAmount(string $totalAmount): self
     {
-        $amount = '0.00';
-        $weight = '0.000';
+        $this->totalAmount = $totalAmount;
+        return $this;
+    }
 
-        foreach ($this->articles as $article) {
-            $amount = bcadd($amount, bcmul($article->getAmount(), $article->getPrice(), 10), 2);
-            $weight = bcadd($weight, bcmul($article->getAmount(), $article->getWeight(), 10), 3);
-        }
-
-        $this->totalAmount = $amount;
-        $this->totalWeight = $weight;
-
+    public function setTotalWeight(string $totalWeight): self
+    {
+        $this->totalWeight = $totalWeight;
         return $this;
     }
 
@@ -796,7 +871,6 @@ class Order
         if (!$this->articles->contains($article)) {
             $this->articles->add($article);
             $article->setOrder($this);
-            $this->recalculateTotals();
         }
         return $this;
     }
@@ -807,7 +881,6 @@ class Order
             if ($article->getOrder() === $this) {
                 $article->setOrder(null);
             }
-            $this->recalculateTotals();
         }
         return $this;
     }

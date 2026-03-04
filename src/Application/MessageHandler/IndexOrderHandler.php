@@ -20,6 +20,10 @@ readonly class IndexOrderHandler
         $order = $this->orderRepository->findById($message->getOrderId());
         if ($order) {
             $this->orderSearch->index($order);
+        } else {
+            // Если заказ не найден в БД, возможно он был удален.
+            // Мы можем попробовать удалить его из индекса для обеспечения идемпотентности/согласованности.
+            $this->orderSearch->delete($message->getOrderId());
         }
     }
 }

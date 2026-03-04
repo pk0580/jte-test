@@ -23,14 +23,4 @@ interface OrderRepositoryInterface
     public function getStats(string $groupBy, int $page, int $limit): array;
     public function countAll(): int;
     public function findForIndexing(int $offset, int $limit): array;
-
-    /**
-     * @param string $query
-     * @param int $page
-     * @param int $limit
-     * @param int|null $lastId
-     * @param int|null $status
-     * @return SearchResult<Order>
-     */
-    public function search(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResult;
 }

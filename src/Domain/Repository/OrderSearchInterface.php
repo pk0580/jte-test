@@ -2,6 +2,7 @@
 
 namespace App\Domain\Repository;
 
+use App\Domain\Dto\Search\SearchOrderDto;
 use App\Domain\Entity\Order;
 
 interface OrderSearchInterface
@@ -12,7 +13,7 @@ interface OrderSearchInterface
      * @param int $limit
      * @param int|null $lastId
      * @param int|null $status
-     * @return SearchResult<Order>
+     * @return SearchResult<SearchOrderDto>
      */
     public function search(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResult;
 

@@ -2,7 +2,10 @@
 
 namespace App\Domain\Entity;
 
+use App\Domain\Enum\OrderEventType;
 use Doctrine\ORM\Mapping as ORM;
+
+use App\Domain\Dto\Outbox\OrderEventPayloadDto;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'outbox_events')]
@@ -14,8 +17,8 @@ class OutboxEvent
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private string $eventType;
+    #[ORM\Column(length: 255, enumType: OrderEventType::class)]
+    private OrderEventType $eventType;
 
     #[ORM\Column(type: 'json')]
     private array $payload;
@@ -26,10 +29,10 @@ class OutboxEvent
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $processedAt = null;
 
-    public function __construct(string $eventType, array $payload)
+    public function __construct(OrderEventType $eventType, OrderEventPayloadDto $payloadDto)
     {
         $this->eventType = $eventType;
-        $this->payload = $payload;
+        $this->payload = $payloadDto->toArray();
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -38,14 +41,14 @@ class OutboxEvent
         return $this->id;
     }
 
-    public function getEventType(): string
+    public function getEventType(): OrderEventType
     {
         return $this->eventType;
     }
 
-    public function getPayload(): array
+    public function getPayloadDto(): OrderEventPayloadDto
     {
-        return $this->payload;
+        return OrderEventPayloadDto::fromArray($this->payload);
     }
 
     public function getCreatedAt(): \DateTimeImmutable

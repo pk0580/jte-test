@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Search;
 
+use App\Domain\Dto\Search\SearchOrderDto;
 use App\Domain\Repository\OrderSearchInterface;
 use App\Domain\Repository\SearchResult;
 use App\Domain\Entity\Order;
@@ -28,7 +29,7 @@ readonly class CombinedSearchProvider implements OrderSearchInterface
      * @param int $limit
      * @param int|null $lastId
      * @param int|null $status
-     * @return SearchResult<Order>
+     * @return SearchResult<SearchOrderDto>
      */
     public function search(
         string $query,
@@ -38,23 +39,36 @@ readonly class CombinedSearchProvider implements OrderSearchInterface
         ?int $status = null
     ): SearchResult
     {
-        if ($this->isCircuitOpen()) {
-            return $this->fallbackSearch->search($query, $page, $limit, $lastId, $status);
-        }
-
+        $startTime = microtime(true);
         try {
-            $result = $this->primarySearch->search($query, $page, $limit, $lastId, $status);
-            $this->resetFailures();
-            return $result;
-        } catch (\Exception $e) {
-            $this->recordFailure();
-            $this->logger->error('Primary search failed, falling back', [
-                'error' => $e->getMessage(),
-                'query' => $query
-            ]);
-        }
+            if ($this->isCircuitOpen()) {
+                $this->logger->warning('Circuit is OPEN, using fallback search', ['query' => $query]);
+                return $this->fallbackSearch->search($query, $page, $limit, $lastId, $status);
+            }
 
-        return $this->fallbackSearch->search($query, $page, $limit, $lastId, $status);
+            try {
+                $result = $this->primarySearch->search($query, $page, $limit, $lastId, $status);
+                $this->resetFailures();
+                return $result;
+            } catch (\Exception $e) {
+                $this->recordFailure();
+                $this->logger->error('Primary search failed, falling back', [
+                    'error' => $e->getMessage(),
+                    'query' => $query
+                ]);
+            }
+
+            return $this->fallbackSearch->search($query, $page, $limit, $lastId, $status);
+        } finally {
+            $duration = (microtime(true) - $startTime) * 1000;
+            if ($duration > 500) { // Log slow searches > 500ms
+                $this->logger->warning('Search is slow', [
+                    'duration_ms' => $duration,
+                    'query' => $query,
+                    'page' => $page
+                ]);
+            }
+        }
     }
 
     private function isCircuitOpen(): bool
@@ -65,12 +79,13 @@ readonly class CombinedSearchProvider implements OrderSearchInterface
 
     private function recordFailure(): void
     {
-        $this->appCache->get(self::CB_KEY, function (ItemInterface $item) {
-            $currentValue = (int)$item->get();
-            $item->set($currentValue + 1);
+        $failures = (int)$this->appCache->get(self::CB_KEY, fn() => 0);
+
+        $this->appCache->get(self::CB_KEY, function (ItemInterface $item) use ($failures) {
+            $item->set($failures + 1);
             $item->expiresAfter(self::CB_RECOVERY_TIME);
             return $item->get();
-        });
+        }, INF); // Force save
     }
 
     private function resetFailures(): void

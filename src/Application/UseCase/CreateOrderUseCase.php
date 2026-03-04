@@ -8,7 +8,8 @@ use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
 use App\Application\Dto\Soap\SoapOrderResponseDto;
 use App\Domain\Factory\OrderFactory;
 use App\Domain\Repository\OrderRepositoryInterface;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Application\Common\TransactionManagerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 readonly class CreateOrderUseCase
 {
@@ -17,23 +18,33 @@ readonly class CreateOrderUseCase
         private PayTypeRepositoryInterface $payTypeRepository,
         private ArticleRepositoryInterface $articleRepository,
         private OrderFactory               $orderFactory,
-        private EntityManagerInterface     $entityManager
+        private TransactionManagerInterface $transactionManager,
+        private ValidatorInterface          $validator
     ) {}
 
     public function execute(CreateOrderSoapRequestDto $request): SoapOrderResponseDto
     {
-        return $this->entityManager->wrapInTransaction(function () use ($request) {
+        $violations = $this->validator->validate($request);
+        if (count($violations) > 0) {
+            $errors = [];
+            foreach ($violations as $violation) {
+                $errors[] = $violation->getMessage();
+            }
+            return new SoapOrderResponseDto(false, null, implode(' ', $errors));
+        }
+
+        return $this->transactionManager->wrapInTransaction(function () use ($request) {
             try {
                 $payType = $this->payTypeRepository->findById($request->payType);
                 if (!$payType) {
-                    throw new \Exception('Payment type not found');
+                    throw new \App\Domain\Exception\ArticleNotFoundException(sprintf('Payment type with ID %d not found', $request->payType));
                 }
 
                 $articles = [];
                 foreach ($request->articles as $articleDto) {
                     $article = $this->articleRepository->findById($articleDto->articleId);
                     if (!$article) {
-                        throw new \Exception(sprintf('Article with ID %d not found', $articleDto->articleId));
+                        throw new \App\Domain\Exception\ArticleNotFoundException(sprintf('Article with ID %d not found', $articleDto->articleId));
                     }
                     $articles[] = [
                         'entity' => $article,
@@ -46,8 +57,10 @@ readonly class CreateOrderUseCase
                 $this->orderRepository->save($order);
 
                 return new SoapOrderResponseDto(true, $order->getId());
-            } catch (\Exception $e) {
+            } catch (\App\Domain\Exception\ArticleNotFoundException $e) {
                 return new SoapOrderResponseDto(false, null, $e->getMessage());
+            } catch (\Exception $e) {
+                return new SoapOrderResponseDto(false, null, 'An unexpected error occurred during order creation');
             }
         });
     }

@@ -2,9 +2,9 @@
 
 namespace App\Application\UseCase;
 
-use App\Application\Dto\Order\OrderArticleResponseDto;
-use App\Application\Dto\Order\OrderResponseDto;
+use App\Application\Dto\Search\SearchOrderResponseDto;
 use App\Application\Dto\Search\SearchResultDto;
+use App\Domain\Dto\Search\SearchOrderDto;
 use App\Domain\Repository\OrderSearchInterface;
 
 readonly class SearchOrdersUseCase
@@ -25,26 +25,16 @@ readonly class SearchOrdersUseCase
     {
         $searchResult = $this->orderSearch->search($query, $page, $limit, $lastId, $status);
 
-        $items = array_map(function ($order) {
-            $articles = [];
-            foreach ($order->getArticles() as $article) {
-                $articles[] = new OrderArticleResponseDto(
-                    (int)$article->getId(),
-                    (int)$article->getArticle()->getId(),
-                    $article->getAmount(),
-                    $article->getPrice(),
-                    $article->getWeight()
-                );
-            }
-
-            return new OrderResponseDto(
-                (int)$order->getId(),
-                $order->getClientName() ?? '',
-                $order->getClientSurname() ?? '',
-                $order->getEmail() ?? '',
-                (int)$order->getPayType()->getId(),
-                $order->getCreateDate()->format('Y-m-d H:i:s'),
-                $articles
+        $items = array_map(function (SearchOrderDto $order) {
+            return new SearchOrderResponseDto(
+                id: $order->id,
+                number: $order->number,
+                email: $order->email,
+                clientName: $order->clientName,
+                clientSurname: $order->clientSurname,
+                companyName: $order->companyName,
+                description: $order->description,
+                status: $order->status,
             );
         }, $searchResult->items);
 

@@ -2,8 +2,10 @@
 
 namespace App\Infrastructure\EventSubscriber;
 
+use App\Domain\Dto\Outbox\OrderEventPayloadDto;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OutboxEvent;
+use App\Domain\Enum\OrderEventType;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Event\PostPersistEventArgs;
 use Doctrine\ORM\Event\PostRemoveEventArgs;
@@ -20,8 +22,8 @@ readonly class OrderSearchSubscriber
         $entity = $args->getObject();
         if ($entity instanceof Order) {
             $em = $args->getObjectManager();
-            $em->persist(new OutboxEvent('order.indexed', ['id' => $entity->getId()]));
-            // No explicit flush here, it will be flushed together with the order
+            $payload = new OrderEventPayloadDto($entity->getId());
+            $em->persist(new OutboxEvent(OrderEventType::INDEXED, $payload));
         }
     }
 
@@ -30,8 +32,8 @@ readonly class OrderSearchSubscriber
         $entity = $args->getObject();
         if ($entity instanceof Order) {
             $em = $args->getObjectManager();
-            $em->persist(new OutboxEvent('order.indexed', ['id' => $entity->getId()]));
-            // No explicit flush here
+            $payload = new OrderEventPayloadDto($entity->getId());
+            $em->persist(new OutboxEvent(OrderEventType::INDEXED, $payload));
         }
     }
 
@@ -40,8 +42,8 @@ readonly class OrderSearchSubscriber
         $entity = $args->getObject();
         if ($entity instanceof Order) {
             $em = $args->getObjectManager();
-            $em->persist(new OutboxEvent('order.deleted', ['id' => $entity->getId()]));
-            // No explicit flush here
+            $payload = new OrderEventPayloadDto($entity->getId());
+            $em->persist(new OutboxEvent(OrderEventType::DELETED, $payload));
         }
     }
 }

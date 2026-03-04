@@ -4,9 +4,14 @@ namespace App\Tests\Domain\Entity;
 
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
+use App\Domain\Entity\Article;
 use App\Domain\Entity\PayType;
 use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\ValueObject\DeliveryAddress;
+use App\Domain\ValueObject\DeliveryConfig;
+use App\Domain\ValueObject\DeliveryTerms;
+use App\Domain\ValueObject\FinancialTerms;
+use App\Domain\ValueObject\ManagerInfo;
 use App\Domain\Exception\InvalidOrderStateException;
 use PHPUnit\Framework\TestCase;
 
@@ -16,23 +21,42 @@ class OrderTest extends TestCase
     {
         return new Order(
             payType: new PayType('Test Pay'),
-            name: 'Test Order'
+            name: 'Test Order',
+            customerInfo: new CustomerInfo(),
+            deliveryAddress: new DeliveryAddress(),
+            deliveryTerms: new DeliveryTerms(),
+            managerInfo: new ManagerInfo(),
+            financialTerms: new FinancialTerms(),
+            deliveryConfig: new DeliveryConfig()
         );
     }
 
     public function testRecalculateTotals(): void
     {
         $order = $this->createOrder();
+        $articleEntity = new Article('Test', '100.50', '1.5');
 
-        $article1 = new OrderArticle();
-        $article1->setPrice('100.50');
-        $article1->setAmount('2');
-        $article1->setWeight('1.5');
+        $article1 = new OrderArticle(
+            order: $order,
+            article: $articleEntity,
+            amount: '2',
+            price: '100.50',
+            weight: '1.5',
+            packagingCount: '1',
+            pallet: '0',
+            packaging: 'box'
+        );
 
-        $article2 = new OrderArticle();
-        $article2->setPrice('50.00');
-        $article2->setAmount('1');
-        $article2->setWeight('2.0');
+        $article2 = new OrderArticle(
+            order: $order,
+            article: $articleEntity,
+            amount: '1',
+            price: '50.00',
+            weight: '2.0',
+            packagingCount: '1',
+            pallet: '0',
+            packaging: 'box'
+        );
 
         $order->addArticle($article1);
         $order->addArticle($article2);
@@ -55,7 +79,12 @@ class OrderTest extends TestCase
         $order = new Order(
             payType: new PayType('Test Pay'),
             name: 'Test Order',
-            customerInfo: $customerInfo
+            customerInfo: $customerInfo,
+            deliveryAddress: new DeliveryAddress(),
+            deliveryTerms: new DeliveryTerms(),
+            managerInfo: new ManagerInfo(),
+            financialTerms: new FinancialTerms(),
+            deliveryConfig: new DeliveryConfig()
         );
 
         $this->assertEquals('Ivan', $order->getClientName());

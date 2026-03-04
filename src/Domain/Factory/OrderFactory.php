@@ -13,8 +13,14 @@ use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
 
+use App\Domain\Service\OrderPriceCalculator;
+
 class OrderFactory
 {
+    public function __construct(
+        private readonly OrderPriceCalculator $priceCalculator
+    ) {}
+
     public function createFromSoapRequest(CreateOrderSoapRequestDto $request, PayType $payType, array $articlesData): Order
     {
         $customerInfo = new CustomerInfo(
@@ -44,14 +50,18 @@ class OrderFactory
             $orderArticle = new OrderArticle(
                 order: $order,
                 article: $articleEntity,
-                amount: $articleDto->amount,
-                price: $articleDto->price,
-                weight: $articleDto->weight
+                amount: (string)$articleDto->amount,
+                price: (string)$articleDto->price,
+                weight: (string)$articleDto->weight,
+                packagingCount: '1',
+                pallet: '0',
+                packaging: 'unit'
             );
 
             $order->addArticle($orderArticle);
         }
 
+        $this->priceCalculator->recalculate($order);
 
         return $order;
     }

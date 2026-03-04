@@ -12,9 +12,18 @@ class OrderSearchQueryBuilder
 
         if ($isCursorPagination) {
             $offset = 0;
+            // Cursor pagination always needs predictable sort
             $sort = ['id' => 'desc'];
         } else {
+            // High load optimization: limit max OFFSET to prevent performance degradation
+            // If page is too high, we should encourage UI to use cursor pagination
+            $maxOffset = 10000;
             $offset = ($page - 1) * $limit;
+
+            if ($offset > $maxOffset) {
+                $offset = $maxOffset;
+            }
+
             $sort = [];
         }
 
