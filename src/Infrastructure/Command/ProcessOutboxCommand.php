@@ -20,40 +20,59 @@ class ProcessOutboxCommand extends Command
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly MessageBusInterface $messageBus
+        private readonly MessageBusInterface $messageBus,
+        private readonly \Symfony\Contracts\Cache\CacheInterface $cache
     ) {
         parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $repository = $this->entityManager->getRepository(OutboxEvent::class);
-        $events = $repository->findBy(['processedAt' => null], ['createdAt' => 'ASC'], 100);
+        $lockKey = 'outbox_process_lock';
+        $lockAcquired = false;
 
-        if (empty($events)) {
+        $this->cache->get($lockKey, function (\Symfony\Contracts\Cache\ItemInterface $item) use (&$lockAcquired) {
+            $item->expiresAfter(60); // Блокировка на 60 секунд
+            $lockAcquired = true;
+            return true;
+        }, 0.0);
+
+        if (!$lockAcquired) {
+            $output->writeln('Command is already running.');
             return Command::SUCCESS;
         }
 
-        foreach ($events as $event) {
-            try {
-                $payload = $event->getPayload();
-                $message = match ($event->getEventType()) {
-                    'order.indexed' => new IndexOrderMessage($payload['id']),
-                    'order.deleted' => new DeleteOrderMessage($payload['id']),
-                    default => null,
-                };
+        try {
+            $repository = $this->entityManager->getRepository(OutboxEvent::class);
+            $events = $repository->findBy(['processedAt' => null], ['createdAt' => 'ASC'], 100);
 
-                if ($message) {
-                    $this->messageBus->dispatch($message);
-                }
-
-                $event->setProcessedAt(new \DateTimeImmutable());
-            } catch (\Exception $e) {
-                $output->writeln(sprintf('Error processing event %d: %s', $event->getId(), $e->getMessage()));
+            if (empty($events)) {
+                return Command::SUCCESS;
             }
-        }
 
-        $this->entityManager->flush();
+            foreach ($events as $event) {
+                try {
+                    $payload = $event->getPayload();
+                    $message = match ($event->getEventType()) {
+                        'order.indexed' => new IndexOrderMessage($payload['id']),
+                        'order.deleted' => new DeleteOrderMessage($payload['id']),
+                        default => null,
+                    };
+
+                    if ($message) {
+                        $this->messageBus->dispatch($message);
+                    }
+
+                    $event->setProcessedAt(new \DateTimeImmutable());
+                } catch (\Exception $e) {
+                    $output->writeln(sprintf('Error processing event %d: %s', $event->getId(), $e->getMessage()));
+                }
+            }
+
+            $this->entityManager->flush();
+        } finally {
+            $this->cache->delete($lockKey);
+        }
 
         return Command::SUCCESS;
     }

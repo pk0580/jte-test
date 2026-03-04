@@ -14,6 +14,8 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: 'App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository')]
 #[ORM\Table(name: 'orders')]
+#[ORM\Index(columns: ['hash'], name: 'idx_orders_hash')]
+#[ORM\Index(columns: ['token'], name: 'idx_orders_token')]
 class Order
 {
     public const STATUS_NEW = 1;
