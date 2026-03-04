@@ -50,7 +50,6 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
     {
         $em = $this->getEntityManager();
         $em->persist($order);
-        $em->flush();
     }
 
     public function remove(Order $order): void
@@ -137,11 +136,6 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
         $qb = $this->createQueryBuilder('o')
             ->select('o', 'a')
             ->leftJoin('o.articles', 'a');
-
-        if (!empty($query)) {
-            $qb->andWhere('o.number LIKE :query OR o.customerInfo.email LIKE :query OR o.customerInfo.name LIKE :query OR o.customerInfo.surname LIKE :query OR o.customerInfo.companyName LIKE :query OR o.description LIKE :query')
-                ->setParameter('query', '%' . $query . '%');
-        }
 
         if ($queryDto->status !== null) {
             $qb->andWhere('o.status = :status')

@@ -52,3 +52,8 @@ services:
         arguments:
             $host: '%env(MANTICORE_HOST)%'
             $port: '%env(int:MANTICORE_PORT)%'
+
+    App\Infrastructure\Soap\SoapServerFactory:
+        arguments:
+            $wsdlPath: '%kernel.project_dir%/public/wsdl/order.wsdl'
+            $cacheEnabled: '%env(bool:SOAP_CACHE_ENABLED)%'

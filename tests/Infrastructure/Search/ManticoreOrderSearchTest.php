@@ -2,7 +2,13 @@
 
 namespace App\Tests\Infrastructure\Search;
 
-use App\Domain\Entity\Order;
+use App\Domain\Entity\PayType;
+use App\Domain\ValueObject\CustomerInfo;
+use App\Domain\ValueObject\DeliveryAddress;
+use App\Domain\ValueObject\DeliveryTerms;
+use App\Domain\ValueObject\ManagerInfo;
+use App\Domain\ValueObject\FinancialTerms;
+use App\Domain\ValueObject\DeliveryConfig;
 use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\Repository\SearchResult;
 use App\Infrastructure\Search\ManticoreOrderSearch;
@@ -26,7 +32,8 @@ class ManticoreOrderSearchTest extends TestCase
         $page = 1;
         $limit = 10;
 
-        $dbItems = [new Order()];
+        $payType = new PayType('Test');
+        $dbItems = [new Order($payType, 'Test Order')];
         $dbTotal = 1;
         $dbResult = new SearchResult($dbItems, $dbTotal);
 

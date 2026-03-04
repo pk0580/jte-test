@@ -96,11 +96,17 @@ class Order
     #[ORM\Column(length: 255)]
     private string $name;
 
+    #[ORM\Column(length: 3, options: ['default' => 'EUR'])]
+    private string $currency = 'EUR';
+
+    #[ORM\Column(length: 10, options: ['default' => 'unit'])]
+    private string $measure = 'unit';
+
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(type: 'datetime', options: ['default' => 'CURRENT_TIMESTAMP'])]
-    private \DateTimeInterface $createDate;
+    #[ORM\Column(type: 'datetime_immutable', options: ['default' => 'CURRENT_TIMESTAMP'])]
+    private \DateTimeImmutable $createDate;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTimeInterface $updateDate = null;

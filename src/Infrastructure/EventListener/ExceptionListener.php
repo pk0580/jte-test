@@ -7,8 +7,11 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
+use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 #[AsEventListener(event: KernelEvents::EXCEPTION, priority: 10)]
 class ExceptionListener
@@ -33,6 +36,9 @@ class ExceptionListener
                 'error' => $exception->getMessage(),
                 'violations' => $exception->getViolations()
             ]);
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } elseif ($exception instanceof NotFoundHttpException && str_contains($exception->getMessage(), 'request query parameters are invalid')) {
+            $response->setData(['error' => 'Invalid query parameters']);
             $response->setStatusCode(Response::HTTP_BAD_REQUEST);
         } elseif ($exception instanceof HttpExceptionInterface) {
             $response->setData(['error' => $exception->getMessage()]);

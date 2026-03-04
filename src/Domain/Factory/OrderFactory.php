@@ -3,6 +3,7 @@
 namespace App\Domain\Factory;
 
 use App\Domain\Entity\PayType;
+use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\ValueObject\DeliveryAddress;
 use App\Domain\ValueObject\DeliveryConfig;
 use App\Domain\ValueObject\DeliveryTerms;
