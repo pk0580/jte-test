@@ -5,6 +5,7 @@ namespace App\Infrastructure\Persistence\Doctrine\Repository;
 use App\Domain\Entity\Order;
 use App\Domain\Repository\OrderRepositoryInterface;
 use App\Infrastructure\Search\OrderSearchQueryBuilder;
+use App\Domain\Repository\OrderSearchInterface;
 use App\Domain\Repository\SearchResult;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ParameterType;
@@ -13,7 +14,7 @@ use Doctrine\Persistence\ManagerRegistry;
 /**
  * @extends ServiceEntityRepository<Order>
  */
-class OrderRepository extends ServiceEntityRepository implements OrderRepositoryInterface
+class OrderRepository extends ServiceEntityRepository implements OrderRepositoryInterface, OrderSearchInterface
 {
     public function __construct(
         ManagerRegistry $registry,
@@ -72,13 +73,8 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             SELECT
                 DATE_FORMAT(o.create_date, :format) as period,
                 COUNT(*) as orderCount,
-                SUM(t.totalAmount) as totalAmount
+                SUM(o.total_amount) as totalAmount
             FROM `orders` o
-            LEFT JOIN (
-                SELECT orders_id, SUM(amount * price) as totalAmount
-                FROM `orders_article`
-                GROUP BY orders_id
-            ) t ON t.orders_id = o.id
             GROUP BY period
             ORDER BY period DESC
             LIMIT :limit
@@ -131,7 +127,13 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             ->getArrayResult();
     }
 
-    public function search(string $query, int $page, int $limit, ?int $lastId = null, ?int $status = null): SearchResult
+    public function search(
+        string $query,
+        int $page = 1,
+        int $limit = 10,
+        ?int $lastId = null,
+        ?int $status = null
+    ): SearchResult
     {
         $queryDto = $this->queryBuilder->build($query, $page, $limit, $lastId, $status);
 
@@ -178,5 +180,15 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             ->getResult();
 
         return new SearchResult($items, $total);
+    }
+
+    public function index(Order $order): void
+    {
+        // No-op for DB repository
+    }
+
+    public function delete(int $orderId): void
+    {
+        // No-op for DB repository
     }
 }

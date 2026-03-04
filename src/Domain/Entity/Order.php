@@ -202,6 +202,12 @@ class Order
     #[ORM\OneToMany(mappedBy: 'order', targetEntity: OrderArticle::class, cascade: ['persist', 'remove'])]
     private Collection $articles;
 
+    #[ORM\Column(type: 'decimal', precision: 12, scale: 2, options: ['default' => '0.00'])]
+    private string $totalAmount = '0.00';
+
+    #[ORM\Column(type: 'decimal', precision: 12, scale: 3, options: ['default' => '0.000'])]
+    private string $totalWeight = '0.000';
+
     public function __construct()
     {
         $this->articles = new ArrayCollection();
@@ -874,20 +880,40 @@ class Order
      */
     public function getTotalAmount(): string
     {
-        $total = '0.00';
-        foreach ($this->articles as $article) {
-            $total = bcadd($total, bcmul($article->getAmount(), $article->getPrice(), 10), 2);
-        }
-        return $total;
+        return $this->totalAmount;
+    }
+
+    public function setTotalAmount(string $totalAmount): self
+    {
+        $this->totalAmount = $totalAmount;
+        return $this;
     }
 
     public function getTotalWeight(): string
     {
-        $total = '0.000';
+        return $this->totalWeight;
+    }
+
+    public function setTotalWeight(string $totalWeight): self
+    {
+        $this->totalWeight = $totalWeight;
+        return $this;
+    }
+
+    public function recalculateTotals(): self
+    {
+        $amount = '0.00';
+        $weight = '0.000';
+
         foreach ($this->articles as $article) {
-            $total = bcadd($total, bcmul($article->getAmount(), $article->getWeight(), 10), 3);
+            $amount = bcadd($amount, bcmul($article->getAmount(), $article->getPrice(), 10), 2);
+            $weight = bcadd($weight, bcmul($article->getAmount(), $article->getWeight(), 10), 3);
         }
-        return $total;
+
+        $this->totalAmount = $amount;
+        $this->totalWeight = $weight;
+
+        return $this;
     }
 
     public function addArticle(OrderArticle $article): self
@@ -895,6 +921,7 @@ class Order
         if (!$this->articles->contains($article)) {
             $this->articles->add($article);
             $article->setOrder($this);
+            $this->recalculateTotals();
         }
         return $this;
     }
@@ -905,6 +932,7 @@ class Order
             if ($article->getOrder() === $this) {
                 $article->setOrder(null);
             }
+            $this->recalculateTotals();
         }
         return $this;
     }

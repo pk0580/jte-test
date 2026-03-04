@@ -32,5 +32,5 @@ interface OrderRepositoryInterface
      * @param int|null $status
      * @return SearchResult<Order>
      */
-    public function search(string $query, int $page, int $limit, ?int $lastId = null, ?int $status = null): SearchResult;
+    public function search(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResult;
 }

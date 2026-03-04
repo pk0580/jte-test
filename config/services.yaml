@@ -28,7 +28,12 @@ services:
         alias: App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository
 
     App\Domain\Repository\OrderSearchInterface:
-        alias: App\Infrastructure\Search\ManticoreOrderSearch
+        alias: App\Infrastructure\Search\CombinedSearchProvider
+
+    App\Infrastructure\Search\CombinedSearchProvider:
+        arguments:
+            $primarySearch: '@App\Infrastructure\Search\ManticoreOrderSearch'
+            $fallbackSearch: '@App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository'
 
     App\Infrastructure\Search\ManticoreOrderSearch:
         arguments:
