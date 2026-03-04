@@ -15,13 +15,13 @@ class SoapValidationTest extends WebTestCase
    <soapenv:Header/>
    <soapenv:Body>
       <soap:CreateOrderRequest>
-         <client_name>John</client_name>
-         <client_surname>Doe</client_surname>
+         <clientName>John</clientName>
+         <clientSurname>Doe</clientSurname>
          <email>invalid-email</email>
-         <pay_type>1</pay_type>
+         <payType>1</payType>
          <articles>
             <item>
-               <article_id>101</article_id>
+               <articleId>101</articleId>
                <amount>2.5</amount>
                <price>100.00</price>
                <weight>1.2</weight>
@@ -75,8 +75,8 @@ XML;
         $this->assertEquals(200, $client->getResponse()->getStatusCode());
         $content = $client->getResponse()->getContent();
         $this->assertStringContainsString('Validation failed', $content);
-        $this->assertStringContainsString('client_name', $content);
-        $this->assertStringContainsString('client_surname', $content);
+        $this->assertStringContainsString('clientName', $content);
+        $this->assertStringContainsString('clientSurname', $content);
     }
 
     public function testCreateOrderWithNonExistentArticle(): void
@@ -88,13 +88,13 @@ XML;
    <soapenv:Header/>
    <soapenv:Body>
       <soap:CreateOrderRequest>
-         <client_name>John</client_name>
-         <client_surname>Doe</client_surname>
+         <clientName>John</clientName>
+         <clientSurname>Doe</clientSurname>
          <email>john.doe@example.com</email>
-         <pay_type>1</pay_type>
+         <payType>1</payType>
          <articles>
             <item>
-               <article_id>999999</article_id>
+               <articleId>999999</articleId>
                <amount>2.5</amount>
                <price>100.00</price>
                <weight>1.2</weight>
@@ -117,7 +117,7 @@ XML;
         $this->assertEquals(200, $client->getResponse()->getStatusCode());
         $content = $client->getResponse()->getContent();
         $this->assertStringContainsString('Validation failed', $content);
-        $this->assertStringContainsString('article_id', $content);
+        $this->assertStringContainsString('articleId', $content);
         $this->assertStringContainsString('does not exist', $content);
     }
 
@@ -130,13 +130,13 @@ XML;
    <soapenv:Header/>
    <soapenv:Body>
       <soap:CreateOrderRequest>
-         <client_name>John</client_name>
-         <client_surname>Doe</client_surname>
+         <clientName>John</clientName>
+         <clientSurname>Doe</clientSurname>
          <email>john.doe@example.com</email>
-         <pay_type>999999</pay_type>
+         <payType>999999</payType>
          <articles>
             <item>
-               <article_id>1</article_id>
+               <articleId>1</articleId>
                <amount>2.5</amount>
                <price>100.00</price>
                <weight>1.2</weight>
@@ -159,7 +159,7 @@ XML;
         $this->assertEquals(200, $client->getResponse()->getStatusCode());
         $content = $client->getResponse()->getContent();
         $this->assertStringContainsString('Validation failed', $content);
-        $this->assertStringContainsString('pay_type', $content);
+        $this->assertStringContainsString('payType', $content);
         $this->assertStringContainsString('Invalid payment type', $content);
     }
 }

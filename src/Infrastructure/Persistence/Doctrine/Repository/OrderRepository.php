@@ -127,6 +127,14 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             ->getArrayResult();
     }
 
+    /**
+     * @param string $query
+     * @param int $page
+     * @param int $limit
+     * @param int|null $lastId
+     * @param int|null $status
+     * @return SearchResult<Order>
+     */
     public function search(
         string $query,
         int $page = 1,
@@ -190,5 +198,10 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
     public function delete(int $orderId): void
     {
         // No-op for DB repository
+    }
+
+    public function ping(): bool
+    {
+        return true;
     }
 }

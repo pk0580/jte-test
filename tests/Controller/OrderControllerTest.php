@@ -2,8 +2,11 @@
 
 namespace App\Tests\Controller;
 
+use App\Domain\Entity\Article;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
+use App\Domain\Entity\PayType;
+use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\Repository\OrderRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -17,24 +20,30 @@ class OrderControllerTest extends WebTestCase
         /** @var OrderRepositoryInterface $repository */
         $repository = $container->get(OrderRepositoryInterface::class);
 
+        // Создаем тестовые зависимости
+        $em = $container->get('doctrine')->getManager();
+        $payType = new PayType('Test Pay');
+        $em->persist($payType);
+        $articleEntity = new Article('Test Article', '50.5', '1.5');
+        $em->persist($articleEntity);
+        $em->flush();
+
         // Создаем тестовый заказ
         $order = new Order();
         $order->setHash(bin2hex(random_bytes(16)));
         $order->setToken(bin2hex(random_bytes(32)));
-        $order->setClientName('Test');
-        $order->setClientSurname('User');
-        $order->setEmail('test@example.com');
-        $order->setPayType(1);
+        $order->setCustomerInfo(new CustomerInfo('Test', 'User', 'test@example.com'));
+        $order->setPayType($payType);
         $order->setLocale('ru');
         $order->setCurrency('EUR');
         $order->setMeasure('m');
         $order->setName('Test Order');
         $order->setCreateDate(new \DateTime());
-        $order->setStatus(1);
+        $order->changeStatus(1);
 
         $article = new OrderArticle();
         $article->setOrder($order);
-        $article->setArticleId(123);
+        $article->setArticle($articleEntity);
         $article->setAmount('10');
         $article->setPrice('50.5');
         $article->setWeight('1.5');
@@ -56,7 +65,7 @@ class OrderControllerTest extends WebTestCase
         $this->assertEquals($orderId, $data['id']);
         $this->assertEquals('Test', $data['client_name']);
         $this->assertCount(1, $data['articles']);
-        $this->assertEquals(123, $data['articles'][0]['article_id']);
+        $this->assertEquals($articleEntity->getId(), $data['articles'][0]['article_id']);
         $this->assertEquals('50.5', $data['articles'][0]['price']);
     }
 

@@ -9,11 +9,11 @@ class OrderResponseDto
      */
     public function __construct(
         public int $id,
-        public string $client_name,
-        public string $client_surname,
+        public string $clientName,
+        public string $clientSurname,
         public string $email,
-        public int $pay_type,
-        public string $create_date,
+        public int $payType,
+        public string $createDate,
         public array $articles
     ) {}
 }

@@ -4,6 +4,8 @@ namespace App\Tests\Application\UseCase;
 
 use App\Application\UseCase\GetOrderUseCase;
 use App\Domain\Entity\Order;
+use App\Domain\Entity\PayType;
+use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\Repository\OrderRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -12,13 +14,17 @@ class GetOrderUseCaseTest extends TestCase
 {
     public function testExecuteSuccess(): void
     {
+        $payType = new PayType('Test Pay');
+        $reflectionPay = new \ReflectionClass(PayType::class);
+        $propPay = $reflectionPay->getProperty('id');
+        $propPay->setAccessible(true);
+        $propPay->setValue($payType, 1);
+
         $order = new Order();
         $order->setHash('test_hash');
         $order->setToken('test_token');
-        $order->setClientName('John');
-        $order->setClientSurname('Doe');
-        $order->setEmail('john@example.com');
-        $order->setPayType(1);
+        $order->setCustomerInfo(new CustomerInfo('John', 'Doe', 'john@example.com'));
+        $order->setPayType($payType);
         $order->setCreateDate(new \DateTime('2023-01-01 12:00:00'));
         $order->setLocale('en');
         $order->setCurrency('USD');
@@ -41,8 +47,8 @@ class GetOrderUseCaseTest extends TestCase
         $result = $useCase->execute(1);
 
         $this->assertEquals(1, $result->id);
-        $this->assertEquals('John', $result->client_name);
-        $this->assertEquals('2023-01-01 12:00:00', $result->create_date);
+        $this->assertEquals('John', $result->clientName);
+        $this->assertEquals('2023-01-01 12:00:00', $result->createDate);
     }
 
     public function testExecuteNotFound(): void

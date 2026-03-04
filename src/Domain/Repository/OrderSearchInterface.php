@@ -12,7 +12,7 @@ interface OrderSearchInterface
      * @param int $limit
      * @param int|null $lastId
      * @param int|null $status
-     * @return SearchResult
+     * @return SearchResult<Order>
      */
     public function search(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResult;
 
@@ -25,4 +25,6 @@ interface OrderSearchInterface
      * @param int $orderId
      */
     public function delete(int $orderId): void;
+
+    public function ping(): bool;
 }

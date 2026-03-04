@@ -1,0 +1,180 @@
+/var/www/html/src/Application/Dto/Order/OrderDto.php:18:Parameter $articles of method App\Application\Dto\Order\OrderDto::__construct() has invalid type App\Application\Dto\Order\OrderArticleDto.
+/var/www/html/src/Application/Dto/Order/OrderDto.php:18:Property App\Application\Dto\Order\OrderDto::$articles has unknown class App\Application\Dto\Order\OrderArticleDto as its type.
+/var/www/html/src/Application/Service/SoapOrderService.php:18:Method App\Application\Service\SoapOrderService::createOrder() has parameter $parameters with no type specified.
+/var/www/html/src/Application/Service/SoapOrderService.php:18:Method App\Application\Service\SoapOrderService::createOrder() return type has no value type specified in iterable type array.
+/var/www/html/src/Application/Service/SoapOrderService.php:20:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/src/Application/Service/SoapOrderService.php:23:Cannot access offset 'articles' on mixed.
+/var/www/html/src/Application/Service/SoapOrderService.php:23:Cannot access offset 'item' on mixed.
+/var/www/html/src/Application/Service/SoapOrderService.php:25:Cannot access offset 0 on mixed.
+/var/www/html/src/Application/Service/SoapOrderService.php:31:Cannot access offset 'articles' on mixed.
+/var/www/html/src/Application/Service/SoapOrderService.php:35:Call to an undefined method Symfony\Component\Serializer\SerializerInterface::denormalize().
+/var/www/html/src/Application/Service/SoapOrderService.php:48:Call to an undefined method Symfony\Component\Serializer\SerializerInterface::normalize().
+/var/www/html/src/Application/UseCase/GetOrderUseCase.php:25:Call to an undefined method App\Domain\Entity\Order::getArticles().
+/var/www/html/src/Application/UseCase/GetOrderUseCase.php:36:Parameter #1 $id of class App\Application\Dto\Order\OrderResponseDto constructor expects int, int|null given.
+/var/www/html/src/Application/UseCase/GetOrderUseCase.php:37:Call to an undefined method App\Domain\Entity\Order::getClientName().
+/var/www/html/src/Application/UseCase/GetOrderUseCase.php:38:Call to an undefined method App\Domain\Entity\Order::getClientSurname().
+/var/www/html/src/Application/UseCase/GetOrderUseCase.php:39:Call to an undefined method App\Domain\Entity\Order::getEmail().
+/var/www/html/src/Application/UseCase/GetOrderUseCase.php:40:Parameter #5 $pay_type of class App\Application\Dto\Order\OrderResponseDto constructor expects int, App\Domain\Entity\PayType given.
+/var/www/html/src/Application/UseCase/SearchOrdersUseCase.php:30:Cannot call method getArticles() on mixed.
+/var/www/html/src/Application/UseCase/SearchOrdersUseCase.php:41:Cannot call method getId() on mixed.
+/var/www/html/src/Application/UseCase/SearchOrdersUseCase.php:42:Cannot call method getClientName() on mixed.
+/var/www/html/src/Application/UseCase/SearchOrdersUseCase.php:43:Cannot call method getClientSurname() on mixed.
+/var/www/html/src/Application/UseCase/SearchOrdersUseCase.php:44:Cannot call method getEmail() on mixed.
+/var/www/html/src/Application/UseCase/SearchOrdersUseCase.php:45:Cannot call method getPayType() on mixed.
+/var/www/html/src/Application/UseCase/SearchOrdersUseCase.php:46:Cannot call method getCreateDate() on mixed.
+/var/www/html/src/Application/Validator/Constraints/EntityExistsValidator.php:26:Parameter #1 $className of method Doctrine\ORM\EntityManagerInterface::getRepository() expects class-string<object>, string given.
+/var/www/html/src/Application/Validator/Constraints/EntityExistsValidator.php:31:Cannot cast mixed to string.
+/var/www/html/src/Controller/Api/v1/HealthController.php:16:Call to an undefined method App\Domain\Repository\OrderSearchInterface::ping().
+/var/www/html/src/Controller/Api/v1/SoapController.php:23:Parameter #1 $content of class Symfony\Component\HttpFoundation\Response constructor expects string|null, string|false given.
+/var/www/html/src/Controller/Api/v1/SoapController.php:43:Parameter #1 $content of method Symfony\Component\HttpFoundation\Response::setContent() expects string|null, string|false given.
+/var/www/html/src/Domain/Entity/Order.php:137:Property App\Domain\Entity\Order::$warehouseData type has no value type specified in iterable type array.
+/var/www/html/src/Domain/Entity/Order.php:647:Method App\Domain\Entity\Order::getWarehouseData() return type has no value type specified in iterable type array.
+/var/www/html/src/Domain/Entity/Order.php:652:Method App\Domain\Entity\Order::setWarehouseData() has parameter $warehouseData with no value type specified in iterable type array.
+/var/www/html/src/Domain/Entity/Order.php:881:PHPDoc tag @return with type Doctrine\Common\Collections\Collection<int, App\Domain\Entity\OrderArticle> is incompatible with native type string.
+/var/www/html/src/Domain/Entity/Order.php:909:Parameter #1 $num1 of function bcmul expects numeric-string, string given.
+/var/www/html/src/Domain/Entity/Order.php:909:Parameter #2 $num2 of function bcmul expects numeric-string, string given.
+/var/www/html/src/Domain/Entity/Order.php:910:Parameter #1 $num1 of function bcmul expects numeric-string, string given.
+/var/www/html/src/Domain/Entity/Order.php:910:Parameter #2 $num2 of function bcmul expects numeric-string, string given.
+/var/www/html/src/Domain/Factory/OrderFactory.php:13:Method App\Domain\Factory\OrderFactory::createFromSoapRequest() has parameter $articlesData with no value type specified in iterable type array.
+/var/www/html/src/Domain/Repository/OrderRepositoryInterface.php:25:Method App\Domain\Repository\OrderRepositoryInterface::findForIndexing() return type has no value type specified in iterable type array.
+/var/www/html/src/Domain/Repository/OrderSearchInterface.php:17:Method App\Domain\Repository\OrderSearchInterface::search() return type with generic class App\Domain\Repository\SearchResult does not specify its types: T
+/var/www/html/src/Infrastructure/Command/IndexOrdersCommand.php:38:Cannot cast mixed to int.
+/var/www/html/src/Infrastructure/Command/IndexOrdersCommand.php:39:Cannot cast mixed to int.
+/var/www/html/src/Infrastructure/EventSubscriber/OrderSearchSubscriber.php:26:Parameter #1 $orderId of class App\Application\Message\IndexOrderMessage constructor expects int, int|null given.
+/var/www/html/src/Infrastructure/EventSubscriber/OrderSearchSubscriber.php:34:Parameter #1 $orderId of class App\Application\Message\IndexOrderMessage constructor expects int, int|null given.
+/var/www/html/src/Infrastructure/EventSubscriber/OrderSearchSubscriber.php:42:Parameter #1 $orderId of class App\Application\Message\DeleteOrderMessage constructor expects int, int|null given.
+/var/www/html/src/Infrastructure/Persistence/Doctrine/Repository/OrderRepository.php:99:Cannot cast mixed to int.
+/var/www/html/src/Infrastructure/Persistence/Doctrine/Repository/OrderRepository.php:103:Cannot cast mixed to string.
+/var/www/html/src/Infrastructure/Persistence/Doctrine/Repository/OrderRepository.php:104:Cannot cast mixed to int.
+/var/www/html/src/Infrastructure/Persistence/Doctrine/Repository/OrderRepository.php:105:Cannot cast mixed to float.
+/var/www/html/src/Infrastructure/Persistence/Doctrine/Repository/OrderRepository.php:119:Method App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository::findForIndexing() return type has no value type specified in iterable type array.
+/var/www/html/src/Infrastructure/Search/CombinedSearchProvider.php:18:Method App\Infrastructure\Search\CombinedSearchProvider::search() return type with generic class App\Domain\Repository\SearchResult does not specify its types: T
+/var/www/html/src/Infrastructure/Search/Dto/SearchQueryDto.php:7:Method App\Infrastructure\Search\Dto\SearchQueryDto::__construct() has parameter $sort with no value type specified in iterable type array.
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:28:Method App\Infrastructure\Search\ManticoreOrderSearch::search() return type with generic class App\Domain\Repository\SearchResult does not specify its types: T
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:75:Method App\Infrastructure\Search\ManticoreOrderSearch::fetchIds() return type has no value type specified in iterable type array.
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:115:Call to an undefined method App\Domain\Entity\Order::getEmail().
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:116:Call to an undefined method App\Domain\Entity\Order::getClientName().
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:117:Call to an undefined method App\Domain\Entity\Order::getClientSurname().
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:118:Call to an undefined method App\Domain\Entity\Order::getCompanyName().
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:189:Cannot cast mixed to int.
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:191:Cannot cast mixed to string.
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:192:Cannot cast mixed to string.
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:193:Cannot cast mixed to string.
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:194:Cannot cast mixed to string.
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:195:Cannot cast mixed to string.
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:196:Cannot cast mixed to string.
+/var/www/html/src/Infrastructure/Search/ManticoreOrderSearch.php:197:Cannot cast mixed to int.
+/var/www/html/src/Infrastructure/Search/OrderReindexer.php:24:Cannot cast mixed to int.
+/var/www/html/src/Infrastructure/Search/OrderReindexer.php:81:Comparison operation ">" between 10000 and 0 is always true.
+/var/www/html/src/Infrastructure/Search/OrderReindexer.php:122:Method App\Infrastructure\Search\OrderReindexer::fetchBatch() return type has no value type specified in iterable type array.
+/var/www/html/src/Infrastructure/Search/OrderReindexer.php:139:Method App\Infrastructure\Search\OrderReindexer::retryBulk() has parameter $rows with no value type specified in iterable type array.
+/var/www/html/tests/Application/UseCase/GetOrderUseCaseTest.php:18:Call to an undefined method App\Domain\Entity\Order::setClientName().
+/var/www/html/tests/Application/UseCase/GetOrderUseCaseTest.php:19:Call to an undefined method App\Domain\Entity\Order::setClientSurname().
+/var/www/html/tests/Application/UseCase/GetOrderUseCaseTest.php:20:Call to an undefined method App\Domain\Entity\Order::setEmail().
+/var/www/html/tests/Application/UseCase/GetOrderUseCaseTest.php:21:Parameter #1 $payType of method App\Domain\Entity\Order::setPayType() expects App\Domain\Entity\PayType, int given.
+/var/www/html/tests/Controller/Api/v1/HealthControllerTest.php:15:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/HealthControllerTest.php:17:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/HealthControllerTest.php:18:Cannot access offset 'status' on mixed.
+/var/www/html/tests/Controller/Api/v1/HealthControllerTest.php:19:Cannot access offset 'manticore' on mixed.
+/var/www/html/tests/Controller/Api/v1/HealthControllerTest.php:19:Cannot access offset 'services' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:29:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:31:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:32:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:33:Cannot access offset 'meta' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:33:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:34:Cannot access offset 'meta' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:34:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:35:Cannot access offset 'meta' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:35:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:36:Cannot access offset 'meta' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:36:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:38:Cannot access offset 'items' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:38:Parameter #1 $value of function count expects array|Countable, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:39:Cannot access offset 'items' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:39:Cannot access offset 0 on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:40:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:41:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:42:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:44:Cannot access offset 'period' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:44:Parameter #2 $string of method PHPUnit\Framework\Assert::assertMatchesRegularExpression() expects string, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:57:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:58:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:59:Cannot access offset 'error' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:71:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:72:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:73:Cannot access offset 'error' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:85:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:86:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:87:Cannot access offset 'error' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:102:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:103:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:104:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:113:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:114:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:115:Cannot access offset 'meta' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:115:Cannot access offset 'status' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:117:Argument of an invalid type mixed supplied for foreach, only iterables are supported.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:117:Cannot access offset 'items' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:134:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:136:Cannot access offset 'items' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:136:Parameter #1 $value of function count expects array|Countable, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:140:Cannot access offset 'items' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:140:Cannot access offset 0 on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:141:Cannot access offset 'items' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:141:Cannot access offset 1 on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:142:Cannot access offset 'id' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:152:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:154:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:155:Cannot access offset 'items' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:155:Parameter #1 $value of function count expects array|Countable, mixed given.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:156:Cannot access offset 'items' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:156:Cannot access offset 0 on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:157:Cannot access offset 'id' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:158:Cannot access offset 'id' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:158:Cannot access offset 'id' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:159:Cannot access offset 'id' on mixed.
+/var/www/html/tests/Controller/Api/v1/OrderControllerTest.php:159:Cannot access offset 'id' on mixed.
+/var/www/html/tests/Controller/Api/v1/PriceControllerTest.php:15:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/Api/v1/PriceControllerTest.php:16:Parameter #2 $array of method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.
+/var/www/html/tests/Controller/OrderControllerTest.php:24:Call to an undefined method App\Domain\Entity\Order::setClientName().
+/var/www/html/tests/Controller/OrderControllerTest.php:25:Call to an undefined method App\Domain\Entity\Order::setClientSurname().
+/var/www/html/tests/Controller/OrderControllerTest.php:26:Call to an undefined method App\Domain\Entity\Order::setEmail().
+/var/www/html/tests/Controller/OrderControllerTest.php:27:Parameter #1 $payType of method App\Domain\Entity\Order::setPayType() expects App\Domain\Entity\PayType, int given.
+/var/www/html/tests/Controller/OrderControllerTest.php:33:Call to an undefined method App\Domain\Entity\Order::setStatus().
+/var/www/html/tests/Controller/OrderControllerTest.php:37:Call to an undefined method App\Domain\Entity\OrderArticle::setArticleId().
+/var/www/html/tests/Controller/OrderControllerTest.php:54:Parameter #1 $json of function json_decode expects string, string|false given.
+/var/www/html/tests/Controller/OrderControllerTest.php:56:Cannot access offset 'id' on mixed.
+/var/www/html/tests/Controller/OrderControllerTest.php:57:Cannot access offset 'client_name' on mixed.
+/var/www/html/tests/Controller/OrderControllerTest.php:58:Cannot access offset 'articles' on mixed.
+/var/www/html/tests/Controller/OrderControllerTest.php:58:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertCount() expects Countable|iterable, mixed given.
+/var/www/html/tests/Controller/OrderControllerTest.php:59:Cannot access offset 'article_id' on mixed.
+/var/www/html/tests/Controller/OrderControllerTest.php:59:Cannot access offset 'articles' on mixed.
+/var/www/html/tests/Controller/OrderControllerTest.php:59:Cannot access offset 0 on mixed.
+/var/www/html/tests/Controller/OrderControllerTest.php:60:Cannot access offset 'articles' on mixed.
+/var/www/html/tests/Controller/OrderControllerTest.php:60:Cannot access offset 'price' on mixed.
+/var/www/html/tests/Controller/OrderControllerTest.php:60:Cannot access offset 0 on mixed.
+/var/www/html/tests/Controller/Soap/SoapControllerTest.php:45:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|null given.
+/var/www/html/tests/Controller/Soap/SoapControllerTest.php:46:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapControllerTest.php:47:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapControllerTest.php:56:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|null given.
+/var/www/html/tests/Controller/Soap/SoapControllerTest.php:57:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:46:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:47:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:48:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringNotContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:77:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:78:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:79:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:119:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:120:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:121:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:161:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:162:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Controller/Soap/SoapValidationTest.php:163:Parameter #2 $haystack of method PHPUnit\Framework\Assert::assertStringContainsString() expects string, string|false given.
+/var/www/html/tests/Infrastructure/Search/ManticoreAsyncIndexingTest.php:27:Call to an undefined method App\Domain\Entity\Order::setClientName().
+/var/www/html/tests/Infrastructure/Search/ManticoreAsyncIndexingTest.php:28:Call to an undefined method App\Domain\Entity\Order::setClientSurname().
+/var/www/html/tests/Infrastructure/Search/ManticoreAsyncIndexingTest.php:29:Call to an undefined method App\Domain\Entity\Order::setEmail().
+/var/www/html/tests/Infrastructure/Search/ManticoreAsyncIndexingTest.php:30:Parameter #1 $payType of method App\Domain\Entity\Order::setPayType() expects App\Domain\Entity\PayType, int given.
+/var/www/html/tests/Infrastructure/Search/ManticoreAsyncIndexingTest.php:36:Call to an undefined method App\Domain\Entity\Order::setStatus().
+/var/www/html/tests/Infrastructure/Search/ManticoreAsyncIndexingTest.php:40:Call to an undefined method App\Domain\Entity\OrderArticle::setArticleId().
+/var/www/html/tests/bootstrap.php:7:Call to function method_exists() with 'Symfony\\Component\\Dotenv\\Dotenv' and 'bootEnv' will always evaluate to true.
+/var/www/html/tests/object-manager.php:10:Parameter #1 $environment of class App\Kernel constructor expects string, mixed given.

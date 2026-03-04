@@ -196,9 +196,6 @@ class Order
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $bankDetails = null;
 
-    /**
-     * @var Collection<int, OrderArticle>
-     */
     #[ORM\OneToMany(mappedBy: 'order', targetEntity: OrderArticle::class, cascade: ['persist', 'remove'])]
     private Collection $articles;
 
@@ -220,6 +217,21 @@ class Order
     public function getCustomerInfo(): CustomerInfo
     {
         return $this->customerInfo;
+    }
+
+    public function getClientName(): ?string
+    {
+        return $this->customerInfo->getName();
+    }
+
+    public function getClientSurname(): ?string
+    {
+        return $this->customerInfo->getSurname();
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->customerInfo->getEmail();
     }
 
     public function setCustomerInfo(CustomerInfo $customerInfo): self
@@ -248,6 +260,14 @@ class Order
     {
         $this->deliveryTerms = $deliveryTerms;
         return $this;
+    }
+
+    /**
+     * @return Collection<int, OrderArticle>
+     */
+    public function getArticles(): Collection
+    {
+        return $this->articles;
     }
 
     public function getPayType(): PayType

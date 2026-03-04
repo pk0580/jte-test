@@ -15,6 +15,14 @@ readonly class CombinedSearchProvider implements OrderSearchInterface
         private LoggerInterface      $logger
     ) {}
 
+    /**
+     * @param string $query
+     * @param int $page
+     * @param int $limit
+     * @param int|null $lastId
+     * @param int|null $status
+     * @return SearchResult<Order>
+     */
     public function search(
         string $query,
         int $page = 1,
@@ -56,6 +64,16 @@ readonly class CombinedSearchProvider implements OrderSearchInterface
                 'error' => $e->getMessage(),
                 'order_id' => $orderId
             ]);
+        }
+    }
+
+    public function ping(): bool
+    {
+        try {
+            return $this->primarySearch->ping();
+        } catch (\Exception $e) {
+            $this->logger->error('Ping failed', ['error' => $e->getMessage()]);
+            return false;
         }
     }
 }

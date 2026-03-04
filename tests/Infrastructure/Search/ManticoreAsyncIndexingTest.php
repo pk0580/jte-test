@@ -3,8 +3,11 @@
 namespace App\Tests\Infrastructure\Search;
 
 use App\Application\Message\IndexOrderMessage;
+use App\Domain\Entity\Article;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
+use App\Domain\Entity\PayType;
+use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\Repository\OrderSearchInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -20,24 +23,30 @@ class ManticoreAsyncIndexingTest extends WebTestCase
         /** @var OrderRepositoryInterface $repository */
         $repository = $container->get(OrderRepositoryInterface::class);
 
-        // 1. Создаем тестовый заказ
+        // 1. Создаем тестовые зависимости
+        $em = $container->get('doctrine')->getManager();
+        $payType = new PayType('Async Pay');
+        $em->persist($payType);
+        $articleEntity = new Article('Async Article', '100', '1');
+        $em->persist($articleEntity);
+        $em->flush();
+
+        // 2. Создаем тестовый заказ
         $order = new Order();
         $order->setHash(bin2hex(random_bytes(16)));
         $order->setToken(bin2hex(random_bytes(32)));
-        $order->setClientName('AsyncTest');
-        $order->setClientSurname('User');
-        $order->setEmail('async@example.com');
-        $order->setPayType(1);
+        $order->setCustomerInfo(new CustomerInfo('AsyncTest', 'User', 'async@example.com'));
+        $order->setPayType($payType);
         $order->setLocale('ru');
         $order->setCurrency('EUR');
         $order->setMeasure('m');
         $order->setName('Async Test Order');
         $order->setCreateDate(new \DateTime());
-        $order->setStatus(1);
+        $order->changeStatus(1);
 
         $article = new OrderArticle();
         $article->setOrder($order);
-        $article->setArticleId(456);
+        $article->setArticle($articleEntity);
         $article->setAmount('1');
         $article->setPrice('100');
         $article->setWeight('1');

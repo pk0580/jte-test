@@ -24,8 +24,8 @@ readonly class GetOrderUseCase
         $articles = [];
         foreach ($order->getArticles() as $article) {
             $articles[] = new OrderArticleResponseDto(
-                $article->getId(),
-                $article->getArticleId(),
+                (int)$article->getId(),
+                (int)$article->getArticle()->getId(),
                 $article->getAmount(),
                 $article->getPrice(),
                 $article->getWeight()
@@ -33,11 +33,11 @@ readonly class GetOrderUseCase
         }
 
         return new OrderResponseDto(
-            $order->getId(),
-            $order->getClientName(),
-            $order->getClientSurname(),
-            $order->getEmail(),
-            $order->getPayType(),
+            (int)$order->getId(),
+            $order->getClientName() ?? '',
+            $order->getClientSurname() ?? '',
+            $order->getEmail() ?? '',
+            (int)$order->getPayType()->getId(),
             $order->getCreateDate()->format('Y-m-d H:i:s'),
             $articles
         );

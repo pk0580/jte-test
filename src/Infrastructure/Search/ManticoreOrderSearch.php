@@ -25,6 +25,14 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
         $this->client = new Client(['host' => $host, 'port' => $port]);
     }
 
+    /**
+     * @param string $query
+     * @param int $page
+     * @param int $limit
+     * @param int|null $lastId
+     * @param int|null $status
+     * @return SearchResult<Order>
+     */
     public function search(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResult
     {
         try {
