@@ -9,7 +9,6 @@ use App\Application\Dto\Soap\SoapOrderResponseDto;
 use App\Domain\Factory\OrderFactory;
 use App\Domain\Repository\OrderRepositoryInterface;
 use App\Application\Common\TransactionManagerInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 readonly class CreateOrderUseCase
 {
@@ -18,21 +17,11 @@ readonly class CreateOrderUseCase
         private PayTypeRepositoryInterface $payTypeRepository,
         private ArticleRepositoryInterface $articleRepository,
         private OrderFactory               $orderFactory,
-        private TransactionManagerInterface $transactionManager,
-        private ValidatorInterface          $validator
+        private TransactionManagerInterface $transactionManager
     ) {}
 
     public function execute(CreateOrderSoapRequestDto $request): SoapOrderResponseDto
     {
-        $violations = $this->validator->validate($request);
-        if (count($violations) > 0) {
-            $errors = [];
-            foreach ($violations as $violation) {
-                $errors[] = $violation->getMessage();
-            }
-            return new SoapOrderResponseDto(false, null, implode(' ', $errors));
-        }
-
         return $this->transactionManager->wrapInTransaction(function () use ($request) {
             try {
                 $payType = $this->payTypeRepository->findById($request->payType);

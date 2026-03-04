@@ -9,7 +9,8 @@ use App\Domain\Dto\Outbox\OrderEventPayloadDto;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'outbox_events')]
-#[ORM\Index(columns: ['processed_at'], name: 'idx_outbox_processed_at')]
+#[ORM\Index(columns: ['processed_at', 'attempts'], name: 'idx_outbox_process_lookup')]
+#[ORM\Index(columns: ['created_at'], name: 'idx_outbox_created_at')]
 class OutboxEvent
 {
     #[ORM\Id]
@@ -28,6 +29,12 @@ class OutboxEvent
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $processedAt = null;
+
+    #[ORM\Column(type: 'integer')]
+    private int $attempts = 0;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $lastError = null;
 
     public function __construct(OrderEventType $eventType, OrderEventPayloadDto $payloadDto)
     {
@@ -64,6 +71,28 @@ class OutboxEvent
     public function setProcessedAt(?\DateTimeImmutable $processedAt): self
     {
         $this->processedAt = $processedAt;
+        return $this;
+    }
+
+    public function getAttempts(): int
+    {
+        return $this->attempts;
+    }
+
+    public function incrementAttempts(): self
+    {
+        $this->attempts++;
+        return $this;
+    }
+
+    public function getLastError(): ?string
+    {
+        return $this->lastError;
+    }
+
+    public function setLastError(?string $lastError): self
+    {
+        $this->lastError = $lastError;
         return $this;
     }
 }

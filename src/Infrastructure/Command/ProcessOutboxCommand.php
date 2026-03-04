@@ -41,14 +41,41 @@ class ProcessOutboxCommand extends Command
 
         try {
             $repository = $this->entityManager->getRepository(OutboxEvent::class);
-            $events = $repository->findBy(['processedAt' => null], ['createdAt' => 'ASC'], 100);
+
+            // Получаем необработанные события.
+            // Мы не можем легко отфильтровать по backoff в findBy,
+            // поэтому возьмем пачку и отфильтруем в PHP или используем QueryBuilder.
+            $queryBuilder = $this->entityManager->createQueryBuilder();
+            $queryBuilder->select('e')
+                ->from(OutboxEvent::class, 'e')
+                ->where('e.processedAt IS NULL')
+                ->andWhere('e.attempts < :maxAttempts')
+                ->setParameter('maxAttempts', 10)
+                ->orderBy('e.createdAt', 'ASC')
+                ->setMaxResults(100);
+
+            $events = $queryBuilder->getQuery()->getResult();
 
             if (empty($events)) {
                 return Command::SUCCESS;
             }
 
+            $now = new \DateTimeImmutable();
+
             foreach ($events as $index => $event) {
+                // Exponential Backoff: delay = 2^attempts * 60 seconds
+                if ($event->getAttempts() > 0) {
+                    $delaySeconds = (2 ** ($event->getAttempts() - 1)) * 60;
+                    $nextAttemptAt = $event->getCreatedAt()->modify(sprintf('+%d seconds', $delaySeconds));
+
+                    if ($nextAttemptAt > $now) {
+                        continue;
+                    }
+                }
+
                 try {
+                    $event->incrementAttempts();
+
                     $payloadDto = $event->getPayloadDto();
                     $message = match ($event->getEventType()) {
                         OrderEventType::INDEXED => new IndexOrderMessage($payloadDto->id),
@@ -60,13 +87,19 @@ class ProcessOutboxCommand extends Command
                     }
 
                     $event->setProcessedAt(new \DateTimeImmutable());
+                    $event->setLastError(null);
 
-                    // Flush every 20 events to provide progress and reduce memory usage
+                    // Flush every 20 events
                     if (($index + 1) % 20 === 0) {
                         $this->entityManager->flush();
                     }
                 } catch (\Exception $e) {
-                    $output->writeln(sprintf('Error processing event %d: %s', $event->getId(), $e->getMessage()));
+                    $event->setLastError($e->getMessage());
+                    $output->writeln(sprintf('Error processing event %d (attempt %d): %s',
+                        $event->getId(),
+                        $event->getAttempts(),
+                        $e->getMessage()
+                    ));
                 }
             }
 

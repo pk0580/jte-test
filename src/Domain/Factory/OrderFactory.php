@@ -55,7 +55,8 @@ class OrderFactory
                 weight: (string)$articleDto->weight,
                 packagingCount: '1',
                 pallet: '0',
-                packaging: 'unit'
+                packaging: '1',
+                measure: 'unit'
             );
 
             $order->addArticle($orderArticle);

@@ -3,6 +3,7 @@
 namespace App\Controller\Api\v1;
 
 use App\Application\Service\SoapOrderService;
+use App\Application\Service\WsdlProviderInterface;
 use App\Infrastructure\Soap\SoapServerFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,15 +17,15 @@ class SoapController extends AbstractController
     public function index(
         Request $request,
         SoapOrderService $soapOrderService,
-        SoapServerFactory $soapServerFactory
+        SoapServerFactory $soapServerFactory,
+        WsdlProviderInterface $wsdlProvider
     ): Response {
-        $wsdlPath = $this->getParameter('kernel.project_dir') . '/public/wsdl/order.wsdl';
-
         if ($request->isMethod('GET')) {
-            if (!file_exists($wsdlPath)) {
-                return new Response('WSDL file not found', 404);
+            try {
+                return new Response($wsdlProvider->getWsdlContent(), 200, ['Content-Type' => 'text/xml']);
+            } catch (Throwable $e) {
+                return new Response($e->getMessage(), 404);
             }
-            return new Response(file_get_contents($wsdlPath), 200, ['Content-Type' => 'text/xml']);
         }
 
         $soapServer = $soapServerFactory->create($soapOrderService);

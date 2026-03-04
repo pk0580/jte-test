@@ -2,12 +2,13 @@
 
 namespace App\Infrastructure\Soap;
 
+use App\Application\Service\WsdlProviderInterface;
 use SoapServer;
 
 class SoapServerFactory
 {
     public function __construct(
-        private string $wsdlPath,
+        private WsdlProviderInterface $wsdlProvider,
         private bool $cacheEnabled = false
     ) {}
 
@@ -18,7 +19,7 @@ class SoapServerFactory
             'exceptions' => true,
         ];
 
-        $soapServer = new SoapServer($this->wsdlPath, $options);
+        $soapServer = new SoapServer($this->wsdlProvider->getWsdlPath(), $options);
         $soapServer->setObject($service);
 
         return $soapServer;

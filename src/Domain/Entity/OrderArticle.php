@@ -6,6 +6,8 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'orders_article')]
+#[ORM\Index(columns: ['orders_id'], name: 'idx_order_articles_order')]
+#[ORM\Index(columns: ['article_id'], name: 'idx_order_articles_article')]
 class OrderArticle
 {
     #[ORM\Id]
@@ -68,7 +70,8 @@ class OrderArticle
         string $weight,
         string $packagingCount = '0',
         string $pallet = '0',
-        string $packaging = '0'
+        string $packaging = '0',
+        ?string $measure = null
     ) {
         $this->order = $order;
         $this->article = $article;
@@ -78,6 +81,7 @@ class OrderArticle
         $this->packagingCount = $packagingCount;
         $this->pallet = $pallet;
         $this->packaging = $packaging;
+        $this->measure = $measure;
     }
 
     public function getId(): ?int

@@ -17,8 +17,10 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: 'App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository')]
 #[ORM\Table(name: 'orders')]
-#[ORM\Index(columns: ['hash'], name: 'idx_orders_hash')]
-#[ORM\Index(columns: ['token'], name: 'idx_orders_token')]
+#[ORM\Index(columns: ['metadata_hash'], name: 'idx_orders_hash')]
+#[ORM\Index(columns: ['metadata_token'], name: 'idx_orders_token')]
+#[ORM\Index(columns: ['pay_type_id'], name: 'idx_orders_pay_type')]
+#[ORM\Index(columns: ['status'], name: 'idx_orders_status')]
 class Order
 {
     public const STATUS_NEW = 1;
