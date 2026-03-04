@@ -60,6 +60,26 @@ class OrderArticle
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $swimmingPool = false;
 
+    public function __construct(
+        Order $order,
+        Article $article,
+        string $amount,
+        string $price,
+        string $weight,
+        string $packagingCount = '0',
+        string $pallet = '0',
+        string $packaging = '0'
+    ) {
+        $this->order = $order;
+        $this->article = $article;
+        $this->amount = $amount;
+        $this->price = $price;
+        $this->weight = $weight;
+        $this->packagingCount = $packagingCount;
+        $this->pallet = $pallet;
+        $this->packaging = $packaging;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

@@ -26,30 +26,28 @@ class OrderFactory
         $order = new Order(
             payType: $payType,
             name: 'Order from SOAP',
-            locale: 'en',
-            currency: 'EUR',
-            measure: 'unit',
             customerInfo: $customerInfo,
             deliveryAddress: new DeliveryAddress(),
             deliveryTerms: new DeliveryTerms(),
             managerInfo: new ManagerInfo(),
             financialTerms: new FinancialTerms(),
-            deliveryConfig: new DeliveryConfig()
+            deliveryConfig: new DeliveryConfig(),
+            locale: 'en',
+            currency: 'EUR',
+            measure: 'unit'
         );
 
         foreach ($articlesData as $data) {
             $articleEntity = $data['entity'];
             $articleDto = $data['dto'];
 
-            $orderArticle = new OrderArticle();
-            $orderArticle->setOrder($order);
-            $orderArticle->setArticle($articleEntity);
-            $orderArticle->setPrice($articleDto->price);
-            $orderArticle->setAmount($articleDto->amount);
-            $orderArticle->setWeight($articleDto->weight);
-            $orderArticle->setPackagingCount('0');
-            $orderArticle->setPallet('0');
-            $orderArticle->setPackaging('0');
+            $orderArticle = new OrderArticle(
+                order: $order,
+                article: $articleEntity,
+                amount: $articleDto->amount,
+                price: $articleDto->price,
+                weight: $articleDto->weight
+            );
 
             $order->addArticle($orderArticle);
         }

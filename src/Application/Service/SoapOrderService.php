@@ -43,9 +43,19 @@ readonly class SoapOrderService
         if (count($violations) > 0) {
             $errors = [];
             foreach ($violations as $violation) {
-                $errors[] = sprintf('%s: %s', $violation->getPropertyPath(), $violation->getMessage());
+                $errors[$violation->getPropertyPath()][] = $violation->getMessage();
             }
-            throw new \SoapFault('Client', 'Validation failed: ' . implode('; ', $errors));
+
+            // Формируем детальное сообщение об ошибке для SoapFault
+            $faultString = 'Validation failed';
+            $detail = ['errors' => []];
+            foreach ($errors as $path => $messages) {
+                foreach ($messages as $message) {
+                    $detail['errors'][] = ['field' => $path, 'message' => $message];
+                }
+            }
+
+            throw new \SoapFault('Client', $faultString, null, $detail);
         }
 
         $responseDto = $this->useCase->execute($dto);
