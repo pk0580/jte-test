@@ -48,6 +48,6 @@ readonly class SearchOrdersUseCase
             );
         }, $searchResult->items);
 
-        return new SearchResultDto($items, $searchResult->total);
+        return new SearchResultDto($items, $searchResult->total, $page, $limit, $lastId, $status);
     }
 }

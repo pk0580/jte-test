@@ -5,15 +5,17 @@ namespace App\Application\Service;
 use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
 use App\Application\UseCase\CreateOrderUseCase;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 readonly class SoapOrderService
 {
     public function __construct(
-        private CreateOrderUseCase  $useCase,
-        private ValidatorInterface  $validator,
-        private SerializerInterface $serializer
+        private CreateOrderUseCase    $useCase,
+        private ValidatorInterface    $validator,
+        private SerializerInterface   $serializer,
+        private DenormalizerInterface $denormalizer
     ) {}
 
     /**
@@ -23,20 +25,19 @@ readonly class SoapOrderService
      */
     public function createOrder(mixed $parameters): array
     {
-        // Преобразуем параметры в массив для удобства обработки структур SOAP (item в массивах)
-        $parametersArray = json_decode((string)json_encode($parameters), true);
-        if (!is_array($parametersArray)) {
-            $parametersArray = [];
-        }
+        // Преобразуем SoapObject в массив
+        $parametersArray = (array) $parameters;
 
-        // Унификация структуры для массивов (articles.item -> articles)
-        if (isset($parametersArray['articles']['item'])) {
-            $items = $parametersArray['articles']['item'];
-            $parametersArray['articles'] = isset($items[0]) ? $items : [$items];
+        // Если передан массив объектов, нормализуем articles.item
+        if (isset($parametersArray['articles']) && is_object($parametersArray['articles'])) {
+            $articlesObj = (array)$parametersArray['articles'];
+            if (isset($articlesObj['item'])) {
+                $parametersArray['articles'] = is_array($articlesObj['item']) ? $articlesObj['item'] : [$articlesObj['item']];
+            }
         }
 
         /** @var CreateOrderSoapRequestDto $dto */
-        $dto = $this->serializer->denormalize($parametersArray, CreateOrderSoapRequestDto::class);
+        $dto = $this->denormalizer->denormalize($parametersArray, CreateOrderSoapRequestDto::class);
 
         $violations = $this->validator->validate($dto);
         if (count($violations) > 0) {

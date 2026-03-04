@@ -6,10 +6,13 @@ readonly class SearchResultDto
 {
     /**
      * @param mixed[] $items
-     * @param int $total
      */
     public function __construct(
         public array $items,
-        public int $total
+        public int   $total,
+        public int   $page = 1,
+        public int   $limit = 10,
+        public ?int  $lastId = null,
+        public ?int  $status = null,
     ) {}
 }
