@@ -10,6 +10,8 @@ use App\Domain\Repository\SearchResult;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * @extends ServiceEntityRepository<Order>
@@ -18,7 +20,8 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
 {
     public function __construct(
         ManagerRegistry $registry,
-        private readonly OrderSearchQueryBuilder $queryBuilder
+        private readonly OrderSearchQueryBuilder $queryBuilder,
+        private readonly CacheInterface $statsCache
     ) {
         parent::__construct($registry, Order::class);
     }
@@ -59,53 +62,39 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
 
     public function getStats(string $groupBy, int $page, int $limit): array
     {
-        $dateFormat = match ($groupBy) {
-            'year' => '%Y',
-            'month' => '%Y-%m',
-            default => '%Y-%m-%d',
-        };
+        $cacheKey = sprintf('stats_%s_%d_%d', $groupBy, $page, $limit);
 
-        $conn = $this->getEntityManager()->getConnection();
+        return $this->statsCache->get($cacheKey, function (ItemInterface $item) use ($groupBy, $page, $limit) {
+            $item->expiresAfter(600); // 10 minutes cache for stats
 
-        $offset = ($page - 1) * $limit;
+            $qb = $this->getEntityManager()->createQueryBuilder();
+            $qb->select('s')
+                ->from(\App\Domain\Entity\OrderStats::class, 's')
+                ->where('s.groupBy = :groupBy')
+                ->setParameter('groupBy', $groupBy)
+                ->orderBy('s.period', 'DESC')
+                ->setFirstResult(($page - 1) * $limit)
+                ->setMaxResults($limit);
 
-        $sql = "
-            SELECT
-                DATE_FORMAT(o.create_date, :format) as period,
-                COUNT(*) as orderCount,
-                SUM(o.total_amount) as totalAmount
-            FROM `orders` o
-            GROUP BY period
-            ORDER BY period DESC
-            LIMIT :limit
-            OFFSET :offset
-        ";
+            $stats = $qb->getQuery()->getResult();
 
-        $items = $conn->fetchAllAssociative($sql, [
-            'format' => $dateFormat,
-            'limit' => $limit,
-            'offset' => $offset,
-        ], [
-            'limit' => ParameterType::INTEGER,
-            'offset' => ParameterType::INTEGER,
-        ]);
+            $countQb = $this->getEntityManager()->createQueryBuilder();
+            $countQb->select('COUNT(s.id)')
+                ->from(\App\Domain\Entity\OrderStats::class, 's')
+                ->where('s.groupBy = :groupBy')
+                ->setParameter('groupBy', $groupBy);
 
-        // SQL для получения общего количества групп
-        $countSql = "
-            SELECT COUNT(DISTINCT DATE_FORMAT(create_date, :format))
-            FROM `orders`
-        ";
+            $total = (int)$countQb->getQuery()->getSingleScalarResult();
 
-        $total = (int) $conn->fetchOne($countSql, ['format' => $dateFormat]);
-
-        return [
-            'items' => array_map(fn($item) => [
-                'period' => (string) $item['period'],
-                'orderCount' => (int) $item['orderCount'],
-                'totalAmount' => (float) ($item['totalAmount'] ?? 0),
-            ], $items),
-            'total' => $total,
-        ];
+            return [
+                'items' => array_map(fn(\App\Domain\Entity\OrderStats $item) => [
+                    'period' => $item->getPeriod(),
+                    'orderCount' => $item->getOrderCount(),
+                    'totalAmount' => (float)$item->getTotalAmount(),
+                ], $stats),
+                'total' => $total,
+            ];
+        });
     }
 
     public function countAll(): int

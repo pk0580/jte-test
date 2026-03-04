@@ -34,6 +34,19 @@ services:
         arguments:
             $primarySearch: '@App\Infrastructure\Search\ManticoreOrderSearch'
             $fallbackSearch: '@App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository'
+            $appCache: '@cache.app'
+
+    App\Infrastructure\Persistence\Doctrine\Repository\PayTypeRepository:
+        arguments:
+            $referenceCache: '@app.reference_cache'
+
+    App\Infrastructure\Persistence\Doctrine\Repository\ArticleRepository:
+        arguments:
+            $referenceCache: '@app.reference_cache'
+
+    App\Infrastructure\Persistence\Doctrine\Repository\OrderRepository:
+        arguments:
+            $statsCache: '@app.stats_cache'
 
     App\Infrastructure\Search\ManticoreOrderSearch:
         arguments:
