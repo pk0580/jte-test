@@ -3,41 +3,36 @@
 namespace App\Application\Service;
 
 use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
-use App\Application\Dto\Soap\SoapOrderArticleDto;
 use App\Application\UseCase\CreateOrderUseCase;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 readonly class SoapOrderService
 {
     public function __construct(
-        private CreateOrderUseCase $useCase,
-        private ValidatorInterface $validator
+        private CreateOrderUseCase  $useCase,
+        private ValidatorInterface  $validator,
+        private SerializerInterface $serializer
     ) {}
 
     public function createOrder($parameters): array
     {
-        $articlesData = $parameters->articles->item ?? [];
-        if (!is_array($articlesData)) {
-            $articlesData = [$articlesData];
+        $parametersArray = json_decode(json_encode($parameters), true);
+
+        // Обработка случая, когда articles.item может быть как массивом, так и одиночным объектом
+        if (isset($parametersArray['articles']['item'])) {
+            $items = $parametersArray['articles']['item'];
+            if (!isset($items[0])) {
+                $parametersArray['articles'] = [$items];
+            } else {
+                $parametersArray['articles'] = $items;
+            }
+        } else {
+            $parametersArray['articles'] = [];
         }
 
-        $articles = [];
-        foreach ($articlesData as $item) {
-            $articles[] = new SoapOrderArticleDto(
-                (int) ($item->article_id ?? 0),
-                (string) ($item->amount ?? ''),
-                (string) ($item->price ?? ''),
-                (string) ($item->weight ?? '')
-            );
-        }
-
-        $dto = new CreateOrderSoapRequestDto(
-            (string) ($parameters->client_name ?? ''),
-            (string) ($parameters->client_surname ?? ''),
-            (string) ($parameters->email ?? ''),
-            (int) ($parameters->pay_type ?? 0),
-            $articles
-        );
+        /** @var CreateOrderSoapRequestDto $dto */
+        $dto = $this->serializer->denormalize($parametersArray, CreateOrderSoapRequestDto::class);
 
         $violations = $this->validator->validate($dto);
         if (count($violations) > 0) {
@@ -50,10 +45,6 @@ readonly class SoapOrderService
 
         $responseDto = $this->useCase->execute($dto);
 
-        return [
-            'success' => $responseDto->success,
-            'order_id' => $responseDto->order_id,
-            'message' => $responseDto->message,
-        ];
+        return $this->serializer->normalize($responseDto);
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Application\Dto\Soap;
 
 use App\Application\Validator\Constraints as AppAssert;
-use App\Domain\Entity\Order;
+use App\Domain\Entity\PayType;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class CreateOrderSoapRequestDto
@@ -24,7 +24,7 @@ class CreateOrderSoapRequestDto
 
         #[Assert\NotBlank]
         #[Assert\Positive]
-        #[AppAssert\EntityExists(entity: Order::class, message: 'Invalid payment type.')]
+        #[AppAssert\EntityExists(entity: PayType::class, message: 'Invalid payment type.')]
         public int $pay_type,
 
         /** @var SoapOrderArticleDto[] */
