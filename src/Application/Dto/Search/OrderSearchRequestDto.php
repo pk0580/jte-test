@@ -24,18 +24,4 @@ readonly class OrderSearchRequestDto
         #[Assert\Type(type: 'integer', message: 'Status must be an integer')]
         public ?int   $status = null,
     ) {}
-
-    public static function fromRequest(Request $request): self
-    {
-        $lastId = $request->query->get('last_id');
-        $status = $request->query->get('status');
-
-        return new self(
-            query: $request->query->get('query', ''),
-            page: $request->query->getInt('page', 1),
-            limit: $request->query->getInt('limit', 10),
-            lastId: $lastId !== null ? (int)$lastId : null,
-            status: $status !== null ? (int)$status : null,
-        );
-    }
 }

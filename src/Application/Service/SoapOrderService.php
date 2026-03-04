@@ -3,8 +3,8 @@
 namespace App\Application\Service;
 
 use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
-use App\Application\Dto\Soap\SoapOrderArticleDto;
 use App\Application\UseCase\CreateOrderUseCase;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -23,46 +23,20 @@ readonly class SoapOrderService
      */
     public function createOrder(mixed $parameters): array
     {
+        // Преобразуем параметры в массив для удобства обработки структур SOAP (item в массивах)
         $parametersArray = json_decode((string)json_encode($parameters), true);
         if (!is_array($parametersArray)) {
             $parametersArray = [];
         }
 
-        // Обработка случая, когда articles.item может быть как массивом, так и одиночным объектом
+        // Унификация структуры для массивов (articles.item -> articles)
         if (isset($parametersArray['articles']['item'])) {
             $items = $parametersArray['articles']['item'];
-            if (!isset($items[0])) {
-                $parametersArray['articles'] = [$items];
-            } else {
-                $parametersArray['articles'] = $items;
-            }
-        } else {
-            $parametersArray['articles'] = [];
+            $parametersArray['articles'] = isset($items[0]) ? $items : [$items];
         }
 
-        // Ручное создание DTO для обхода проблем с глобальным name_converter (camelCase -> snake_case)
-        if (is_array($parametersArray['articles'])) {
-            $articles = [];
-            foreach ($parametersArray['articles'] as $articleData) {
-                if (is_array($articleData)) {
-                    $articles[] = new SoapOrderArticleDto(
-                        (int)($articleData['articleId'] ?? 0),
-                        (string)($articleData['amount'] ?? '0'),
-                        (string)($articleData['price'] ?? '0'),
-                        (string)($articleData['weight'] ?? '0')
-                    );
-                }
-            }
-            $parametersArray['articles'] = $articles;
-        }
-
-        $dto = new CreateOrderSoapRequestDto(
-            (string)($parametersArray['clientName'] ?? ''),
-            (string)($parametersArray['clientSurname'] ?? ''),
-            (string)($parametersArray['email'] ?? ''),
-            (int)($parametersArray['payType'] ?? 0),
-            $parametersArray['articles']
-        );
+        /** @var CreateOrderSoapRequestDto $dto */
+        $dto = $this->serializer->denormalize($parametersArray, CreateOrderSoapRequestDto::class);
 
         $violations = $this->validator->validate($dto);
         if (count($violations) > 0) {
@@ -75,11 +49,9 @@ readonly class SoapOrderService
 
         $responseDto = $this->useCase->execute($dto);
 
-        // Ручная нормализация ответа для SOAP, чтобы гарантировать camelCase и наличие всех полей
-        return [
-            'success' => $responseDto->success,
-            'orderId' => $responseDto->orderId,
-            'message' => $responseDto->message,
-        ];
+        // Используем Serializer для нормализации ответа
+        return (array)$this->serializer->normalize($responseDto, null, [
+            AbstractObjectNormalizer::SKIP_NULL_VALUES => false,
+        ]);
     }
 }

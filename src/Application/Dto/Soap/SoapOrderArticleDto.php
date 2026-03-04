@@ -13,22 +13,18 @@ class SoapOrderArticleDto
         #[Assert\NotBlank]
         #[Assert\Positive]
         #[AppAssert\EntityExists(entity: Article::class)]
-        #[SerializedName('articleId')]
-        public int $articleId,
+        public int $articleId = 0,
 
         #[Assert\NotBlank]
         #[Assert\Positive]
-        #[SerializedName('amount')]
-        public string $amount,
+        public string $amount = '0',
 
         #[Assert\NotBlank]
         #[Assert\Positive]
-        #[SerializedName('price')]
-        public string $price,
+        public string $price = '0',
 
         #[Assert\NotBlank]
         #[Assert\Positive]
-        #[SerializedName('weight')]
-        public string $weight
+        public string $weight = '0'
     ) {}
 }

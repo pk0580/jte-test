@@ -17,13 +17,4 @@ readonly class OrderStatsRequestDto
         #[Assert\Range(min: 1, max: 100, notInRangeMessage: 'Limit must be between 1 and 100')]
         public int    $limit = 10,
     ) {}
-
-    public static function fromRequest(Request $request): self
-    {
-        return new self(
-            groupBy: $request->query->get('group_by', 'day'),
-            page: $request->query->getInt('page', 1),
-            limit: $request->query->getInt('limit', 10),
-        );
-    }
 }

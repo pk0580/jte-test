@@ -12,30 +12,25 @@ class CreateOrderSoapRequestDto
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        #[SerializedName('clientName')]
-        public string $clientName,
+        public string $clientName = '',
 
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        #[SerializedName('clientSurname')]
-        public string $clientSurname,
+        public string $clientSurname = '',
 
         #[Assert\NotBlank]
         #[Assert\Email]
         #[Assert\Length(max: 150)]
-        #[SerializedName('email')]
-        public string $email,
+        public string $email = '',
 
         #[Assert\NotBlank]
         #[Assert\Positive]
         #[AppAssert\EntityExists(entity: PayType::class, message: 'Invalid payment type.')]
-        #[SerializedName('payType')]
-        public int $payType,
+        public int $payType = 0,
 
         /** @var SoapOrderArticleDto[] */
         #[Assert\NotBlank]
         #[Assert\Valid]
-        #[SerializedName('articles')]
         public array $articles = []
     ) {}
 }
