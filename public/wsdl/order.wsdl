@@ -11,7 +11,7 @@
         <xsd:schema targetNamespace="http://localhost:8000/soap">
             <xsd:complexType name="OrderArticle">
                 <xsd:sequence>
-                    <xsd:element name="article_id" type="xsd:integer"/>
+                    <xsd:element name="articleId" type="xsd:integer"/>
                     <xsd:element name="amount" type="xsd:decimal"/>
                     <xsd:element name="price" type="xsd:decimal"/>
                     <xsd:element name="weight" type="xsd:decimal"/>
@@ -27,10 +27,10 @@
             <xsd:element name="CreateOrderRequest">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="client_name" type="xsd:string"/>
-                        <xsd:element name="client_surname" type="xsd:string"/>
+                        <xsd:element name="clientName" type="xsd:string"/>
+                        <xsd:element name="clientSurname" type="xsd:string"/>
                         <xsd:element name="email" type="xsd:string"/>
-                        <xsd:element name="pay_type" type="xsd:integer"/>
+                        <xsd:element name="payType" type="xsd:integer"/>
                         <xsd:element name="articles" type="tns:OrderArticleList"/>
                     </xsd:sequence>
                 </xsd:complexType>
@@ -40,7 +40,7 @@
                 <xsd:complexType>
                     <xsd:sequence>
                         <xsd:element name="success" type="xsd:boolean"/>
-                        <xsd:element name="order_id" type="xsd:integer" minOccurs="0"/>
+                        <xsd:element name="orderId" type="xsd:integer" minOccurs="0"/>
                         <xsd:element name="message" type="xsd:string" minOccurs="0"/>
                     </xsd:sequence>
                 </xsd:complexType>

@@ -119,7 +119,7 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
     public function findForIndexing(int $offset, int $limit): array
     {
         return $this->createQueryBuilder('o')
-            ->select('o.id, o.number, o.email, o.clientName, o.clientSurname, o.companyName, o.description')
+            ->select('o.id, o.number, o.customerInfo.email as email, o.customerInfo.name as clientName, o.customerInfo.surname as clientSurname, o.customerInfo.companyName as companyName, o.description')
             ->orderBy('o.id', 'ASC')
             ->setFirstResult($offset)
             ->setMaxResults($limit)
@@ -142,7 +142,7 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             ->leftJoin('o.articles', 'a');
 
         if (!empty($query)) {
-            $qb->andWhere('o.number LIKE :query OR o.email LIKE :query OR o.clientName LIKE :query OR o.clientSurname LIKE :query OR o.companyName LIKE :query OR o.description LIKE :query')
+            $qb->andWhere('o.number LIKE :query OR o.customerInfo.email LIKE :query OR o.customerInfo.name LIKE :query OR o.customerInfo.surname LIKE :query OR o.customerInfo.companyName LIKE :query OR o.description LIKE :query')
                 ->setParameter('query', '%' . $query . '%');
         }
 

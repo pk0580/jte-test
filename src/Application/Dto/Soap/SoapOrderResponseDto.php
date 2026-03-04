@@ -6,7 +6,7 @@ readonly class SoapOrderResponseDto
 {
     public function __construct(
         public bool $success,
-        public ?int $order_id = null,
+        public ?int $orderId = null,
         public ?string $message = null
     ) {}
 }

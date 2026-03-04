@@ -12,7 +12,7 @@ class SoapOrderArticleDto
         #[Assert\NotBlank]
         #[Assert\Positive]
         #[AppAssert\EntityExists(entity: Article::class)]
-        public int $article_id,
+        public int $articleId,
 
         #[Assert\NotBlank]
         #[Assert\Positive]

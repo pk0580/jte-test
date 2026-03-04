@@ -15,13 +15,13 @@ class SoapControllerTest extends WebTestCase
    <soapenv:Header/>
    <soapenv:Body>
       <soap:CreateOrderRequest>
-         <client_name>John</client_name>
-         <client_surname>Doe</client_surname>
+         <clientName>John</clientName>
+         <clientSurname>Doe</clientSurname>
          <email>john.doe@example.com</email>
-         <pay_type>1</pay_type>
+         <payType>1</payType>
          <articles>
             <item>
-               <article_id>101</article_id>
+               <articleId>1</articleId>
                <amount>2.5</amount>
                <price>100.00</price>
                <weight>1.2</weight>
@@ -44,7 +44,7 @@ XML;
         $this->assertEquals(200, $client->getResponse()->getStatusCode());
         $this->assertStringContainsString('text/xml', $client->getResponse()->headers->get('Content-Type'));
         $this->assertStringContainsString('<success>true</success>', $client->getResponse()->getContent());
-        $this->assertStringContainsString('<order_id>', $client->getResponse()->getContent());
+        $this->assertStringContainsString('<orderId>', $client->getResponse()->getContent());
     }
 
     public function testGetWsdl(): void

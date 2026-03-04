@@ -11,11 +11,11 @@ class CreateOrderSoapRequestDto
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        public string $client_name,
+        public string $clientName,
 
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
-        public string $client_surname,
+        public string $clientSurname,
 
         #[Assert\NotBlank]
         #[Assert\Email]
@@ -25,7 +25,7 @@ class CreateOrderSoapRequestDto
         #[Assert\NotBlank]
         #[Assert\Positive]
         #[AppAssert\EntityExists(entity: PayType::class, message: 'Invalid payment type.')]
-        public int $pay_type,
+        public int $payType,
 
         /** @var SoapOrderArticleDto[] */
         #[Assert\NotBlank]
