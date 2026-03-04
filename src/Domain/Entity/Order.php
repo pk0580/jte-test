@@ -16,19 +16,33 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'orders')]
 class Order
 {
+    public const STATUS_NEW = 1;
+    public const STATUS_PROCESSING = 2;
+    public const STATUS_SHIPPED = 3;
+    public const STATUS_DELIVERED = 4;
+    public const STATUS_CANCELLED = 5;
+
+    private static array $allowedTransitions = [
+        self::STATUS_NEW => [self::STATUS_PROCESSING, self::STATUS_CANCELLED],
+        self::STATUS_PROCESSING => [self::STATUS_SHIPPED, self::STATUS_CANCELLED],
+        self::STATUS_SHIPPED => [self::STATUS_DELIVERED],
+        self::STATUS_DELIVERED => [],
+        self::STATUS_CANCELLED => [],
+    ];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
     #[ORM\Column(length: 32)]
-    public readonly string $hash;
+    private string $hash;
 
     #[ORM\Column(nullable: true)]
     private ?int $userId = null;
 
     #[ORM\Column(length: 64)]
-    public readonly string $token;
+    private string $token;
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $number = null;
@@ -146,25 +160,36 @@ class Order
     private string $totalWeight = '0.000';
 
     public function __construct(
-        string $hash = '',
-        string $token = '',
+        PayType $payType,
+        string $name,
+        string $locale = 'ru',
+        string $currency = 'EUR',
+        string $measure = 'm',
         CustomerInfo $customerInfo = new CustomerInfo(),
         DeliveryAddress $deliveryAddress = new DeliveryAddress(),
         DeliveryTerms $deliveryTerms = new DeliveryTerms(),
         ManagerInfo $managerInfo = new ManagerInfo(),
         FinancialTerms $financialTerms = new FinancialTerms(),
         DeliveryConfig $deliveryConfig = new DeliveryConfig(),
+        ?string $hash = null,
+        ?string $token = null,
     ) {
-        $this->hash = $hash ?: bin2hex(random_bytes(16));
-        $this->token = $token ?: bin2hex(random_bytes(32));
+        $this->hash = $hash ?? bin2hex(random_bytes(16));
+        $this->token = $token ?? bin2hex(random_bytes(32));
         $this->articles = new ArrayCollection();
         $this->createDate = new \DateTimeImmutable();
+        $this->payType = $payType;
+        $this->name = $name;
+        $this->locale = $locale;
+        $this->currency = $currency;
+        $this->measure = $measure;
         $this->customerInfo = $customerInfo;
         $this->deliveryAddress = $deliveryAddress;
         $this->deliveryTerms = $deliveryTerms;
         $this->managerInfo = $managerInfo;
         $this->financialTerms = $financialTerms;
         $this->deliveryConfig = $deliveryConfig;
+        $this->status = self::STATUS_NEW;
     }
 
     public function getCustomerInfo(): CustomerInfo
@@ -187,7 +212,7 @@ class Order
         return $this->customerInfo->email;
     }
 
-    public function setCustomerInfo(CustomerInfo $customerInfo): self
+    protected function setCustomerInfo(CustomerInfo $customerInfo): self
     {
         $this->customerInfo = $customerInfo;
         return $this;
@@ -198,7 +223,7 @@ class Order
         return $this->deliveryAddress;
     }
 
-    public function setDeliveryAddress(DeliveryAddress $deliveryAddress): self
+    protected function setDeliveryAddress(DeliveryAddress $deliveryAddress): self
     {
         $this->deliveryAddress = $deliveryAddress;
         return $this;
@@ -209,7 +234,7 @@ class Order
         return $this->deliveryTerms;
     }
 
-    public function setDeliveryTerms(DeliveryTerms $deliveryTerms): self
+    protected function setDeliveryTerms(DeliveryTerms $deliveryTerms): self
     {
         $this->deliveryTerms = $deliveryTerms;
         return $this;
@@ -228,7 +253,7 @@ class Order
         return $this->payType;
     }
 
-    public function setPayType(PayType $payType): self
+    protected function setPayType(PayType $payType): self
     {
         $this->payType = $payType;
         return $this;
@@ -300,8 +325,21 @@ class Order
 
     public function changeStatus(int $newStatus): self
     {
-        // Add business logic/validation here if needed
+        if ($this->status === $newStatus) {
+            return $this;
+        }
+
+        if (!isset(self::$allowedTransitions[$this->status]) || !in_array($newStatus, self::$allowedTransitions[$this->status], true)) {
+            throw \App\Domain\Exception\InvalidOrderStateException::transitionNotAllowed($this->status, $newStatus);
+        }
+
         $this->status = $newStatus;
+        $this->updateDate = new \DateTime();
+
+        if ($newStatus === self::STATUS_CANCELLED) {
+            $this->cancelDate = new \DateTime();
+        }
+
         return $this;
     }
 
@@ -454,7 +492,7 @@ class Order
         return $this->locale;
     }
 
-    public function setLocale(string $locale): self
+    protected function setLocale(string $locale): self
     {
         $this->locale = $locale;
         return $this;
@@ -475,7 +513,7 @@ class Order
         return $this->measure;
     }
 
-    public function setMeasure(string $measure): self
+    protected function setMeasure(string $measure): self
     {
         $this->measure = $measure;
         return $this;
@@ -486,7 +524,7 @@ class Order
         return $this->name;
     }
 
-    public function setName(string $name): self
+    protected function setName(string $name): self
     {
         $this->name = $name;
         return $this;

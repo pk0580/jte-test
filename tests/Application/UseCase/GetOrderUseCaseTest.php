@@ -26,23 +26,27 @@ class GetOrderUseCaseTest extends TestCase
         $propPay->setValue($payType, 1);
 
         $order = new Order(
-            'test_hash',
-            'test_token',
-            new CustomerInfo('John', 'Doe', 'john@example.com'),
-            new DeliveryAddress(),
-            new DeliveryTerms(),
-            new ManagerInfo(),
-            new FinancialTerms(currency: 'USD'),
-            new DeliveryConfig()
+            payType: $payType,
+            name: 'Test Order',
+            locale: 'en',
+            measure: 'unit',
+            customerInfo: new CustomerInfo('John', 'Doe', 'john@example.com'),
+            financialTerms: new FinancialTerms(currency: 'USD')
         );
-        $order->setPayType($payType);
+
         $reflectionCreateDate = new \ReflectionClass(Order::class);
         $propCreateDate = $reflectionCreateDate->getProperty('createDate');
         $propCreateDate->setAccessible(true);
         $propCreateDate->setValue($order, new \DateTimeImmutable('2023-01-01 12:00:00'));
-        $order->setLocale('en');
-        $order->setMeasure('unit');
-        $order->setName('Test Order');
+
+        $reflectionHash = new \ReflectionClass(Order::class);
+        $propHash = $reflectionHash->getProperty('hash');
+        $propHash->setAccessible(true);
+        $propHash->setValue($order, 'test_hash');
+
+        $propToken = $reflectionHash->getProperty('token');
+        $propToken->setAccessible(true);
+        $propToken->setValue($order, 'test_token');
 
         // Reflection to set ID since it's only set by Doctrine
         $reflection = new \ReflectionClass(Order::class);

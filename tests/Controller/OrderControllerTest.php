@@ -35,20 +35,11 @@ class OrderControllerTest extends WebTestCase
 
         // Создаем тестовый заказ
         $order = new Order(
-            bin2hex(random_bytes(16)),
-            bin2hex(random_bytes(32)),
-            new CustomerInfo('Test', 'User', 'test@example.com'),
-            new DeliveryAddress(),
-            new DeliveryTerms(),
-            new ManagerInfo(),
-            new FinancialTerms(currency: 'EUR'),
-            new DeliveryConfig()
+            payType: $payType,
+            name: 'Test Order',
+            customerInfo: new CustomerInfo('Test', 'User', 'test@example.com'),
+            financialTerms: new FinancialTerms(currency: 'EUR')
         );
-        $order->setPayType($payType);
-        $order->setLocale('ru');
-        $order->setMeasure('m');
-        $order->setName('Test Order');
-        $order->changeStatus(1);
 
         $article = new OrderArticle();
         $article->setOrder($order);

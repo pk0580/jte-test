@@ -19,15 +19,10 @@ class OrderFactory
         );
 
         $order = new Order(
+            payType: $payType,
+            name: 'Order from SOAP',
             customerInfo: $customerInfo
         );
-
-        $order->setPayType($payType);
-        $order->setLocale('ru');
-        $order->setCurrency('EUR');
-        $order->setMeasure('m');
-        $order->setName('Order from SOAP');
-        $order->changeStatus(1);
 
         foreach ($articlesData as $data) {
             $articleEntity = $data['entity'];
@@ -36,8 +31,8 @@ class OrderFactory
             $orderArticle = new OrderArticle();
             $orderArticle->setOrder($order);
             $orderArticle->setArticle($articleEntity);
-            $orderArticle->setAmount($articleDto->amount);
             $orderArticle->setPrice($articleDto->price);
+            $orderArticle->setAmount($articleDto->amount);
             $orderArticle->setWeight($articleDto->weight);
             $orderArticle->setPackagingCount('0');
             $orderArticle->setPallet('0');
@@ -46,7 +41,6 @@ class OrderFactory
             $order->addArticle($orderArticle);
         }
 
-        $order->recalculateTotals();
 
         return $order;
     }

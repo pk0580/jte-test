@@ -38,20 +38,11 @@ class ManticoreAsyncIndexingTest extends WebTestCase
 
         // 2. Создаем тестовый заказ
         $order = new Order(
-            bin2hex(random_bytes(16)),
-            bin2hex(random_bytes(32)),
-            new CustomerInfo('AsyncTest', 'User', 'async@example.com'),
-            new DeliveryAddress(),
-            new DeliveryTerms(),
-            new ManagerInfo(),
-            new FinancialTerms(currency: 'EUR'),
-            new DeliveryConfig()
+            payType: $payType,
+            name: 'Async Test Order',
+            customerInfo: new CustomerInfo('AsyncTest', 'User', 'async@example.com'),
+            financialTerms: new FinancialTerms(currency: 'EUR')
         );
-        $order->setPayType($payType);
-        $order->setLocale('ru');
-        $order->setMeasure('m');
-        $order->setName('Async Test Order');
-        $order->changeStatus(1);
 
         $article = new OrderArticle();
         $article->setOrder($order);

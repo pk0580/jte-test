@@ -95,6 +95,9 @@ class OrderArticle
     public function setAmount(string $amount): self
     {
         $this->amount = $amount;
+        if ($this->order !== null) {
+            $this->order->recalculateTotals();
+        }
         return $this;
     }
 
@@ -106,6 +109,9 @@ class OrderArticle
     public function setPrice(string $price): self
     {
         $this->price = $price;
+        if ($this->order !== null) {
+            $this->order->recalculateTotals();
+        }
         return $this;
     }
 
@@ -172,6 +178,9 @@ class OrderArticle
     public function setWeight(string $weight): self
     {
         $this->weight = $weight;
+        if ($this->order !== null) {
+            $this->order->recalculateTotals();
+        }
         return $this;
     }
 
