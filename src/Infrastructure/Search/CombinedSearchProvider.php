@@ -13,14 +13,14 @@ use Symfony\Contracts\Cache\ItemInterface;
 readonly class CombinedSearchProvider implements OrderSearchInterface
 {
     private const string CB_KEY = 'circuit_breaker_manticore';
-    private const int CB_FAILURE_THRESHOLD = 3;
-    private const int CB_RECOVERY_TIME = 60; // seconds
 
     public function __construct(
         private OrderSearchInterface $primarySearch,
         private OrderSearchInterface $fallbackSearch,
         private LoggerInterface      $logger,
-        private CacheInterface       $appCache
+        private CacheInterface       $appCache,
+        private int                  $failureThreshold = 3,
+        private int                  $recoveryTime = 60
     ) {}
 
     /**
@@ -74,7 +74,7 @@ readonly class CombinedSearchProvider implements OrderSearchInterface
     private function isCircuitOpen(): bool
     {
         $failures = (int)$this->appCache->get(self::CB_KEY, fn() => 0);
-        return $failures >= self::CB_FAILURE_THRESHOLD;
+        return $failures >= $this->failureThreshold;
     }
 
     private function recordFailure(): void
@@ -83,7 +83,7 @@ readonly class CombinedSearchProvider implements OrderSearchInterface
 
         $this->appCache->get(self::CB_KEY, function (ItemInterface $item) use ($failures) {
             $item->set($failures + 1);
-            $item->expiresAfter(self::CB_RECOVERY_TIME);
+            $item->expiresAfter($this->recoveryTime);
             return $item->get();
         }, INF); // Force save
     }

@@ -52,6 +52,8 @@ services:
             $primarySearch: '@App\Infrastructure\Search\ManticoreOrderSearch'
             $fallbackSearch: '@App\Infrastructure\Search\SqlOrderSearchProvider'
             $appCache: '@cache.app'
+            $failureThreshold: 3
+            $recoveryTime: 60
 
     # Decorators for reference repositories caching
     App\Infrastructure\Persistence\Doctrine\Repository\Decorator\ArticleRepositoryCacheDecorator:

@@ -32,8 +32,6 @@ readonly class OrderStatsSubscriber
         foreach ($periods as $groupBy => $period) {
             $this->updateStats($em, $period, $groupBy, $amount);
         }
-
-        $em->flush();
     }
 
     private function updateStats(EntityManagerInterface $em, string $period, string $groupBy, string $amount): void
