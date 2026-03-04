@@ -2,6 +2,9 @@
 
 namespace App\Domain\Entity;
 
+use App\Domain\ValueObject\CustomerInfo;
+use App\Domain\ValueObject\DeliveryAddress;
+use App\Domain\ValueObject\DeliveryTerms;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -30,8 +33,8 @@ class Order
     #[ORM\Column(type: 'smallint', options: ['unsigned' => true, 'default' => 1])]
     private int $status = 1;
 
-    #[ORM\Column(length: 150, nullable: true)]
-    private ?string $email = null;
+    #[ORM\Embedded(class: CustomerInfo::class)]
+    private CustomerInfo $customerInfo;
 
     #[ORM\Column(type: 'smallint', options: ['unsigned' => true, 'default' => 0])]
     private int $vatType = 0;
@@ -45,17 +48,8 @@ class Order
     #[ORM\Column(type: 'decimal', precision: 5, scale: 2, nullable: true)]
     private ?string $discount = null;
 
-    #[ORM\Column(type: 'decimal', precision: 12, scale: 2, nullable: true)]
-    private ?string $delivery = null;
-
-    #[ORM\Column(type: 'smallint', nullable: true, options: ['unsigned' => true, 'default' => 0])]
-    private ?int $deliveryType = 0;
-
-    #[ORM\Column(type: 'date', nullable: true)]
-    private ?\DateTimeInterface $deliveryTimeMin = null;
-
-    #[ORM\Column(type: 'date', nullable: true)]
-    private ?\DateTimeInterface $deliveryTimeMax = null;
+    #[ORM\Embedded(class: DeliveryTerms::class)]
+    private DeliveryTerms $deliveryTerms;
 
     #[ORM\Column(type: 'date', nullable: true)]
     private ?\DateTimeInterface $deliveryTimeConfirmMin = null;
@@ -75,47 +69,12 @@ class Order
     #[ORM\Column(type: 'date', nullable: true)]
     private ?\DateTimeInterface $deliveryOldTimeMax = null;
 
-    #[ORM\Column(length: 20, nullable: true)]
-    private ?string $deliveryIndex = null;
+    #[ORM\Embedded(class: DeliveryAddress::class)]
+    private DeliveryAddress $deliveryAddress;
 
-    #[ORM\Column(type: 'integer', nullable: true, options: ['unsigned' => true])]
-    private ?int $deliveryCountry = null;
-
-    #[ORM\Column(length: 100, nullable: true)]
-    private ?string $deliveryRegion = null;
-
-    #[ORM\Column(length: 200, nullable: true)]
-    private ?string $deliveryCity = null;
-
-    #[ORM\Column(length: 300, nullable: true)]
-    private ?string $deliveryAddress = null;
-
-    #[ORM\Column(length: 200, nullable: true)]
-    private ?string $deliveryBuilding = null;
-
-    #[ORM\Column(length: 30, nullable: true)]
-    private ?string $deliveryApartmentOffice = null;
-
-    #[ORM\Column(length: 20, nullable: true)]
-    private ?string $deliveryPhoneCode = null;
-
-    #[ORM\Column(length: 30, nullable: true)]
-    private ?string $deliveryPhone = null;
-
-    #[ORM\Column(type: 'smallint', nullable: true, options: ['unsigned' => true])]
-    private ?int $sex = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $clientName = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $clientSurname = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $companyName = null;
-
-    #[ORM\Column(type: 'smallint', options: ['unsigned' => true])]
-    private int $payType;
+    #[ORM\ManyToOne(targetEntity: PayType::class)]
+    #[ORM\JoinColumn(name: 'pay_type_id', referencedColumnName: 'id', nullable: false)]
+    private PayType $payType;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTimeInterface $payDateExecution = null;
@@ -247,6 +206,53 @@ class Order
     {
         $this->articles = new ArrayCollection();
         $this->createDate = new \DateTime();
+        $this->customerInfo = new CustomerInfo();
+        $this->deliveryAddress = new DeliveryAddress();
+        $this->deliveryTerms = new DeliveryTerms();
+    }
+
+    public function getCustomerInfo(): CustomerInfo
+    {
+        return $this->customerInfo;
+    }
+
+    public function setCustomerInfo(CustomerInfo $customerInfo): self
+    {
+        $this->customerInfo = $customerInfo;
+        return $this;
+    }
+
+    public function getDeliveryAddress(): DeliveryAddress
+    {
+        return $this->deliveryAddress;
+    }
+
+    public function setDeliveryAddress(DeliveryAddress $deliveryAddress): self
+    {
+        $this->deliveryAddress = $deliveryAddress;
+        return $this;
+    }
+
+    public function getDeliveryTerms(): DeliveryTerms
+    {
+        return $this->deliveryTerms;
+    }
+
+    public function setDeliveryTerms(DeliveryTerms $deliveryTerms): self
+    {
+        $this->deliveryTerms = $deliveryTerms;
+        return $this;
+    }
+
+    public function getPayType(): PayType
+    {
+        return $this->payType;
+    }
+
+    public function setPayType(PayType $payType): self
+    {
+        $this->payType = $payType;
+        return $this;
     }
 
     public function getId(): ?int
@@ -303,23 +309,13 @@ class Order
         return $this->status;
     }
 
-    public function setStatus(int $status): self
+    public function changeStatus(int $newStatus): self
     {
-        $this->status = $status;
+        // Add business logic/validation here if needed
+        $this->status = $newStatus;
         return $this;
     }
 
-    public function getEmail(): ?string
-    {
-        return $this->email;
-    }
-
-    public function setEmail(?string $email): self
-    {
-        $this->email = $email;
-
-        return $this;
-    }
 
     public function getVatType(): int
     {
@@ -365,51 +361,6 @@ class Order
         return $this;
     }
 
-    public function getDelivery(): ?string
-    {
-        return $this->delivery;
-    }
-
-    public function setDelivery(?string $delivery): self
-    {
-        $this->delivery = $delivery;
-        return $this;
-    }
-
-    public function getDeliveryType(): ?int
-    {
-        return $this->deliveryType;
-    }
-
-    public function setDeliveryType(?int $deliveryType): self
-    {
-        $this->deliveryType = $deliveryType;
-        return $this;
-    }
-
-    public function getDeliveryTimeMin(): ?\DateTimeInterface
-    {
-        return $this->deliveryTimeMin;
-    }
-
-    public function setDeliveryTimeMin(?\DateTimeInterface $deliveryTimeMin): self
-    {
-        $this->deliveryTimeMin = $deliveryTimeMin;
-
-        return $this;
-    }
-
-    public function getDeliveryTimeMax(): ?\DateTimeInterface
-    {
-        return $this->deliveryTimeMax;
-    }
-
-    public function setDeliveryTimeMax(?\DateTimeInterface $deliveryTimeMax): self
-    {
-        $this->deliveryTimeMax = $deliveryTimeMax;
-
-        return $this;
-    }
 
     public function getDeliveryTimeConfirmMin(): ?\DateTimeInterface
     {
@@ -477,159 +428,6 @@ class Order
         return $this;
     }
 
-    public function getDeliveryIndex(): ?string
-    {
-        return $this->deliveryIndex;
-    }
-
-    public function setDeliveryIndex(?string $deliveryIndex): self
-    {
-        $this->deliveryIndex = $deliveryIndex;
-        return $this;
-    }
-
-    public function getDeliveryCountry(): ?int
-    {
-        return $this->deliveryCountry;
-    }
-
-    public function setDeliveryCountry(?int $deliveryCountry): self
-    {
-        $this->deliveryCountry = $deliveryCountry;
-        return $this;
-    }
-
-    public function getDeliveryRegion(): ?string
-    {
-        return $this->deliveryRegion;
-    }
-
-    public function setDeliveryRegion(?string $deliveryRegion): self
-    {
-        $this->deliveryRegion = $deliveryRegion;
-        return $this;
-    }
-
-    public function getDeliveryCity(): ?string
-    {
-        return $this->deliveryCity;
-    }
-
-    public function setDeliveryCity(?string $deliveryCity): self
-    {
-        $this->deliveryCity = $deliveryCity;
-        return $this;
-    }
-
-    public function getDeliveryAddress(): ?string
-    {
-        return $this->deliveryAddress;
-    }
-
-    public function setDeliveryAddress(?string $deliveryAddress): self
-    {
-        $this->deliveryAddress = $deliveryAddress;
-        return $this;
-    }
-
-    public function getDeliveryBuilding(): ?string
-    {
-        return $this->deliveryBuilding;
-    }
-
-    public function setDeliveryBuilding(?string $deliveryBuilding): self
-    {
-        $this->deliveryBuilding = $deliveryBuilding;
-        return $this;
-    }
-
-    public function getDeliveryApartmentOffice(): ?string
-    {
-        return $this->deliveryApartmentOffice;
-    }
-
-    public function setDeliveryApartmentOffice(?string $deliveryApartmentOffice): self
-    {
-        $this->deliveryApartmentOffice = $deliveryApartmentOffice;
-        return $this;
-    }
-
-    public function getDeliveryPhoneCode(): ?string
-    {
-        return $this->deliveryPhoneCode;
-    }
-
-    public function setDeliveryPhoneCode(?string $deliveryPhoneCode): self
-    {
-        $this->deliveryPhoneCode = $deliveryPhoneCode;
-        return $this;
-    }
-
-    public function getDeliveryPhone(): ?string
-    {
-        return $this->deliveryPhone;
-    }
-
-    public function setDeliveryPhone(?string $deliveryPhone): self
-    {
-        $this->deliveryPhone = $deliveryPhone;
-        return $this;
-    }
-
-    public function getSex(): ?int
-    {
-        return $this->sex;
-    }
-
-    public function setSex(?int $sex): self
-    {
-        $this->sex = $sex;
-        return $this;
-    }
-
-    public function getClientName(): ?string
-    {
-        return $this->clientName;
-    }
-
-    public function setClientName(?string $clientName): self
-    {
-        $this->clientName = $clientName;
-        return $this;
-    }
-
-    public function getClientSurname(): ?string
-    {
-        return $this->clientSurname;
-    }
-
-    public function setClientSurname(?string $clientSurname): self
-    {
-        $this->clientSurname = $clientSurname;
-        return $this;
-    }
-
-    public function getCompanyName(): ?string
-    {
-        return $this->companyName;
-    }
-
-    public function setCompanyName(?string $companyName): self
-    {
-        $this->companyName = $companyName;
-        return $this;
-    }
-
-    public function getPayType(): int
-    {
-        return $this->payType;
-    }
-
-    public function setPayType(int $payType): self
-    {
-        $this->payType = $payType;
-        return $this;
-    }
 
     public function getPayDateExecution(): ?\DateTimeInterface
     {
@@ -1074,9 +872,22 @@ class Order
     /**
      * @return Collection<int, OrderArticle>
      */
-    public function getArticles(): Collection
+    public function getTotalAmount(): string
     {
-        return $this->articles;
+        $total = '0.00';
+        foreach ($this->articles as $article) {
+            $total = bcadd($total, bcmul($article->getAmount(), $article->getPrice(), 10), 2);
+        }
+        return $total;
+    }
+
+    public function getTotalWeight(): string
+    {
+        $total = '0.000';
+        foreach ($this->articles as $article) {
+            $total = bcadd($total, bcmul($article->getAmount(), $article->getWeight(), 10), 3);
+        }
+        return $total;
     }
 
     public function addArticle(OrderArticle $article): self

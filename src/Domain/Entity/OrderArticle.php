@@ -17,8 +17,9 @@ class OrderArticle
     #[ORM\JoinColumn(name: 'orders_id', referencedColumnName: 'id')]
     private ?Order $order = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $articleId = null;
+    #[ORM\ManyToOne(targetEntity: Article::class)]
+    #[ORM\JoinColumn(name: 'article_id', referencedColumnName: 'id', nullable: false)]
+    private Article $article;
 
     #[ORM\Column(type: 'decimal', precision: 14, scale: 3)]
     private string $amount;
@@ -75,14 +76,14 @@ class OrderArticle
         return $this;
     }
 
-    public function getArticleId(): ?int
+    public function getArticle(): Article
     {
-        return $this->articleId;
+        return $this->article;
     }
 
-    public function setArticleId(?int $articleId): self
+    public function setArticle(Article $article): self
     {
-        $this->articleId = $articleId;
+        $this->article = $article;
         return $this;
     }
 
