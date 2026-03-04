@@ -6,6 +6,11 @@ use App\Application\UseCase\GetOrderUseCase;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\PayType;
 use App\Domain\ValueObject\CustomerInfo;
+use App\Domain\ValueObject\FinancialTerms;
+use App\Domain\ValueObject\DeliveryConfig;
+use App\Domain\ValueObject\DeliveryAddress;
+use App\Domain\ValueObject\DeliveryTerms;
+use App\Domain\ValueObject\ManagerInfo;
 use App\Domain\Repository\OrderRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -20,14 +25,22 @@ class GetOrderUseCaseTest extends TestCase
         $propPay->setAccessible(true);
         $propPay->setValue($payType, 1);
 
-        $order = new Order();
-        $order->setHash('test_hash');
-        $order->setToken('test_token');
-        $order->setCustomerInfo(new CustomerInfo('John', 'Doe', 'john@example.com'));
+        $order = new Order(
+            'test_hash',
+            'test_token',
+            new CustomerInfo('John', 'Doe', 'john@example.com'),
+            new DeliveryAddress(),
+            new DeliveryTerms(),
+            new ManagerInfo(),
+            new FinancialTerms(currency: 'USD'),
+            new DeliveryConfig()
+        );
         $order->setPayType($payType);
-        $order->setCreateDate(new \DateTime('2023-01-01 12:00:00'));
+        $reflectionCreateDate = new \ReflectionClass(Order::class);
+        $propCreateDate = $reflectionCreateDate->getProperty('createDate');
+        $propCreateDate->setAccessible(true);
+        $propCreateDate->setValue($order, new \DateTimeImmutable('2023-01-01 12:00:00'));
         $order->setLocale('en');
-        $order->setCurrency('USD');
         $order->setMeasure('unit');
         $order->setName('Test Order');
 

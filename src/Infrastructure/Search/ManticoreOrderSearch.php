@@ -183,6 +183,9 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
         }
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     */
     public function bulkIndexRawToIndex(string $index, array $rows): void
     {
         if (empty($rows)) {
@@ -194,7 +197,8 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
 
         try {
             foreach ($rows as $row) {
-                $id = (int)$row['id'];
+                /** @var int $id */
+                $id = (int)($row['id'] ?? 0);
                 $doc = [
                     'number' => (string)($row['number'] ?? ''),
                     'email' => (string)($row['email'] ?? ''),

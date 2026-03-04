@@ -133,6 +133,9 @@ class Order
     #[ORM\Column(type: 'bigint', nullable: true, options: ['unsigned' => true])]
     private ?string $addressPayer = null;
 
+    /**
+     * @var Collection<int, OrderArticle>
+     */
     #[ORM\OneToMany(mappedBy: 'order', targetEntity: OrderArticle::class, cascade: ['persist', 'remove'])]
     private Collection $articles;
 
@@ -171,17 +174,17 @@ class Order
 
     public function getClientName(): ?string
     {
-        return $this->customerInfo->getName();
+        return $this->customerInfo->name;
     }
 
     public function getClientSurname(): ?string
     {
-        return $this->customerInfo->getSurname();
+        return $this->customerInfo->surname;
     }
 
     public function getEmail(): ?string
     {
-        return $this->customerInfo->getEmail();
+        return $this->customerInfo->email;
     }
 
     public function setCustomerInfo(CustomerInfo $customerInfo): self

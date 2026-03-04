@@ -6,7 +6,7 @@ use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
 use App\Application\UseCase\CreateOrderUseCase;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 readonly class SoapOrderService
@@ -14,7 +14,7 @@ readonly class SoapOrderService
     public function __construct(
         private CreateOrderUseCase    $useCase,
         private ValidatorInterface    $validator,
-        private SerializerInterface   $serializer,
+        private NormalizerInterface   $normalizer,
         private DenormalizerInterface $denormalizer
     ) {}
 
@@ -50,8 +50,8 @@ readonly class SoapOrderService
 
         $responseDto = $this->useCase->execute($dto);
 
-        // Используем Serializer для нормализации ответа
-        return (array)$this->serializer->normalize($responseDto, null, [
+        // Используем Normalizer для нормализации ответа
+        return (array)$this->normalizer->normalize($responseDto, null, [
             AbstractObjectNormalizer::SKIP_NULL_VALUES => false,
         ]);
     }

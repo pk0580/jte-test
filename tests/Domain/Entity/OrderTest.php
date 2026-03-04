@@ -4,6 +4,8 @@ namespace App\Tests\Domain\Entity;
 
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
+use App\Domain\ValueObject\CustomerInfo;
+use App\Domain\ValueObject\DeliveryAddress;
 use PHPUnit\Framework\TestCase;
 
 class OrderTest extends TestCase
@@ -34,7 +36,25 @@ class OrderTest extends TestCase
         $this->assertEquals('5.000', $order->getTotalWeight());
     }
 
-    public function testChangeStatus(): void
+    public function testIncapsulation(): void
+    {
+        $order = new Order();
+
+        $customerInfo = new CustomerInfo(name: 'Ivan', surname: 'Ivanov');
+        $order->setCustomerInfo($customerInfo);
+
+        $this->assertEquals('Ivan', $order->getClientName());
+        $this->assertEquals('Ivanov', $order->getClientSurname());
+
+        $deliveryAddress = new DeliveryAddress(city: 'Moscow', address: 'Red Square');
+        $order->setDeliveryAddress($deliveryAddress);
+        $this->assertEquals('Moscow', $order->getDeliveryAddress()->city);
+
+        $order->assignNumber('ORD-123');
+        $this->assertEquals('ORD-123', $order->getNumber());
+    }
+
+    public function testStatusChange(): void
     {
         $order = new Order();
         $order->changeStatus(2);

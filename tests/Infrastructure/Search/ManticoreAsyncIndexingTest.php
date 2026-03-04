@@ -8,6 +8,11 @@ use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
 use App\Domain\Entity\PayType;
 use App\Domain\ValueObject\CustomerInfo;
+use App\Domain\ValueObject\FinancialTerms;
+use App\Domain\ValueObject\DeliveryConfig;
+use App\Domain\ValueObject\DeliveryAddress;
+use App\Domain\ValueObject\DeliveryTerms;
+use App\Domain\ValueObject\ManagerInfo;
 use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\Repository\OrderSearchInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -32,16 +37,20 @@ class ManticoreAsyncIndexingTest extends WebTestCase
         $em->flush();
 
         // 2. Создаем тестовый заказ
-        $order = new Order();
-        $order->setHash(bin2hex(random_bytes(16)));
-        $order->setToken(bin2hex(random_bytes(32)));
-        $order->setCustomerInfo(new CustomerInfo('AsyncTest', 'User', 'async@example.com'));
+        $order = new Order(
+            bin2hex(random_bytes(16)),
+            bin2hex(random_bytes(32)),
+            new CustomerInfo('AsyncTest', 'User', 'async@example.com'),
+            new DeliveryAddress(),
+            new DeliveryTerms(),
+            new ManagerInfo(),
+            new FinancialTerms(currency: 'EUR'),
+            new DeliveryConfig()
+        );
         $order->setPayType($payType);
         $order->setLocale('ru');
-        $order->setCurrency('EUR');
         $order->setMeasure('m');
         $order->setName('Async Test Order');
-        $order->setCreateDate(new \DateTime());
         $order->changeStatus(1);
 
         $article = new OrderArticle();

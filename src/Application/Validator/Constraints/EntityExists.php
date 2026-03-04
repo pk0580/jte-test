@@ -10,6 +10,10 @@ class EntityExists extends Constraint
     public string $message = 'The entity of type "{{ entity }}" with ID "{{ id }}" does not exist.';
     public string $entity;
 
+    /**
+     * @param class-string $entity
+     * @param array<string>|null $groups
+     */
     public function __construct(
         string $entity,
         ?string $message = null,

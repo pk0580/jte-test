@@ -7,6 +7,7 @@
         "php": ">=8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "predis/predis": "^3.4",
         "symfony/asset": "8.0.*",
         "symfony/console": "8.0.*",
         "symfony/doctrine-messenger": "8.0.*",
@@ -28,6 +29,7 @@
         "doctrine/orm": "^3.6",
         "manticoresoftware/manticoresearch-php": "^4.0",
         "nelmio/api-doc-bundle": "^5.9",
+        "phparkitect/phparkitect": "dev-main",
         "phpdocumentor/reflection-docblock": "^6.0",
         "phpstan/phpdoc-parser": "^2.3",
         "phpstan/phpstan": "^2.1",
@@ -38,7 +40,8 @@
         "symfony/css-selector": "8.0.*",
         "symfony/dom-crawler": "8.0.*",
         "symfony/http-client": "8.0.*",
-        "symfony/maker-bundle": "^1.66"
+        "symfony/maker-bundle": "^1.66",
+        "symplify/easy-coding-standard": "^12.0"
     },
     "config": {
         "allow-plugins": {
@@ -72,6 +75,17 @@
         "symfony/polyfill-php84": "*"
     },
     "scripts": {
+        "check": [
+            "@phpstan",
+            "@ecs",
+            "@arkitect",
+            "@test"
+        ],
+        "phpstan": "vendor/bin/phpstan analyse src --level 9",
+        "ecs": "vendor/bin/ecs check",
+        "ecs:fix": "vendor/bin/ecs check --fix",
+        "arkitect": "vendor/bin/phparkitect check",
+        "test": "vendor/bin/phpunit",
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"

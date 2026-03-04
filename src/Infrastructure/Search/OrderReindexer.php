@@ -119,6 +119,9 @@ class OrderReindexer
         }
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     private function fetchBatch(int $lastId, int $limit, ?int $maxId = null): array
     {
         $sql = "SELECT id, number, email, client_name, client_surname, company_name, description, status
@@ -136,6 +139,9 @@ class OrderReindexer
         return $this->connection->fetchAllAssociative($sql, $params, $types);
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     */
     private function retryBulk(string $index, array $rows, ?SymfonyStyle $io): void
     {
         $attempt = 0;
@@ -147,10 +153,12 @@ class OrderReindexer
             } catch (Throwable $e) {
                 $attempt++;
                 if ($io) {
+                    $firstRow = $rows[0] ?? null;
+                    $lastRow = end($rows);
                     $io->warning(sprintf(
-                        "Batch failed (ID %d - %d), attempt %d/%d: %s",
-                        $rows[0]['id'],
-                        end($rows)['id'],
+                        "Batch failed (ID %s - %s), attempt %d/%d: %s",
+                        (string)($firstRow['id'] ?? '?'),
+                        (string)($lastRow !== false ? ($lastRow['id'] ?? '?') : '?'),
                         $attempt,
                         self::RETRIES,
                         $e->getMessage()
