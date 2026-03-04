@@ -5,6 +5,9 @@ namespace App\Domain\Entity;
 use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\ValueObject\DeliveryAddress;
 use App\Domain\ValueObject\DeliveryTerms;
+use App\Domain\ValueObject\ManagerInfo;
+use App\Domain\ValueObject\FinancialTerms;
+use App\Domain\ValueObject\DeliveryConfig;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -19,13 +22,13 @@ class Order
     private ?int $id = null;
 
     #[ORM\Column(length: 32)]
-    private string $hash;
+    public readonly string $hash;
 
     #[ORM\Column(nullable: true)]
     private ?int $userId = null;
 
     #[ORM\Column(length: 64)]
-    private string $token;
+    public readonly string $token;
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $number = null;
@@ -36,38 +39,14 @@ class Order
     #[ORM\Embedded(class: CustomerInfo::class)]
     private CustomerInfo $customerInfo;
 
-    #[ORM\Column(type: 'smallint', options: ['unsigned' => true, 'default' => 0])]
-    private int $vatType = 0;
-
-    #[ORM\Column(length: 100, nullable: true)]
-    private ?string $vatNumber = null;
-
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $taxNumber = null;
-
-    #[ORM\Column(type: 'decimal', precision: 5, scale: 2, nullable: true)]
-    private ?string $discount = null;
+    #[ORM\Embedded(class: FinancialTerms::class)]
+    private FinancialTerms $financialTerms;
 
     #[ORM\Embedded(class: DeliveryTerms::class)]
     private DeliveryTerms $deliveryTerms;
 
-    #[ORM\Column(type: 'date', nullable: true)]
-    private ?\DateTimeInterface $deliveryTimeConfirmMin = null;
-
-    #[ORM\Column(type: 'date', nullable: true)]
-    private ?\DateTimeInterface $deliveryTimeConfirmMax = null;
-
-    #[ORM\Column(type: 'date', nullable: true)]
-    private ?\DateTimeInterface $deliveryTimeFastPayMin = null;
-
-    #[ORM\Column(type: 'date', nullable: true)]
-    private ?\DateTimeInterface $deliveryTimeFastPayMax = null;
-
-    #[ORM\Column(type: 'date', nullable: true)]
-    private ?\DateTimeInterface $deliveryOldTimeMin = null;
-
-    #[ORM\Column(type: 'date', nullable: true)]
-    private ?\DateTimeInterface $deliveryOldTimeMax = null;
+    #[ORM\Embedded(class: DeliveryConfig::class)]
+    private DeliveryConfig $deliveryConfig;
 
     #[ORM\Embedded(class: DeliveryAddress::class)]
     private DeliveryAddress $deliveryAddress;
@@ -94,32 +73,11 @@ class Order
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $trackingNumber = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
-    private ?string $managerName = null;
-
-    #[ORM\Column(length: 150, nullable: true)]
-    private ?string $managerEmail = null;
-
-    #[ORM\Column(length: 30, nullable: true)]
-    private ?string $managerPhone = null;
-
-    #[ORM\Column(length: 100, nullable: true)]
-    private ?string $carrierName = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $carrierContactData = null;
+    #[ORM\Embedded(class: ManagerInfo::class)]
+    private ManagerInfo $managerInfo;
 
     #[ORM\Column(length: 5)]
     private string $locale;
-
-    #[ORM\Column(type: 'decimal', precision: 14, scale: 6, nullable: true, options: ['default' => 1.0])]
-    private ?string $curRate = '1.000000';
-
-    #[ORM\Column(length: 3, options: ['default' => 'EUR'])]
-    private string $currency = 'EUR';
-
-    #[ORM\Column(length: 10, options: ['default' => 'm'])]
-    private string $measure = 'm';
 
     #[ORM\Column(length: 255)]
     private string $name;
@@ -151,9 +109,6 @@ class Order
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTimeInterface $cancelDate = null;
 
-    #[ORM\Column(type: 'decimal', precision: 12, scale: 3, nullable: true)]
-    private ?string $weightGross = null;
-
     #[ORM\Column(type: 'boolean', nullable: true)]
     private ?bool $productReview = null;
 
@@ -163,14 +118,8 @@ class Order
     #[ORM\Column(type: 'boolean', nullable: true)]
     private ?bool $process = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $factDate = null;
-
     #[ORM\Column(type: 'smallint', nullable: true, options: ['unsigned' => true])]
     private ?int $entranceReview = null;
-
-    #[ORM\Column(type: 'boolean', options: ['default' => false])]
-    private bool $paymentEuro = false;
 
     #[ORM\Column(type: 'boolean', nullable: true)]
     private ?bool $specPrice = null;
@@ -184,18 +133,6 @@ class Order
     #[ORM\Column(type: 'bigint', nullable: true, options: ['unsigned' => true])]
     private ?string $addressPayer = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $sendingDate = null;
-
-    #[ORM\Column(type: 'smallint', nullable: true, options: ['unsigned' => true, 'default' => 0])]
-    private ?int $deliveryCalculateType = 0;
-
-    #[ORM\Column(type: 'date', nullable: true)]
-    private ?\DateTimeInterface $fullPaymentDate = null;
-
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $bankDetails = null;
-
     #[ORM\OneToMany(mappedBy: 'order', targetEntity: OrderArticle::class, cascade: ['persist', 'remove'])]
     private Collection $articles;
 
@@ -205,13 +142,26 @@ class Order
     #[ORM\Column(type: 'decimal', precision: 12, scale: 3, options: ['default' => '0.000'])]
     private string $totalWeight = '0.000';
 
-    public function __construct()
-    {
+    public function __construct(
+        string $hash = '',
+        string $token = '',
+        CustomerInfo $customerInfo = new CustomerInfo(),
+        DeliveryAddress $deliveryAddress = new DeliveryAddress(),
+        DeliveryTerms $deliveryTerms = new DeliveryTerms(),
+        ManagerInfo $managerInfo = new ManagerInfo(),
+        FinancialTerms $financialTerms = new FinancialTerms(),
+        DeliveryConfig $deliveryConfig = new DeliveryConfig(),
+    ) {
+        $this->hash = $hash ?: bin2hex(random_bytes(16));
+        $this->token = $token ?: bin2hex(random_bytes(32));
         $this->articles = new ArrayCollection();
-        $this->createDate = new \DateTime();
-        $this->customerInfo = new CustomerInfo();
-        $this->deliveryAddress = new DeliveryAddress();
-        $this->deliveryTerms = new DeliveryTerms();
+        $this->createDate = new \DateTimeImmutable();
+        $this->customerInfo = $customerInfo;
+        $this->deliveryAddress = $deliveryAddress;
+        $this->deliveryTerms = $deliveryTerms;
+        $this->managerInfo = $managerInfo;
+        $this->financialTerms = $financialTerms;
+        $this->deliveryConfig = $deliveryConfig;
     }
 
     public function getCustomerInfo(): CustomerInfo
@@ -291,43 +241,53 @@ class Order
         return $this->hash;
     }
 
-    public function setHash(string $hash): self
-    {
-        $this->hash = $hash;
-        return $this;
-    }
-
-    public function getUserId(): ?int
-    {
-        return $this->userId;
-    }
-
-    public function setUserId(?int $userId): self
-    {
-        $this->userId = $userId;
-        return $this;
-    }
-
     public function getToken(): string
     {
         return $this->token;
     }
 
-    public function setToken(string $token): self
+    public function getFinancialTerms(): FinancialTerms
     {
-        $this->token = $token;
+        return $this->financialTerms;
+    }
+
+    public function getDeliveryConfig(): DeliveryConfig
+    {
+        return $this->deliveryConfig;
+    }
+
+    public function getManagerInfo(): ManagerInfo
+    {
+        return $this->managerInfo;
+    }
+
+    public function updateManagerInfo(ManagerInfo $managerInfo): self
+    {
+        $this->managerInfo = $managerInfo;
+        return $this;
+    }
+
+    public function updateFinancialTerms(FinancialTerms $financialTerms): self
+    {
+        $this->financialTerms = $financialTerms;
+        return $this;
+    }
+
+    public function updateDeliveryConfig(DeliveryConfig $deliveryConfig): self
+    {
+        $this->deliveryConfig = $deliveryConfig;
+        return $this;
+    }
+
+    public function assignNumber(string $number): self
+    {
+        $this->number = $number;
         return $this;
     }
 
     public function getNumber(): ?string
     {
         return $this->number;
-    }
-
-    public function setNumber(?string $number): self
-    {
-        $this->number = $number;
-        return $this;
     }
 
     public function getStatus(): int
@@ -345,113 +305,53 @@ class Order
 
     public function getVatType(): int
     {
-        return $this->vatType;
-    }
-
-    public function setVatType(int $vatType): self
-    {
-        $this->vatType = $vatType;
-        return $this;
+        return $this->financialTerms->vatType;
     }
 
     public function getVatNumber(): ?string
     {
-        return $this->vatNumber;
-    }
-
-    public function setVatNumber(?string $vatNumber): self
-    {
-        $this->vatNumber = $vatNumber;
-        return $this;
+        return $this->financialTerms->vatNumber;
     }
 
     public function getTaxNumber(): ?string
     {
-        return $this->taxNumber;
-    }
-
-    public function setTaxNumber(?string $taxNumber): self
-    {
-        $this->taxNumber = $taxNumber;
-        return $this;
+        return $this->financialTerms->taxNumber;
     }
 
     public function getDiscount(): ?string
     {
-        return $this->discount;
-    }
-
-    public function setDiscount(?string $discount): self
-    {
-        $this->discount = $discount;
-        return $this;
+        return $this->financialTerms->discount;
     }
 
 
     public function getDeliveryTimeConfirmMin(): ?\DateTimeInterface
     {
-        return $this->deliveryTimeConfirmMin;
-    }
-
-    public function setDeliveryTimeConfirmMin(?\DateTimeInterface $deliveryTimeConfirmMin): self
-    {
-        $this->deliveryTimeConfirmMin = $deliveryTimeConfirmMin;
-        return $this;
+        return $this->deliveryConfig->deliveryTimeConfirmMin;
     }
 
     public function getDeliveryTimeConfirmMax(): ?\DateTimeInterface
     {
-        return $this->deliveryTimeConfirmMax;
-    }
-
-    public function setDeliveryTimeConfirmMax(?\DateTimeInterface $deliveryTimeConfirmMax): self
-    {
-        $this->deliveryTimeConfirmMax = $deliveryTimeConfirmMax;
-        return $this;
+        return $this->deliveryConfig->deliveryTimeConfirmMax;
     }
 
     public function getDeliveryTimeFastPayMin(): ?\DateTimeInterface
     {
-        return $this->deliveryTimeFastPayMin;
-    }
-
-    public function setDeliveryTimeFastPayMin(?\DateTimeInterface $deliveryTimeFastPayMin): self
-    {
-        $this->deliveryTimeFastPayMin = $deliveryTimeFastPayMin;
-        return $this;
+        return $this->deliveryConfig->deliveryTimeFastPayMin;
     }
 
     public function getDeliveryTimeFastPayMax(): ?\DateTimeInterface
     {
-        return $this->deliveryTimeFastPayMax;
-    }
-
-    public function setDeliveryTimeFastPayMax(?\DateTimeInterface $deliveryTimeFastPayMax): self
-    {
-        $this->deliveryTimeFastPayMax = $deliveryTimeFastPayMax;
-        return $this;
+        return $this->deliveryConfig->deliveryTimeFastPayMax;
     }
 
     public function getDeliveryOldTimeMin(): ?\DateTimeInterface
     {
-        return $this->deliveryOldTimeMin;
-    }
-
-    public function setDeliveryOldTimeMin(?\DateTimeInterface $deliveryOldTimeMin): self
-    {
-        $this->deliveryOldTimeMin = $deliveryOldTimeMin;
-        return $this;
+        return $this->deliveryConfig->deliveryOldTimeMin;
     }
 
     public function getDeliveryOldTimeMax(): ?\DateTimeInterface
     {
-        return $this->deliveryOldTimeMax;
-    }
-
-    public function setDeliveryOldTimeMax(?\DateTimeInterface $deliveryOldTimeMax): self
-    {
-        $this->deliveryOldTimeMax = $deliveryOldTimeMax;
-        return $this;
+        return $this->deliveryConfig->deliveryOldTimeMax;
     }
 
 
@@ -523,57 +423,27 @@ class Order
 
     public function getManagerName(): ?string
     {
-        return $this->managerName;
-    }
-
-    public function setManagerName(?string $managerName): self
-    {
-        $this->managerName = $managerName;
-        return $this;
+        return $this->managerInfo->name;
     }
 
     public function getManagerEmail(): ?string
     {
-        return $this->managerEmail;
-    }
-
-    public function setManagerEmail(?string $managerEmail): self
-    {
-        $this->managerEmail = $managerEmail;
-        return $this;
+        return $this->managerInfo->email;
     }
 
     public function getManagerPhone(): ?string
     {
-        return $this->managerPhone;
-    }
-
-    public function setManagerPhone(?string $managerPhone): self
-    {
-        $this->managerPhone = $managerPhone;
-        return $this;
+        return $this->managerInfo->phone;
     }
 
     public function getCarrierName(): ?string
     {
-        return $this->carrierName;
-    }
-
-    public function setCarrierName(?string $carrierName): self
-    {
-        $this->carrierName = $carrierName;
-        return $this;
+        return $this->deliveryConfig->carrierName;
     }
 
     public function getCarrierContactData(): ?string
     {
-        return $this->carrierContactData;
-    }
-
-    public function setCarrierContactData(?string $carrierContactData): self
-    {
-        $this->carrierContactData = $carrierContactData;
-        return $this;
+        return $this->deliveryConfig->carrierContactData;
     }
 
     public function getLocale(): string
@@ -589,24 +459,12 @@ class Order
 
     public function getCurRate(): ?string
     {
-        return $this->curRate;
-    }
-
-    public function setCurRate(?string $curRate): self
-    {
-        $this->curRate = $curRate;
-        return $this;
+        return $this->financialTerms->curRate;
     }
 
     public function getCurrency(): string
     {
-        return $this->currency;
-    }
-
-    public function setCurrency(string $currency): self
-    {
-        $this->currency = $currency;
-        return $this;
+        return $this->financialTerms->currency;
     }
 
     public function getMeasure(): string
@@ -642,16 +500,11 @@ class Order
         return $this;
     }
 
-    public function getCreateDate(): \DateTimeInterface
+    public function getCreateDate(): \DateTimeImmutable
     {
         return $this->createDate;
     }
 
-    public function setCreateDate(\DateTimeInterface $createDate): self
-    {
-        $this->createDate = $createDate;
-        return $this;
-    }
 
     public function getUpdateDate(): ?\DateTimeInterface
     {
@@ -732,13 +585,7 @@ class Order
 
     public function getWeightGross(): ?string
     {
-        return $this->weightGross;
-    }
-
-    public function setWeightGross(?string $weightGross): self
-    {
-        $this->weightGross = $weightGross;
-        return $this;
+        return $this->deliveryConfig->weightGross;
     }
 
     public function getProductReview(): ?bool
@@ -776,13 +623,7 @@ class Order
 
     public function getFactDate(): ?\DateTimeInterface
     {
-        return $this->factDate;
-    }
-
-    public function setFactDate(?\DateTimeInterface $factDate): self
-    {
-        $this->factDate = $factDate;
-        return $this;
+        return $this->deliveryConfig->factDate;
     }
 
     public function getEntranceReview(): ?int
@@ -798,13 +639,7 @@ class Order
 
     public function isPaymentEuro(): bool
     {
-        return $this->paymentEuro;
-    }
-
-    public function setPaymentEuro(bool $paymentEuro): self
-    {
-        $this->paymentEuro = $paymentEuro;
-        return $this;
+        return $this->financialTerms->paymentEuro;
     }
 
     public function getSpecPrice(): ?bool
@@ -853,24 +688,12 @@ class Order
 
     public function getSendingDate(): ?\DateTimeInterface
     {
-        return $this->sendingDate;
-    }
-
-    public function setSendingDate(?\DateTimeInterface $sendingDate): self
-    {
-        $this->sendingDate = $sendingDate;
-        return $this;
+        return $this->deliveryConfig->sendingDate;
     }
 
     public function getDeliveryCalculateType(): ?int
     {
-        return $this->deliveryCalculateType;
-    }
-
-    public function setDeliveryCalculateType(?int $deliveryCalculateType): self
-    {
-        $this->deliveryCalculateType = $deliveryCalculateType;
-        return $this;
+        return $this->deliveryConfig->deliveryCalculateType;
     }
 
     public function getFullPaymentDate(): ?\DateTimeInterface
@@ -886,13 +709,7 @@ class Order
 
     public function getBankDetails(): ?string
     {
-        return $this->bankDetails;
-    }
-
-    public function setBankDetails(?string $bankDetails): self
-    {
-        $this->bankDetails = $bankDetails;
-        return $this;
+        return $this->financialTerms->bankDetails;
     }
 
     /**
@@ -903,22 +720,11 @@ class Order
         return $this->totalAmount;
     }
 
-    public function setTotalAmount(string $totalAmount): self
-    {
-        $this->totalAmount = $totalAmount;
-        return $this;
-    }
-
     public function getTotalWeight(): string
     {
         return $this->totalWeight;
     }
 
-    public function setTotalWeight(string $totalWeight): self
-    {
-        $this->totalWeight = $totalWeight;
-        return $this;
-    }
 
     public function recalculateTotals(): self
     {

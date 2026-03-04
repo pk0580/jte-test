@@ -12,23 +12,21 @@ class OrderFactory
 {
     public function createFromSoapRequest(CreateOrderSoapRequestDto $request, PayType $payType, array $articlesData): Order
     {
-        $order = new Order();
-        $order->setHash(bin2hex(random_bytes(16)));
-        $order->setToken(bin2hex(random_bytes(32)));
-
         $customerInfo = new CustomerInfo(
             name: $request->clientName,
             surname: $request->clientSurname,
             email: $request->email
         );
-        $order->setCustomerInfo($customerInfo);
+
+        $order = new Order(
+            customerInfo: $customerInfo
+        );
 
         $order->setPayType($payType);
         $order->setLocale('ru');
         $order->setCurrency('EUR');
         $order->setMeasure('m');
         $order->setName('Order from SOAP');
-        $order->setCreateDate(new \DateTime());
         $order->changeStatus(1);
 
         foreach ($articlesData as $data) {
