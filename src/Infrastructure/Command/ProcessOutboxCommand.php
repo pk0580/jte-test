@@ -5,6 +5,7 @@ namespace App\Infrastructure\Command;
 use App\Domain\Dto\Outbox\OrderEventPayloadDto;
 use App\Application\Message\DeleteOrderMessage;
 use App\Application\Message\IndexOrderMessage;
+use App\Application\Message\SendOrderEmailMessage;
 use App\Domain\Entity\OutboxEvent;
 use App\Domain\Enum\OrderEventType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -72,6 +73,7 @@ class ProcessOutboxCommand extends Command
                     $message = match ($event->getEventType()) {
                         OrderEventType::INDEXED => new IndexOrderMessage($payloadDto->id),
                         OrderEventType::DELETED => new DeleteOrderMessage($payloadDto->id),
+                        OrderEventType::EMAIL_NOTIFICATION => new SendOrderEmailMessage($payloadDto->id),
                     };
 
                     if ($message) {

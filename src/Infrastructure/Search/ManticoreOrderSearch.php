@@ -7,6 +7,7 @@ use App\Domain\Entity\Order;
 use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\Repository\OrderSearchInterface;
 use App\Domain\Repository\SearchResult;
+use App\Infrastructure\Monitoring\TraceIdContext;
 use Manticoresearch\Client;
 use Psr\Log\LoggerInterface;
 
@@ -21,7 +22,8 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
         int $port,
         private readonly OrderRepositoryInterface $orderRepository,
         private readonly OrderSearchQueryBuilder $queryBuilder,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly TraceIdContext $traceIdContext
     ) {
         $this->client = new Client(['host' => $host, 'port' => $port]);
     }
@@ -127,11 +129,11 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             $id = $order->getId();
             $doc = [
                 'number' => $order->getNumber() ?? '',
-                'email' => $order->getEmail() ?? '',
-                'client_name' => $order->getClientName() ?? '',
-                'client_surname' => $order->getClientSurname() ?? '',
-                'company_name' => $order->getCompanyName() ?? '',
-                'description' => $order->getDescription() ?? '',
+                'email' => $order->getCustomerInfo()->email ?? '',
+                'client_name' => $order->getCustomerInfo()->name ?? '',
+                'client_surname' => $order->getCustomerInfo()->surname ?? '',
+                'company_name' => $order->getCustomerInfo()->companyName ?? '',
+                'description' => $order->getMetadata()->description ?? '',
                 'status' => $order->getStatus(),
             ];
 
@@ -141,6 +143,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
         } catch (\Throwable $e) {
             $this->logger->error('Manticore Indexing failed: ' . $e->getMessage(), [
                 'order_id' => $order->getId(),
+                'trace_id' => $this->traceIdContext->getTraceId(),
                 'exception' => $e
             ]);
         }
@@ -149,10 +152,11 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
     public function delete(int $orderId): void
     {
         try {
-            $this->client->sql("DELETE FROM " . self::INDEX . " WHERE id = $orderId", true);
+            $this->client->sql("DELETE FROM " . self::INDEX . " WHERE id = :id", true, ['id' => $orderId]);
         } catch (\Throwable $e) {
             $this->logger->error('Manticore Delete failed: ' . $e->getMessage(), [
                 'order_id' => $orderId,
+                'trace_id' => $this->traceIdContext->getTraceId(),
                 'exception' => $e
             ]);
         }
@@ -184,6 +188,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
         } catch (\Throwable $e) {
             $this->logger->error('Manticore Create Index failed: ' . $e->getMessage(), [
                 'index' => $index,
+                'trace_id' => $this->traceIdContext->getTraceId(),
                 'exception' => $e
             ]);
             throw $e; // Re-throw for commands to handle
@@ -246,6 +251,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             $this->logger->error('Manticore Bulk Indexing failed: ' . $e->getMessage(), [
                 'index' => $index,
                 'count' => count($rows),
+                'trace_id' => $this->traceIdContext->getTraceId(),
                 'exception' => $e
             ]);
             throw $e; // Re-throw for commands to handle

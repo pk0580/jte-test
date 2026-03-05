@@ -38,18 +38,23 @@ class OrderControllerTest extends WebTestCase
             payType: $payType,
             name: 'Test Order',
             customerInfo: new CustomerInfo('Test', 'User', 'test@example.com'),
-            financialTerms: new FinancialTerms(currency: 'EUR')
+            deliveryAddress: new DeliveryAddress(),
+            deliveryTerms: new DeliveryTerms(),
+            managerInfo: new ManagerInfo(),
+            financialTerms: new FinancialTerms(currency: 'EUR'),
+            deliveryConfig: new DeliveryConfig()
         );
 
-        $article = new OrderArticle();
-        $article->setOrder($order);
-        $article->setArticle($articleEntity);
-        $article->setAmount('10');
-        $article->setPrice('50.5');
-        $article->setWeight('1.5');
-        $article->setPackagingCount('0');
-        $article->setPallet('0');
-        $article->setPackaging('0');
+        $article = new OrderArticle(
+            order: $order,
+            article: $articleEntity,
+            amount: '10',
+            price: '50.5',
+            weight: '1.5',
+            packagingCount: '0',
+            pallet: '0',
+            packaging: '0'
+        );
         $order->addArticle($article);
 
         $repository->save($order);

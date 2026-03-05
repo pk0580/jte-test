@@ -41,18 +41,23 @@ class ManticoreAsyncIndexingTest extends WebTestCase
             payType: $payType,
             name: 'Async Test Order',
             customerInfo: new CustomerInfo('AsyncTest', 'User', 'async@example.com'),
-            financialTerms: new FinancialTerms(currency: 'EUR')
+            deliveryAddress: new DeliveryAddress(),
+            deliveryTerms: new DeliveryTerms(),
+            managerInfo: new ManagerInfo(),
+            financialTerms: new FinancialTerms(currency: 'EUR'),
+            deliveryConfig: new DeliveryConfig()
         );
 
-        $article = new OrderArticle();
-        $article->setOrder($order);
-        $article->setArticle($articleEntity);
-        $article->setAmount('1');
-        $article->setPrice('100');
-        $article->setWeight('1');
-        $article->setPackagingCount('0');
-        $article->setPallet('0');
-        $article->setPackaging('0');
+        $article = new OrderArticle(
+            order: $order,
+            article: $articleEntity,
+            amount: '1',
+            price: '100',
+            weight: '1',
+            packagingCount: '0',
+            pallet: '0',
+            packaging: '0'
+        );
         $order->addArticle($article);
 
         // Сохранение должно отправить сообщение в Messenger (транспорт async - in-memory в тестах)

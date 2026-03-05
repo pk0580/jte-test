@@ -13,7 +13,7 @@ use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
-#[AsEventListener(event: KernelEvents::EXCEPTION, priority: 10)]
+#[AsEventListener(event: KernelEvents::EXCEPTION, priority: 255)]
 class ExceptionListener
 {
     public function onKernelException(ExceptionEvent $event): void
@@ -37,9 +37,11 @@ class ExceptionListener
                 'violations' => $exception->getViolations()
             ]);
             $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-        } elseif ($exception instanceof NotFoundHttpException && str_contains($exception->getMessage(), 'request query parameters are invalid')) {
-            $response->setData(['error' => 'Invalid query parameters']);
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } elseif ($exception instanceof NotFoundHttpException && (str_contains($exception->getMessage(), 'request query parameters are invalid') || str_contains($exception->getMessage(), 'App\Application\Dto'))) {
+            $response = new JsonResponse(['error' => $exception->getPrevious()?->getMessage() ?: $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+            $event->setResponse($response);
+            $event->allowCustomResponseCode();
+            return;
         } elseif ($exception instanceof HttpExceptionInterface) {
             $response->setData(['error' => $exception->getMessage()]);
             $response->setStatusCode($exception->getStatusCode());

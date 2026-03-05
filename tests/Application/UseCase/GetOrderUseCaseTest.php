@@ -11,6 +11,8 @@ use App\Domain\ValueObject\DeliveryConfig;
 use App\Domain\ValueObject\DeliveryAddress;
 use App\Domain\ValueObject\DeliveryTerms;
 use App\Domain\ValueObject\ManagerInfo;
+use App\Domain\ValueObject\OrderMetadata;
+use App\Domain\ValueObject\OrderDates;
 use App\Domain\Repository\OrderRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -28,25 +30,30 @@ class GetOrderUseCaseTest extends TestCase
         $order = new Order(
             payType: $payType,
             name: 'Test Order',
-            locale: 'en',
-            measure: 'unit',
             customerInfo: new CustomerInfo('John', 'Doe', 'john@example.com'),
-            financialTerms: new FinancialTerms(currency: 'USD')
+            deliveryAddress: new DeliveryAddress(),
+            deliveryTerms: new DeliveryTerms(),
+            managerInfo: new ManagerInfo(),
+            financialTerms: new FinancialTerms(currency: 'USD'),
+            deliveryConfig: new DeliveryConfig(),
+            locale: 'en',
+            measure: 'unit'
         );
 
-        $reflectionCreateDate = new \ReflectionClass(Order::class);
-        $propCreateDate = $reflectionCreateDate->getProperty('createDate');
-        $propCreateDate->setAccessible(true);
-        $propCreateDate->setValue($order, new \DateTimeImmutable('2023-01-01 12:00:00'));
+        $reflectionDates = new \ReflectionClass(Order::class);
+        $propDates = $reflectionDates->getProperty('dates');
+        $propDates->setAccessible(true);
+        $propDates->setValue($order, new OrderDates(createAt: new \DateTimeImmutable('2023-01-01 12:00:00')));
 
-        $reflectionHash = new \ReflectionClass(Order::class);
-        $propHash = $reflectionHash->getProperty('hash');
-        $propHash->setAccessible(true);
-        $propHash->setValue($order, 'test_hash');
-
-        $propToken = $reflectionHash->getProperty('token');
-        $propToken->setAccessible(true);
-        $propToken->setValue($order, 'test_token');
+        $reflectionMetadata = new \ReflectionClass(Order::class);
+        $propMetadata = $reflectionMetadata->getProperty('metadata');
+        $propMetadata->setAccessible(true);
+        $propMetadata->setValue($order, new OrderMetadata(
+            hash: 'test_hash',
+            token: 'test_token',
+            locale: 'en',
+            measure: 'unit'
+        ));
 
         // Reflection to set ID since it's only set by Doctrine
         $reflection = new \ReflectionClass(Order::class);

@@ -36,6 +36,7 @@ class OrderSearchQueryBuilder
 
         return new SearchQueryDto(
             query: $weightedQuery,
+            originalQuery: $query,
             offset: $offset,
             limit: $limit,
             lastId: $lastId,

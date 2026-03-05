@@ -1,0 +1,4 @@
+app_metrics:
+    path: /metrics
+    controller: Artprima\PrometheusMetricsBundle\Controller\MetricsController::prometheus
+    methods: [GET]

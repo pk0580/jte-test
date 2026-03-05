@@ -17,15 +17,13 @@ return static function (Config $config): void {
     // Правило: Domain не должен зависеть от других слоев (Application, Infrastructure, Controller)
     $rules[] = Rule::allClasses()
         ->that(new ResideInOneOfTheseNamespaces('App\Domain'))
-        ->should(new NotDependsOnTheseNamespaces('App\Application', 'App\Infrastructure', 'App\Controller'))
-        ->since('п.5 REPAIR.md')
+        ->should(new NotDependsOnTheseNamespaces(['App\Application', 'App\Infrastructure', 'App\Controller']))
         ->because('слой Domain должен быть независимым и содержать только бизнес-логику');
 
     // Правило: Application может зависеть от Domain, но не от Infrastructure/Controller
     $rules[] = Rule::allClasses()
         ->that(new ResideInOneOfTheseNamespaces('App\Application'))
-        ->should(new NotDependsOnTheseNamespaces('App\Infrastructure', 'App\Controller'))
-        ->since('п.5 REPAIR.md')
+        ->should(new NotDependsOnTheseNamespaces(['App\Infrastructure', 'App\Controller']))
         ->because('слой Application координирует работу, но не должен зависеть от деталей реализации инфраструктуры');
 
     $config->add($classSet, ...$rules);

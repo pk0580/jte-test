@@ -15,14 +15,22 @@ use Symfony\Contracts\Cache\ItemInterface;
 class OrderRepository extends ServiceEntityRepository implements OrderRepositoryInterface
 {
     public function __construct(
-        ManagerRegistry $registry
+        ManagerRegistry $registry,
+        private readonly CacheInterface $appCache
     ) {
         parent::__construct($registry, Order::class);
     }
 
     public function findById(int $id): ?Order
     {
-        return $this->find($id);
+        return $this->createQueryBuilder('o')
+            ->select('o', 'a', 'p')
+            ->leftJoin('o.articles', 'a')
+            ->leftJoin('o.payType', 'p')
+            ->where('o.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     public function findByIds(array $ids): array
@@ -40,10 +48,18 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             ->getResult();
     }
 
-    public function save(Order $order): void
+    public function save(Order $order, bool $flush = false): void
     {
         $em = $this->getEntityManager();
         $em->persist($order);
+        if ($flush) {
+            $em->flush();
+        }
+    }
+
+    public function flush(): void
+    {
+        $this->getEntityManager()->flush();
     }
 
     public function remove(Order $order): void
@@ -59,5 +75,27 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             ->select('COUNT(o.id)')
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    public function getLastUpdateTimestamp(): ?int
+    {
+        return $this->appCache->get('order_last_update_timestamp', function (ItemInterface $item) {
+            $item->expiresAfter(3600);
+
+            $result = $this->createQueryBuilder('o')
+                ->select('MAX(o.dates.updateAt)')
+                ->getQuery()
+                ->getSingleScalarResult();
+
+            if ($result === null) {
+                return null;
+            }
+
+            if ($result instanceof \DateTimeInterface) {
+                return $result->getTimestamp();
+            }
+
+            return (new \DateTime($result))->getTimestamp();
+        });
     }
 }

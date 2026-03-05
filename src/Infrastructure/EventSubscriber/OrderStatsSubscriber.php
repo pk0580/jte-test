@@ -8,10 +8,15 @@ use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PostPersistEventArgs;
 use Doctrine\ORM\Events;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 #[AsDoctrineListener(event: Events::postPersist, priority: 500, connection: 'default')]
 readonly class OrderStatsSubscriber
 {
+    public function __construct(
+        private TagAwareCacheInterface $statsCache
+    ) {}
+
     public function postPersist(PostPersistEventArgs $args): void
     {
         $entity = $args->getObject();
@@ -20,8 +25,8 @@ readonly class OrderStatsSubscriber
         }
 
         $em = $args->getObjectManager();
-        $date = $entity->getCreateDate();
-        $amount = (string)$entity->getTotalAmount();
+        $date = $entity->getDates()->createAt;
+        $amount = (string)$entity->getPricing()->totalAmount;
 
         $periods = [
             'day' => $date->format('Y-m-d'),
@@ -32,20 +37,28 @@ readonly class OrderStatsSubscriber
         foreach ($periods as $groupBy => $period) {
             $this->updateStats($em, $period, $groupBy, $amount);
         }
+
+        $this->statsCache->invalidateTags(['stats']);
     }
 
     private function updateStats(EntityManagerInterface $em, string $period, string $groupBy, string $amount): void
     {
-        $stats = $em->getRepository(OrderStats::class)->findOneBy([
-            'period' => $period,
-            'groupBy' => $groupBy
-        ]);
+        $repository = $em->getRepository(OrderStats::class);
+        if ($repository instanceof \App\Domain\Repository\OrderStatsRepositoryInterface) {
+            $repository->incrementStats($period, $groupBy, $amount);
+        } else {
+            // Fallback если репозиторий почему-то не тот (хотя должен быть тот)
+            $stats = $repository->findOneBy([
+                'period' => $period,
+                'groupBy' => $groupBy
+            ]);
 
-        if (!$stats) {
-            $stats = new OrderStats($period, $groupBy);
-            $em->persist($stats);
+            if (!$stats) {
+                $stats = new OrderStats($period, $groupBy);
+                $em->persist($stats);
+            }
+
+            $stats->addOrder($amount);
         }
-
-        $stats->addOrder($amount);
     }
 }

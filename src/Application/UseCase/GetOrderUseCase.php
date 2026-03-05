@@ -34,11 +34,11 @@ readonly class GetOrderUseCase
 
         return new OrderResponseDto(
             (int)$order->getId(),
-            $order->getClientName() ?? '',
-            $order->getClientSurname() ?? '',
-            $order->getEmail() ?? '',
+            $order->getCustomerInfo()->name ?? '',
+            $order->getCustomerInfo()->surname ?? '',
+            $order->getCustomerInfo()->email ?? '',
             (int)$order->getPayType()->getId(),
-            $order->getCreateDate()->format('Y-m-d H:i:s'),
+            $order->getDates()->createAt->format('Y-m-d H:i:s'),
             $articles
         );
     }

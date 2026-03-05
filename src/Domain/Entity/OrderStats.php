@@ -2,9 +2,10 @@
 
 namespace App\Domain\Entity;
 
+use App\Infrastructure\Persistence\Doctrine\Repository\DoctrineOrderStatsRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: DoctrineOrderStatsRepository::class)]
 #[ORM\Table(name: 'order_stats')]
 #[ORM\Index(columns: ['period', 'group_by'], name: 'idx_stats_period_group')]
 class OrderStats
@@ -69,9 +70,4 @@ class OrderStats
         return $this;
     }
 
-    public function addOrder(string $amount): void
-    {
-        $this->orderCount++;
-        $this->totalAmount = bcadd($this->totalAmount, $amount, 2);
-    }
 }

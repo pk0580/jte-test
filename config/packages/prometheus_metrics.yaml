@@ -1,0 +1,5 @@
+artprima_prometheus_metrics:
+    namespace: app
+    type: in_memory
+    ignored_routes:
+        - app_metrics

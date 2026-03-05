@@ -20,4 +20,9 @@ final readonly class CustomerInfo
         public ?int $sex = null
     ) {
     }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
 }

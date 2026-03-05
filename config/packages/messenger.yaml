@@ -25,6 +25,8 @@ framework:
             # Route your messages to the transports
             'App\Application\Message\IndexOrderMessage': async
             'App\Application\Message\DeleteOrderMessage': async
+            'App\Application\Message\SendOrderEmailMessage': async
+            'App\Application\Messenger\Message\InvalidateStatsCacheMessage': async
 
 when@test:
     framework:

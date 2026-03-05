@@ -2,6 +2,7 @@
 
 namespace App\Tests\Infrastructure\Search;
 
+use App\Domain\Entity\Order;
 use App\Domain\Entity\PayType;
 use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\ValueObject\DeliveryAddress;
@@ -13,43 +14,30 @@ use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\Repository\SearchResult;
 use App\Infrastructure\Search\ManticoreOrderSearch;
 use App\Infrastructure\Search\OrderSearchQueryBuilder;
+use App\Infrastructure\Monitoring\TraceIdContext;
 use Manticoresearch\Client;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 class ManticoreOrderSearchTest extends TestCase
 {
-    public function testSearchFallbackOnFailure(): void
+    public function testSearchThrowsExceptionOnFailure(): void
     {
         $orderRepository = $this->createMock(OrderRepositoryInterface::class);
         $logger = $this->createMock(LoggerInterface::class);
         $queryBuilder = new OrderSearchQueryBuilder();
+        $traceIdContext = new TraceIdContext();
 
         // Pointing to a wrong port to ensure failure
-        $search = new ManticoreOrderSearch('localhost', 9307, $orderRepository, $queryBuilder, $logger);
+        $search = new ManticoreOrderSearch('localhost', 9307, $orderRepository, $queryBuilder, $logger, $traceIdContext);
 
         $query = 'test query';
         $page = 1;
         $limit = 10;
 
-        $payType = new PayType('Test');
-        $dbItems = [new Order($payType, 'Test Order')];
-        $dbTotal = 1;
-        $dbResult = new SearchResult($dbItems, $dbTotal);
+        $this->expectException(\Manticoresearch\Exceptions\NoMoreNodesException::class);
 
-        $orderRepository->expects($this->once())
-            ->method('search')
-            ->with($query, $page, $limit, null)
-            ->willReturn($dbResult);
-
-        $logger->expects($this->once())
-            ->method('error');
-
-        $result = $search->search($query, $page, $limit);
-
-        $this->assertInstanceOf(SearchResult::class, $result);
-        $this->assertEquals($dbItems, $result->items);
-        $this->assertEquals($dbTotal, $result->total);
+        $search->search($query, $page, $limit);
     }
 
     public function testSwapIndexValidation(): void
@@ -57,7 +45,8 @@ class ManticoreOrderSearchTest extends TestCase
         $orderRepository = $this->createMock(OrderRepositoryInterface::class);
         $logger = $this->createMock(LoggerInterface::class);
         $queryBuilder = new OrderSearchQueryBuilder();
-        $search = new ManticoreOrderSearch('localhost', 9308, $orderRepository, $queryBuilder, $logger);
+        $traceIdContext = new TraceIdContext();
+        $search = new ManticoreOrderSearch('localhost', 9308, $orderRepository, $queryBuilder, $logger, $traceIdContext);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid tmp index name');
@@ -69,7 +58,8 @@ class ManticoreOrderSearchTest extends TestCase
         $orderRepository = $this->createMock(OrderRepositoryInterface::class);
         $logger = $this->createMock(LoggerInterface::class);
         $queryBuilder = new OrderSearchQueryBuilder();
-        $search = new ManticoreOrderSearch('localhost', 9308, $orderRepository, $queryBuilder, $logger);
+        $traceIdContext = new TraceIdContext();
+        $search = new ManticoreOrderSearch('localhost', 9308, $orderRepository, $queryBuilder, $logger, $traceIdContext);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid main index name');
@@ -82,9 +72,10 @@ class ManticoreOrderSearchTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $client = $this->createMock(Client::class);
         $queryBuilder = new OrderSearchQueryBuilder();
+        $traceIdContext = new TraceIdContext();
 
         // We need to inject the client or use reflection because it's private
-        $search = new ManticoreOrderSearch('localhost', 9308, $orderRepository, $queryBuilder, $logger);
+        $search = new ManticoreOrderSearch('localhost', 9308, $orderRepository, $queryBuilder, $logger, $traceIdContext);
         $reflection = new \ReflectionClass($search);
         $property = $reflection->getProperty('client');
         $property->setAccessible(true);

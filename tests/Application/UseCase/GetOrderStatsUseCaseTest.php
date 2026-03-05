@@ -3,15 +3,15 @@
 namespace App\Tests\Application\UseCase;
 
 use App\Application\UseCase\GetOrderStatsUseCase;
-use App\Domain\Repository\OrderRepositoryInterface;
+use App\Domain\Repository\OrderStatsProviderInterface;
 use PHPUnit\Framework\TestCase;
 
 class GetOrderStatsUseCaseTest extends TestCase
 {
     public function testExecute(): void
     {
-        $repository = $this->createMock(OrderRepositoryInterface::class);
-        $repository->expects($this->once())
+        $provider = $this->createMock(OrderStatsProviderInterface::class);
+        $provider->expects($this->once())
             ->method('getStats')
             ->with('day', 1, 10)
             ->willReturn([
@@ -21,7 +21,7 @@ class GetOrderStatsUseCaseTest extends TestCase
                 'total' => 1
             ]);
 
-        $useCase = new GetOrderStatsUseCase($repository);
+        $useCase = new GetOrderStatsUseCase($provider);
         $result = $useCase->execute('day', 1, 10);
 
         $this->assertEquals(1, $result->totalItems);

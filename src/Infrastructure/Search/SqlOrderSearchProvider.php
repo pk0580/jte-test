@@ -42,6 +42,23 @@ readonly class SqlOrderSearchProvider implements OrderSearchInterface
                 ->setParameter('status', $queryDto->status);
         }
 
+        if (!empty($queryDto->originalQuery)) {
+            $searchTerm = $queryDto->originalQuery;
+            // Limit search term length to prevent ReDoS/Heavy queries
+            if (strlen($searchTerm) > 100) {
+                $searchTerm = substr($searchTerm, 0, 100);
+            }
+
+            $qb->andWhere($qb->expr()->orX(
+                'o.number LIKE :query',
+                'o.customerInfo.email LIKE :query',
+                'o.customerInfo.name LIKE :query',
+                'o.customerInfo.surname LIKE :query',
+                'o.customerInfo.companyName LIKE :query',
+                'o.description LIKE :query'
+            ))->setParameter('query', '%' . $searchTerm . '%');
+        }
+
         // Count total matching items
         $totalQuery = clone $qb;
         $total = (int)$totalQuery->select('COUNT(o.id)')
@@ -74,11 +91,11 @@ readonly class SqlOrderSearchProvider implements OrderSearchInterface
             return new SearchOrderDto(
                 id: $order->getId(),
                 number: $order->getNumber() ?? '',
-                email: $order->getEmail() ?? '',
-                clientName: $order->getClientName() ?? '',
-                clientSurname: $order->getClientSurname() ?? '',
-                companyName: $order->getCompanyName() ?? '',
-                description: $order->getDescription() ?? '',
+                email: $order->getCustomerInfo()->email ?? '',
+                clientName: $order->getCustomerInfo()->name ?? '',
+                clientSurname: $order->getCustomerInfo()->surname ?? '',
+                companyName: $order->getCustomerInfo()->companyName ?? '',
+                description: $order->getMetadata()->description ?? '',
                 status: $order->getStatus(),
             );
         }, $items);

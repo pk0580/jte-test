@@ -15,4 +15,14 @@ final readonly class OrderReview
         public ?int $entranceReview = null
     ) {
     }
+
+    public function withProductReview(?bool $productReview): self
+    {
+        return new self($productReview, $this->entranceReview);
+    }
+
+    public function withEntranceReview(?int $entranceReview): self
+    {
+        return new self($this->productReview, $entranceReview);
+    }
 }
