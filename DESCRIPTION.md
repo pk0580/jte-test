@@ -23,22 +23,55 @@
 ### 1. REST API (`src/Controller/Api/v1/OrderController.php`)
 
 *   **GET `/api/v1/orders/{id}`** — Детальная информация о заказе.
-    *   **Реализация**: `GetOrderUseCase`.
-    *   **Оптимизация**: Использует `ETag` и `Last-Modified` заголовки. Если данные заказа не менялись, сервер вернет `304 Not Modified`, экономя трафик и ресурсы.
+    *   **Цепочка вызовов**: `OrderController::getOrder` -> `GetOrderUseCase::execute` -> `OrderRepository::findById`.
+    *   **Логика обработки**:
+        1. `GetOrderUseCase` запрашивает заказ из БД через репозиторий. Если заказ не найден — выбрасывается `NotFoundHttpException` (404).
+        2. Полученная сущность `Order` преобразуется в `OrderResponseDto`.
+        3. В контроллере (`OrderController`) на основе данных DTO (ID и дата создания) вычисляется **ETag** и устанавливается заголовок **Last-Modified**.
+        4. Вызывается `$response->isNotModified($request)`. Если клиент прислал валидный ETag в `If-None-Match` или дату в `If-Modified-Since`, Symfony прерывает выполнение и возвращает **304 Not Modified** без тела ответа.
+        5. Если данные изменились, DTO сериализуется в JSON и отправляется с кодом 200.
 *   **GET `/api/v1/orders/search`** — Полнотекстовый поиск.
-    *   **Реализация**: `SearchOrdersUseCase` -> `CombinedSearchProvider`.
-    *   **Алгоритм**: Использует высокопроизводительный движок **Manticore Search**.
+    *   **Цепочка вызовов**: `OrderController::search` -> `SearchOrdersUseCase::execute` -> `CombinedSearchProvider::search`.
+    *   **Логика обработки**:
+        1. Контроллер использует `MapQueryString` для автоматической валидации параметров запроса в `OrderSearchRequestDto`.
+        2. Перед поиском проверяется **ETag**, который зависит от параметров запроса и метки последнего обновления данных в БД (`order_last_update_timestamp` из Redis).
+        3. `CombinedSearchProvider` реализует паттерн **Circuit Breaker**:
+            - Сначала проверяется, не "разомкнута" ли цепь (состояние OPEN) из-за предыдущих ошибок Manticore.
+            - Если Manticore доступен, запрос идет в `ManticoreSearchProvider`.
+            - В случае ошибки Manticore, счетчик неудач увеличивается, и запрос перенаправляется в `FallbackSearchProvider` (прямой поиск в MySQL).
+        4. Результаты (найденные ID и метаданные) возвращаются в виде `SearchResultDto`.
 *   **GET `/api/v1/orders/stats`** — Статистика по заказам.
-    *   **Реализация**: `GetOrderStatsUseCase`. Позволяет группировать данные по дням/месяцам/годам.
+    *   **Цепочка вызовов**: `OrderController::getStats` -> `GetOrderStatsUseCase::execute` -> `OrderStatsProviderInterface`.
+    *   **Логика обработки**:
+        1. Аналогично поиску, используется **ETag** на базе метки последнего обновления данных.
+        2. `GetOrderStatsUseCase` запрашивает агрегированные данные (количество заказов и суммы) с группировкой по периоду (день/месяц/год).
+        3. Данные маппятся в `OrderStatsDto` и возвращаются клиенту.
 *   **GET `/api/v1/price`** — Получение цены товара с внешнего сайта.
-    *   **Реализация**: `PriceParser`.
-    *   **Оптимизация**: Декоратор `CachedPriceParserDecorator` кэширует результаты парсинга на 1 час.
+    *   **Цепочка вызовов**: `PriceController::getPrice` -> `GetPriceUseCase::execute` -> `CachedPriceParserDecorator::parse` -> `PriceParser::parse`.
+    *   **Логика обработки**:
+        1. `PriceController` извлекает параметры `factory`, `collection`, `article` из GET-запроса.
+        2. `GetPriceUseCase` делегирует выполнение интерфейсу `PriceParserInterface`.
+        3. `CachedPriceParserDecorator` сначала ищет цену в **Redis** (ключ формируется на основе MD5-хэшей параметров).
+        4. Если цены нет в кэше, проверяется **Circuit Breaker** (предохранитель). Если количество ошибок превысило порог, парсер не вызывается.
+        5. Если сервис доступен, `PriceParser` делает HTTP-запрос к внешнему ресурсу (например, `tile.expert`) и извлекает цену с помощью `Symfony DomCrawler` и регулярных выражений.
+        6. Успешный результат кэшируется на 1 час.
+        7. Если внешний сайт недоступен, декоратор записывает ошибку в Circuit Breaker и пытается вернуть ранее кэшированное значение (даже если оно устарело) или выбрасывает исключение, предотвращая лавинообразную нагрузку на систему при сбоях внешнего сервиса.
 
 ### 2. SOAP API (`src/Controller/Api/v1/SoapController.php`)
 
 *   **Endpoint**: `/soap`
-*   **WSDL**: Доступен по `GET /soap?wsdl`. Описывает структуру данных для создания заказов.
-*   **Метод `createOrder`**: Позволяет создавать новые заказы через протокол SOAP. Логика реализована в `SoapOrderService`. При успешном создании заказа автоматически инициируется процесс отправки подтверждения на Email клиента (через асинхронную очередь).
+*   **WSDL**: Доступен по `GET /soap?wsdl`. Генерируется через `WsdlProvider`.
+*   **Метод `createOrder`**:
+    *   **Цепочка вызовов**: `SoapController::index` -> `SoapOrderService::createOrder` -> `CreateOrderUseCase::execute`.
+    *   **Логика обработки**:
+        1. `SoapServer` принимает XML, десериализует его в объекты PHP.
+        2. `SoapOrderService` валидирует входящие данные через `Symfony Validator`. При ошибках выбрасывается `SoapFault` с детальным описанием полей.
+        3. `CreateOrderUseCase` выполняет создание заказа внутри **БД-транзакции** (`TransactionManager`):
+            - `OrderFactory` создает сущность `Order` и связанные объекты.
+            - `OrderRepository::save($order)` сохраняет данные в MySQL.
+            - В этой же транзакции срабатывает `DomainEventListener`, который видит событие `OrderCreatedEvent` и создает запись в таблице `outbox_events` (паттерн **Transactional Outbox**).
+        4. Если транзакция успешна, возвращается `SoapOrderResponseDto` с ID нового заказа.
+        5. Фоновый процесс (описан в разделе "Технологии") позже обработает Outbox-запись и отправит Email.
 
 ---
 

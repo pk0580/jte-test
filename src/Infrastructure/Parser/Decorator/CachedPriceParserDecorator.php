@@ -56,11 +56,10 @@ class CachedPriceParserDecorator implements PriceParserInterface
             ]);
 
             // On failure, try to return stale cache if exists
-            $cached = $this->appCache->get($cacheKey, function (ItemInterface $item) {
+            return $this->appCache->get($cacheKey, function (ItemInterface $item) {
                 $item->expiresAfter(1);
                 throw new \RuntimeException('No cached value available after failure');
             });
-            return $cached;
         }
     }
 

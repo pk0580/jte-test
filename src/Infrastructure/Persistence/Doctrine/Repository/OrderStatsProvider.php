@@ -7,6 +7,7 @@ use App\Domain\Repository\OrderStatsProviderInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareItemInterface;
 
 readonly class OrderStatsProvider implements OrderStatsProviderInterface
 {
@@ -21,7 +22,7 @@ readonly class OrderStatsProvider implements OrderStatsProviderInterface
 
         return $this->statsCache->get($cacheKey, function (ItemInterface $item) use ($groupBy, $page, $limit) {
             $item->expiresAfter(600); // 10 minutes cache for stats
-            if ($item instanceof \Symfony\Contracts\Cache\TagAwareItemInterface) {
+            if ($item instanceof TagAwareItemInterface) {
                 $item->tag(['stats', 'stats_' . $groupBy]);
             }
 
