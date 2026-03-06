@@ -17,9 +17,9 @@ class BatchEntityExists extends Constraint
     public function __construct(
         public string $entity,
         array|string $fields = ['id'],
-        string $message = null,
+        ?string $message = null,
         public bool $allowNull = false,
-        array $groups = null,
+        ?array $groups = null,
         mixed $payload = null
     ) {
         parent::__construct([], $groups, $payload);

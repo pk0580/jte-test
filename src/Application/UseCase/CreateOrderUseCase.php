@@ -21,7 +21,7 @@ readonly class CreateOrderUseCase
     public function execute(CreateOrderSoapRequestDto $request): SoapOrderResponseDto
     {
         $articles = array_map(
-            fn($a) => new OrderArticleDto($a->articleId, (float)$a->amount, (float)$a->price, (float)$a->weight),
+            fn($a) => new OrderArticleDto($a->id, (float)$a->amount, (float)$a->price, (float)$a->weight),
             $request->articles
         );
 

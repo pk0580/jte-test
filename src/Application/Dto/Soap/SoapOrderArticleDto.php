@@ -2,8 +2,6 @@
 
 namespace App\Application\Dto\Soap;
 
-use App\Application\Validator\Constraints as AppAssert;
-use App\Domain\Entity\Article;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -12,7 +10,8 @@ class SoapOrderArticleDto
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Positive]
-        public int $articleId = 0,
+        #[SerializedName('articleId')]
+        public int $id = 0,
 
         #[Assert\NotBlank]
         #[Assert\Positive]

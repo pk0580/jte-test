@@ -136,9 +136,11 @@ class BatchEntityExistsValidator extends ConstraintValidator
             }
 
             if (!isset($foundHashes[serialize($currentCriteria)])) {
-                $this->context->buildViolation($constraint->message)
-                    ->atPath($isBatch ? "[$index]" : null)
-                    ->setParameter('{{ entity }}', $constraint->entity)
+                $violationBuilder = $this->context->buildViolation($constraint->message);
+                if ($isBatch) {
+                    $violationBuilder->atPath("[$index]");
+                }
+                $violationBuilder->setParameter('{{ entity }}', $constraint->entity)
                     ->setParameter('{{ values }}', json_encode($currentCriteria))
                     ->addViolation();
             }

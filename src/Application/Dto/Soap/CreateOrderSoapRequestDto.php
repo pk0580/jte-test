@@ -3,6 +3,7 @@
 namespace App\Application\Dto\Soap;
 
 use App\Application\Validator\Constraints as AppAssert;
+use App\Domain\Entity\Article;
 use App\Domain\Entity\PayType;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -31,7 +32,7 @@ class CreateOrderSoapRequestDto
         /** @var array<int, SoapOrderArticleDto> */
         #[Assert\NotBlank]
         #[Assert\Valid]
-        #[AppAssert\BatchEntityExists(entity: \App\Domain\Entity\Article::class, fields: ['articleId'])]
+        #[AppAssert\BatchEntityExists(entity: Article::class, fields: ['id'])]
         public array $articles = []
     ) {}
 }
