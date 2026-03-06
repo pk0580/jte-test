@@ -34,8 +34,8 @@ SOAP (Simple Object Access Protocol) — это протокол обмена с
 Связь компонентов:
 1. Клиент делает HTTP-запрос на `POST /soap` с SOAP Envelope в теле
 2. Контроллер создаёт `SoapServer` и делегирует обработку объекту `SoapOrderService`
-3. `SoapOrderService::createOrder` парсит входные параметры (по схеме из WSDL), собирает DTO и вызывает бизнес-логику (`CreateOrderUseCase`)
-4. Результат возвращается в виде массива, который PHP SoapServer сериализует в SOAP XML согласно WSDL
+3. `SoapOrderService::createOrder` использует `SoapConverter` для денормализации входных параметров в DTO, затем выполняет валидацию через `Symfony Validator` (включая проверку существования сущностей в БД через `BatchEntityExists`) и вызывает бизнес-логику (`CreateOrderUseCase`)
+4. Результат (`SoapOrderResponseDto`) преобразуется обратно в массив через `SoapConverter` и возвращается PHP SoapServer, который сериализует его в SOAP XML согласно WSDL
 
 Дополнительно: при `GET /soap` контроллер отдаёт сам WSDL — это удобно для генерации клиентов.
 
@@ -83,11 +83,12 @@ SOAP (Simple Object Access Protocol) — это протокол обмена с
 Файл: `src/Application/Service/SoapOrderService.php`
 
 - Метод `createOrder($parameters): array`
-  - Входной объект `$parameters` следует структуре `CreateOrderRequest` из WSDL
-  - Список товаров (`articles->item`) может прийти как массив или как одиночный объект — код нормализует это к массиву
-  - Каждая позиция преобразуется в `SoapOrderArticleDto`
-  - Формируется `CreateOrderSoapRequestDto` и передаётся в `CreateOrderUseCase`
-  - Ответ use-case возвращается как массив с ключами `success`, `order_id`, `message` — SoapServer сериализует это в SOAP XML по схеме ответа
+  - Входной объект `$parameters` денормализуется в `CreateOrderSoapRequestDto` с помощью `SoapConverter`. 
+  - `SoapConverter` автоматически обрабатывает особенность SOAP, когда список товаров (`articles->item`) может прийти как массив или как одиночный объект, приводя всё к единому формату.
+  - Выполняется валидация DTO через `Symfony Validator`. Если данные не валидны (некорректный email, несуществующий ID товара или типа оплаты), выбрасывается `SoapFault` с кодом `Client` и деталями ошибок в блоке `detail->errors`.
+  - Валидация существования сущностей (`articleId`, `payType`) выполняется эффективно с помощью кастомного валидатора `BatchEntityExists`.
+  - При успешной валидации вызывается `CreateOrderUseCase`, который оборачивает создание заказа в БД-транзакцию.
+  - Ответ (`SoapOrderResponseDto`) нормализуется в массив и возвращается для сериализации в SOAP XML.
 
 Важно: приведение типов — строки/числа к ожидаемым типам (int, decimal, string). Это снижает шанс ошибок сериализации.
 
@@ -154,8 +155,20 @@ SOAP (Simple Object Access Protocol) — это протокол обмена с
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
   <SOAP-ENV:Body>
     <SOAP-ENV:Fault>
-      <faultcode>SOAP-ENV:Receiver</faultcode>
-      <faultstring>Validation failed: email is invalid</faultstring>
+      <faultcode>SOAP-ENV:Client</faultcode>
+      <faultstring>Validation failed</faultstring>
+      <detail>
+        <errors>
+          <item>
+            <field>email</field>
+            <message>This value is not a valid email address.</message>
+          </item>
+          <item>
+            <field>articles[0].articleId</field>
+            <message>The record for entity "App\Domain\Entity\Article" with values {"articleId":999} does not exist.</message>
+          </item>
+        </errors>
+      </detail>
     </SOAP-ENV:Fault>
   </SOAP-ENV:Body>
 </SOAP-ENV:Envelope>

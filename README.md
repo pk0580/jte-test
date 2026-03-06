@@ -28,6 +28,7 @@
 cp .env .env.local
 ```
 Отредактируйте `.env.local` (настройте порты и доступы к БД, если необходимо).
+Убедитесь, что порты `8080`, `3306`, `6379`, `9306` свободны.
 
 ### 2. Запуск контейнеров
 ```bash
@@ -39,7 +40,7 @@ docker-compose up -d
 # Установка зависимостей
 docker-compose exec php composer install
 
-# Применение миграций
+# Применение миграций и наполнение справочников
 docker-compose exec php bin/console doctrine:migrations:migrate --no-interaction
 
 # Начальная индексация данных в Manticore Search
@@ -96,7 +97,7 @@ docker-compose exec php composer ecs:fix
 ```
 
 ### 4. Архитектурные тесты (PHPArkitect)
-Проверка соблюдения правил Clean Architecture:
+Проверка соблюдения правил Clean Architecture (зависимости между слоями):
 ```bash
 docker-compose exec php composer arkitect
 ```

@@ -9,10 +9,10 @@
 Приложение построено на принципах **Clean Architecture** (Чистая архитектура), что позволяет отделить бизнес-логику от деталей реализации (БД, API, внешние сервисы).
 
 ### Слои приложения:
-1.  **Domain (Доменный слой)** (`src/Domain`): Самый глубокий слой. Содержит сущности (`Entity`), интерфейсы репозиториев и бизнес-правила. Он не зависит ни от каких библиотек (кроме стандартных PHP).
-2.  **Application (Прикладной слой)** (`src/Application`): Реализует Use Cases (варианты использования). Здесь находятся DTO (объекты передачи данных) и логика, которая управляет потоком данных между Domain и внешним миром.
-3.  **Infrastructure (Инфраструктурный слой)** (`src/Infrastructure`): Реализация интерфейсов. Здесь живет Doctrine ORM, механизмы Manticore Search, интеграции с Prometheus и настройки Symfony.
-4.  **Presentation (Слой представления)** (`src/Controller`): Обработка входящих запросов (REST, SOAP).
+1.  **Domain (Доменный слой)** (`src/Domain`): Самый глубокий слой. Содержит сущности (`Entity`), интерфейсы репозиториев, DTO для бизнес-логики и доменные правила. Не зависит от внешних библиотек (кроме стандартных PHP).
+2.  **Application (Прикладной слой)** (`src/Application`): Реализует Use Cases (варианты использования). Здесь находятся DTO для API, кастомные валидаторы (например, `BatchEntityExists` для эффективной проверки существования сущностей в БД) и логика, управляющая потоком данных.
+3.  **Infrastructure (Инфраструктурный слой)** (`src/Infrastructure`): Реализация интерфейсов. Здесь живет Doctrine ORM (включая `TransactionManager`), механизмы Manticore Search, интеграции с Prometheus и настройки Symfony.
+4.  **Presentation (Слой представления)** (`src/Controller`): Обработка входящих запросов (REST, SOAP). Содержит контроллеры и интеграцию с SOAP-сервером.
 
 ---
 
@@ -65,10 +65,10 @@
 *   **Метод `createOrder`**:
     *   **Цепочка вызовов**: `SoapController::index` -> `SoapOrderService::createOrder` -> `CreateOrderUseCase::execute`.
     *   **Логика обработки**:
-        1. `SoapServer` принимает XML, десериализует его в объекты PHP.
-        2. `SoapOrderService` валидирует входящие данные через `Symfony Validator`. При ошибках выбрасывается `SoapFault` с детальным описанием полей.
-        3. `CreateOrderUseCase` выполняет создание заказа внутри **БД-транзакции** (`TransactionManager`):
-            - `OrderFactory` создает сущность `Order` и связанные объекты.
+        1. `SoapServer` принимает XML, `SoapConverter` десериализует его в `CreateOrderSoapRequestDto`.
+        2. `SoapOrderService` валидирует входящие данные через `Symfony Validator`. В процессе валидации используется кастомное ограничение `BatchEntityExists`, которое эффективно (одним запросом) проверяет существование типов оплаты и товаров в БД. При ошибках выбрасывается `SoapFault` с детальным описанием полей (ключ `errors`).
+        3. `CreateOrderUseCase` выполняет создание заказа внутри **БД-транзакции** (`TransactionManagerInterface`):
+            - `OrderFactory` создает сущность `Order` и связанные объекты на основе доменного DTO.
             - `OrderRepository::save($order)` сохраняет данные в MySQL.
             - В этой же транзакции срабатывает `DomainEventListener`, который видит событие `OrderCreatedEvent` и создает запись в таблице `outbox_events` (паттерн **Transactional Outbox**).
         4. Если транзакция успешна, возвращается `SoapOrderResponseDto` с ID нового заказа.
