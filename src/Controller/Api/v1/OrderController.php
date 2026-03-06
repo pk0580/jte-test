@@ -92,8 +92,8 @@ class OrderController extends AbstractController
         $dto = $useCase->execute($id);
 
         $response = new Response();
-        $response->setEtag(md5($dto->id . $dto->createDate));
-        $response->setLastModified(new \DateTime($dto->createDate));
+        $response->setEtag($dto->payloadHash);
+        $response->setLastModified(new \DateTime($dto->updateDate ?? $dto->createDate));
         $response->setPublic();
 
         if ($response->isNotModified($request)) {

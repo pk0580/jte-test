@@ -14,6 +14,8 @@ class OrderResponseDto
         public string $email,
         public int $payType,
         public string $createDate,
-        public array $articles
+        public array $articles,
+        public ?string $updateDate = null,
+        public ?string $payloadHash = null,
     ) {}
 }

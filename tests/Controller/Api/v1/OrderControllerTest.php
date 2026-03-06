@@ -230,6 +230,47 @@ class OrderControllerTest extends WebTestCase
         $client->request('GET', '/api/v1/orders/' . $orderId, [], [], ['HTTP_IF_MODIFIED_SINCE' => $lastModified]);
         $this->assertResponseStatusCodeSame(304);
     }
+
+    public function testGetOrderCachingWithDataChangeOld(): void
+    {
+        $client = static::createClient();
+
+        // 1. Create a test order or find existing one
+        $container = static::getContainer();
+        /** @var OrderRepositoryInterface $repository */
+        $repository = $container->get(OrderRepositoryInterface::class);
+        $order = $repository->findOneBy([]);
+
+        if (!$order) {
+            $this->markTestSkipped('No orders found for data change test');
+        }
+
+        $orderId = $order->getId();
+
+        // 2. Get initial order response
+        $client->request('GET', '/api/v1/orders/' . $orderId);
+        $this->assertResponseIsSuccessful();
+        $etag1 = $client->getResponse()->headers->get('ETag');
+        $this->assertNotNull($etag1);
+
+        // 3. Modify the order (e.g., change name)
+        $order->setName('Updated Name ' . uniqid());
+        $newDates = $order->getDates()->withUpdateAt(new \DateTime('+1 second'));
+        $order->setDates($newDates);
+        $repository->save($order);
+        $repository->flush();
+
+        // 4. Get order again, ETag should be different
+        $client->request('GET', '/api/v1/orders/' . $orderId);
+        $this->assertResponseIsSuccessful();
+        $etag2 = $client->getResponse()->headers->get('ETag');
+        $this->assertNotNull($etag2);
+        $this->assertNotEquals($etag1, $etag2, 'ETag should change when order data is modified');
+
+        // 5. Verify that with the old ETag we DON'T get 304
+        $client->request('GET', '/api/v1/orders/' . $orderId, [], [], ['HTTP_IF_NONE_MATCH' => $etag1]);
+        $this->assertResponseStatusCodeSame(200, 'Should return 200 when data changed even if old ETag is provided');
+    }
     public function testGetStatsCachingWithDataChange(): void
     {
         $client = static::createClient();
@@ -317,5 +358,48 @@ class OrderControllerTest extends WebTestCase
         ], [], ['HTTP_IF_NONE_MATCH' => $etag1]);
 
         $this->assertResponseStatusCodeSame(200);
+    }
+
+    public function testGetOrderCachingWithDataChange(): void
+    {
+        $client = static::createClient();
+
+        // 1. Find an existing order ID
+        $client->request('GET', '/api/v1/orders/search', ['query' => '', 'limit' => 1]);
+        $responseData = json_decode($client->getResponse()->getContent(), true);
+
+        if (empty($responseData['items'])) {
+            $this->markTestSkipped('No orders found for caching test');
+        }
+
+        $orderId = $responseData['items'][0]['id'];
+
+        // 2. Get initial order and ETag
+        $client->request('GET', '/api/v1/orders/' . $orderId);
+        $this->assertResponseIsSuccessful();
+        $etag1 = $client->getResponse()->headers->get('ETag');
+        $this->assertNotNull($etag1);
+
+        // 3. Modify the order (trigger updatedAt update)
+        $container = static::getContainer();
+        /** @var OrderRepositoryInterface $repository */
+        $repository = $container->get(OrderRepositoryInterface::class);
+        $order = $repository->findById($orderId);
+
+        $newDates = $order->getDates()->withUpdateAt(new \DateTime('+1 second'));
+        $order->setDates($newDates);
+        $repository->save($order);
+        $repository->flush();
+
+        // 4. Get order again, ETag should be different
+        $client->request('GET', '/api/v1/orders/' . $orderId);
+        $this->assertResponseIsSuccessful();
+        $etag2 = $client->getResponse()->headers->get('ETag');
+        $this->assertNotNull($etag2);
+        $this->assertNotEquals($etag1, $etag2, 'ETag should change when order is modified');
+
+        // 5. Verify that with the old ETag we DON'T get 304
+        $client->request('GET', '/api/v1/orders/' . $orderId, [], [], ['HTTP_IF_NONE_MATCH' => $etag1]);
+        $this->assertResponseStatusCodeSame(200, 'Should return 200 when order changed even if old ETag is provided');
     }
 }

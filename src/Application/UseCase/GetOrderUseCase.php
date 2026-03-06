@@ -32,14 +32,19 @@ readonly class GetOrderUseCase
             );
         }
 
-        return new OrderResponseDto(
+        $dto = new OrderResponseDto(
             (int)$order->getId(),
             $order->getCustomerInfo()->name ?? '',
             $order->getCustomerInfo()->surname ?? '',
             $order->getCustomerInfo()->email ?? '',
             (int)$order->getPayType()->getId(),
             $order->getDates()->createAt->format('Y-m-d H:i:s'),
-            $articles
+            $articles,
+            $order->getDates()->updateAt?->format('Y-m-d H:i:s')
         );
+
+        $dto->payloadHash = md5(json_encode($dto));
+
+        return $dto;
     }
 }
