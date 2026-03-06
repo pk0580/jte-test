@@ -76,9 +76,9 @@ class BatchEntityExistsValidatorTest extends TestCase
         $qb->method('getQuery')->willReturn($query);
 
         // Эмулируем, что '1' найден в базе
-        $query->method('getArrayResult')->willReturn([
+        $query->method('toIterable')->willReturn(new \ArrayIterator([
             ['id' => 1]
-        ]);
+        ]));
 
         // Мы НЕ ожидаем нарушений валидации
         // Элемент с id=1 найден, а элемент с id=null должен быть пропущен
@@ -112,7 +112,7 @@ class BatchEntityExistsValidatorTest extends TestCase
         $qb->method('getQuery')->willReturn($query);
 
         // Эмулируем, что ничего не найдено
-        $query->method('getArrayResult')->willReturn([]);
+        $query->method('toIterable')->willReturn(new \ArrayIterator([]));
 
         $violationBuilder = $this->createMock(ConstraintViolationBuilderInterface::class);
         $this->context->expects($this->once())
@@ -159,9 +159,9 @@ class BatchEntityExistsValidatorTest extends TestCase
         $qb->method('getQuery')->willReturn($query);
 
         // SQL возвращает строку
-        $query->method('getArrayResult')->willReturn([
+        $query->method('toIterable')->willReturn(new \ArrayIterator([
             ['createdAt' => '2023-01-01 00:00:00']
-        ]);
+        ]));
 
         // Мы НЕ ожидаем нарушений валидации
         $this->context->expects($this->never())

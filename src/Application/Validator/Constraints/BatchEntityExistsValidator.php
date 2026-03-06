@@ -31,6 +31,11 @@ class BatchEntityExistsValidator extends ConstraintValidator
         }
 
         $foundHashes = $this->fetchExistingHashes($constraint->entity, $constraint->fields, $criteriaList);
+        if (count($foundHashes) === count($criteriaList)) {
+            // Если количество уникальных найденных записей совпадает с количеством уникальных запрошенных,
+            // значит все искомые записи существуют в БД.
+            return;
+        }
 
         $this->processViolations($value, $items, $foundHashes, $constraint);
     }
@@ -105,10 +110,10 @@ class BatchEntityExistsValidator extends ConstraintValidator
                 $qb->where($orX);
             }
 
-            foreach ($qb->getQuery()->getArrayResult() as $row) {
+            foreach ($qb->getQuery()->toIterable() as $row) {
                 $res = [];
                 foreach ($fields as $f) {
-                    $res[$f] = $row[$f];
+                    $res[$f] = is_array($row) ? ($row[$f] ?? null) : $this->extractFieldValue($row, $f);
                 }
                 $found[$this->getHash($res)] = true;
             }
@@ -182,11 +187,11 @@ class BatchEntityExistsValidator extends ConstraintValidator
             if ($value instanceof \DateTimeInterface) {
                 return $value->format('Y-m-d H:i:s');
             }
-            return $value;
+            return (string) $value;
         }, $criteria);
 
         ksort($normalized);
 
-        return json_encode($normalized);
+        return implode('|', $normalized);
     }
 }
