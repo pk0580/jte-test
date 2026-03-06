@@ -61,7 +61,7 @@ class BatchEntityExistsValidator extends ConstraintValidator
                 $criteria[$field] = $val;
             }
 
-            $criteriaList[serialize($criteria)] = $criteria;
+            $criteriaList[$this->getHash($criteria)] = $criteria;
         }
 
         return $criteriaList;
@@ -110,7 +110,7 @@ class BatchEntityExistsValidator extends ConstraintValidator
                 foreach ($fields as $f) {
                     $res[$f] = $row[$f];
                 }
-                $found[serialize($res)] = true;
+                $found[$this->getHash($res)] = true;
             }
         }
 
@@ -131,11 +131,21 @@ class BatchEntityExistsValidator extends ConstraintValidator
 
         foreach ($items as $index => $item) {
             $currentCriteria = [];
+            $hasNull = false;
             foreach ($constraint->fields as $field) {
-                $currentCriteria[$field] = $this->extractFieldValue($item, $field);
+                $val = $this->extractFieldValue($item, $field);
+                if (null === $val && $constraint->allowNull) {
+                    $hasNull = true;
+                }
+                $currentCriteria[$field] = $val;
             }
 
-            if (!isset($foundHashes[serialize($currentCriteria)])) {
+            if ($hasNull) {
+                continue;
+            }
+
+            $hash = $this->getHash($currentCriteria);
+            if (!isset($foundHashes[$hash])) {
                 $violationBuilder = $this->context->buildViolation($constraint->message);
                 if ($isBatch) {
                     $violationBuilder->atPath("[$index]");
@@ -164,5 +174,19 @@ class BatchEntityExistsValidator extends ConstraintValidator
         }
 
         return $item; // Если это просто скалярное значение
+    }
+
+    private function getHash(array $criteria): string
+    {
+        $normalized = array_map(function ($value) {
+            if ($value instanceof \DateTimeInterface) {
+                return $value->format('Y-m-d H:i:s');
+            }
+            return $value;
+        }, $criteria);
+
+        ksort($normalized);
+
+        return json_encode($normalized);
     }
 }
