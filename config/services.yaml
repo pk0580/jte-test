@@ -33,6 +33,9 @@ services:
     App\:
         resource: '../src/'
 
+    Prometheus\CollectorRegistry:
+        alias: prometheus_metrics_bundle.collector_registry
+
     App\Infrastructure\Persistence\Doctrine\Listener\DomainEventListener:
         tags:
             - { name: 'doctrine.event_listener', event: 'onFlush' }

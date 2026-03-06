@@ -48,13 +48,9 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
             ->getResult();
     }
 
-    public function save(Order $order, bool $flush = false): void
+    public function save(Order $order): void
     {
-        $em = $this->getEntityManager();
-        $em->persist($order);
-        if ($flush) {
-            $em->flush();
-        }
+        $this->getEntityManager()->persist($order);
     }
 
     public function flush(): void

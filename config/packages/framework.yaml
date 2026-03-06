@@ -12,7 +12,6 @@ framework:
     serializer:
         enabled: true
         name_converter: 'serializer.name_converter.camel_case_to_snake_case'
-
 when@test:
     framework:
         test: true

@@ -11,7 +11,11 @@ class ValidationException extends HttpException
     /**
      * @var array<string, string>
      */
-    private array $violations;
+    public array $violations {
+        get {
+            return $this->violations;
+        }
+    }
 
     /**
      * @param array<string, string> $violations
@@ -23,11 +27,4 @@ class ValidationException extends HttpException
         parent::__construct(400, $message, $previous, $headers, $code);
     }
 
-    /**
-     * @return array<string, string>
-     */
-    public function getViolations(): array
-    {
-        return $this->violations;
-    }
 }

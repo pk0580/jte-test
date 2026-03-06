@@ -2,7 +2,7 @@
 
 namespace App\Tests\Application\UseCase;
 
-use App\Application\Dto\PriceDto;
+use App\Domain\Dto\PriceDto;
 use App\Application\UseCase\GetPriceUseCase;
 use App\Domain\Service\PriceParserInterface;
 use PHPUnit\Framework\TestCase;

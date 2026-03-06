@@ -11,9 +11,11 @@ readonly class OrderStatsRequestDto
         #[Assert\Choice(choices: ['day', 'month', 'year'], message: 'Invalid group_by parameter. Allowed: day, month, year')]
         public string $groupBy = 'day',
 
+        #[Assert\Type('integer')]
         #[Assert\GreaterThanOrEqual(value: 1, message: 'Page must be greater than or equal to 1')]
         public int    $page = 1,
 
+        #[Assert\Type('integer')]
         #[Assert\Range(min: 1, max: 100, notInRangeMessage: 'Limit must be between 1 and 100')]
         public int    $limit = 10,
     ) {}

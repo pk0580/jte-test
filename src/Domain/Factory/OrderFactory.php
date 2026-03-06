@@ -9,7 +9,7 @@ use App\Domain\ValueObject\DeliveryConfig;
 use App\Domain\ValueObject\DeliveryTerms;
 use App\Domain\ValueObject\FinancialTerms;
 use App\Domain\ValueObject\ManagerInfo;
-use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
+use App\Domain\Dto\CreateOrderDto;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
 
@@ -25,22 +25,22 @@ class OrderFactory
         private readonly PayTypeRepositoryInterface $payTypeRepository
     ) {}
 
-    public function createFromSoapRequest(CreateOrderSoapRequestDto $request): Order
+    public function create(CreateOrderDto $dto): Order
     {
-        $payType = $this->payTypeRepository->findById($request->payType);
+        $payType = $this->payTypeRepository->findById($dto->payType);
         if (!$payType) {
-            throw new \App\Domain\Exception\ArticleNotFoundException(sprintf('Payment type with ID %d not found', $request->payType));
+            throw new \App\Domain\Exception\ArticleNotFoundException(sprintf('Payment type with ID %d not found', $dto->payType));
         }
 
         $customerInfo = new CustomerInfo(
-            name: $request->clientName,
-            surname: $request->clientSurname,
-            email: $request->email
+            name: $dto->clientName,
+            surname: $dto->clientSurname,
+            email: $dto->email
         );
 
         $order = new Order(
             payType: $payType,
-            name: 'Order from SOAP',
+            name: 'Order from DTO',
             customerInfo: $customerInfo,
             deliveryAddress: new DeliveryAddress(),
             deliveryTerms: new DeliveryTerms(),
@@ -52,7 +52,7 @@ class OrderFactory
             measure: 'unit'
         );
 
-        foreach ($request->articles as $articleDto) {
+        foreach ($dto->articles as $articleDto) {
             $article = $this->articleRepository->findById($articleDto->articleId);
             if (!$article) {
                 throw new \App\Domain\Exception\ArticleNotFoundException(sprintf('Article with ID %d not found', $articleDto->articleId));

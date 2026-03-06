@@ -12,7 +12,7 @@ class TraceIdResponseListener
     private const string TRACE_HEADER = 'X-Trace-ID';
 
     public function __construct(
-        private TraceIdContext $traceIdContext
+        private readonly TraceIdContext $traceIdContext
     ) {}
 
     public function __invoke(ResponseEvent $event): void
@@ -21,6 +21,8 @@ class TraceIdResponseListener
             return;
         }
 
-        $event->getResponse()->headers->set(self::TRACE_HEADER, $this->traceIdContext->getTraceId());
+        $event->getResponse()
+            ->headers
+            ->set(self::TRACE_HEADER, $this->traceIdContext->getTraceId());
     }
 }

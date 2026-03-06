@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Application\Dto;
+namespace App\Domain\Dto;
 
 readonly class PriceDto
 {

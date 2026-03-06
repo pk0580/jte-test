@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Infrastructure\Soap;
+namespace App\Application\Soap;
 
 use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
 use App\Application\Dto\Soap\SoapOrderResponseDto;

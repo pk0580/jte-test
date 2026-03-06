@@ -14,7 +14,7 @@ interface OrderRepositoryInterface
      */
     public function findByIds(array $ids): array;
 
-    public function save(Order $order, bool $flush = false): void;
+    public function save(Order $order): void;
     public function flush(): void;
     public function remove(Order $order): void;
 

@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Parser\Decorator;
 
-use App\Application\Dto\PriceDto;
+use App\Domain\Dto\PriceDto;
 use App\Domain\Service\PriceParserInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\CacheInterface;

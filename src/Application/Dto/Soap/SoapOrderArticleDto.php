@@ -12,7 +12,6 @@ class SoapOrderArticleDto
     public function __construct(
         #[Assert\NotBlank]
         #[Assert\Positive]
-        #[AppAssert\EntityExists(entity: Article::class)]
         public int $articleId = 0,
 
         #[Assert\NotBlank]

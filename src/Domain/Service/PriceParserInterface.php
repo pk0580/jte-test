@@ -2,7 +2,7 @@
 
 namespace App\Domain\Service;
 
-use App\Application\Dto\PriceDto;
+use App\Domain\Dto\PriceDto;
 
 interface PriceParserInterface
 {

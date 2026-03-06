@@ -119,4 +119,4 @@ docker-compose exec php bin/console app:collect-messenger-stats
 ### Доступ к инструментам:
 - **Prometheus**: `http://localhost:9090`
 - **Grafana**: `http://localhost:3000`
-- **phpMyAdmin**: `http://localhost:8081` (если настроен в docker-compose)
+- **phpMyAdmin**: `http://localhost:8081`

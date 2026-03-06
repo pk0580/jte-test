@@ -2,7 +2,7 @@
 
 namespace App\Application\UseCase;
 
-use App\Application\Dto\PriceDto;
+use App\Domain\Dto\PriceDto;
 use App\Domain\Service\PriceParserInterface;
 
 readonly class GetPriceUseCase

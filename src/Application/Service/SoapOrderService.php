@@ -3,7 +3,7 @@
 namespace App\Application\Service;
 
 use App\Application\UseCase\CreateOrderUseCase;
-use App\Infrastructure\Soap\SoapConverter;
+use App\Application\Soap\SoapConverter;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 readonly class SoapOrderService

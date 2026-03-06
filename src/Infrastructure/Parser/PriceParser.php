@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Parser;
 
-use App\Application\Dto\PriceDto;
+use App\Domain\Dto\PriceDto;
 use App\Domain\Service\PriceParserInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
