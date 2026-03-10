@@ -28,6 +28,9 @@ class DomainEventListener
     private bool $needsInvalidation = false;
     private float $onFlushStart = 0.0;
 
+    /** @var DomainEventInterface[] */
+    private array $collectedEvents = [];
+
     public function __construct(
         private readonly MessageBusInterface $messageBus,
         private readonly \Symfony\Contracts\Cache\CacheInterface $appCache,
@@ -41,32 +44,56 @@ class DomainEventListener
         $uow = $em->getUnitOfWork();
 
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
-            $this->processEntityEvents($entity, $uow, $em);
+            $this->collectEntityEvents($entity);
         }
 
         foreach ($uow->getScheduledEntityUpdates() as $entity) {
-            $this->processEntityEvents($entity, $uow, $em);
+            $this->collectEntityEvents($entity);
         }
 
         foreach ($uow->getScheduledEntityDeletions() as $entity) {
             if ($entity instanceof Order) {
-                $this->createOutboxEvent(OrderEventType::DELETED, $entity->getId(), $uow, $em);
+                $this->collectedEvents[] = new OrderDeletedEvent($entity->getId());
                 $this->invalidateStats();
             }
         }
     }
 
-    private function invalidateStats(): void
+    private function collectEntityEvents(object $entity): void
     {
-        $this->needsInvalidation = true;
+        if ($entity instanceof HasDomainEventsInterface) {
+            foreach ($entity->pullDomainEvents() as $event) {
+                $this->collectedEvents[] = $event;
+            }
+        }
     }
 
-    public function postFlush(): void
+    public function postFlush(PostFlushEventArgs $args): void
     {
+        if ($this->collectedEvents) {
+            $em = $args->getObjectManager();
+            $uow = $em->getUnitOfWork();
+            $eventsToProcess = $this->collectedEvents;
+            $this->collectedEvents = [];
+
+            foreach ($eventsToProcess as $event) {
+                if ($event instanceof OrderCreatedEvent) {
+                    $this->createOutboxEvent(OrderEventType::INDEXED, $event->getOrder()->getId(), $em);
+                    $this->createOutboxEvent(OrderEventType::EMAIL_NOTIFICATION, $event->getOrder()->getId(), $em);
+                    $this->invalidateStats();
+                } elseif ($event instanceof OrderUpdatedEvent) {
+                    $this->createOutboxEvent(OrderEventType::INDEXED, $event->getOrder()->getId(), $em);
+                    $this->invalidateStats();
+                } elseif ($event instanceof OrderDeletedEvent) {
+                    $this->createOutboxEvent(OrderEventType::DELETED, $event->getOrderId(), $em);
+                    $this->invalidateStats();
+                }
+            }
+            $em->flush();
+        }
+
         if ($this->onFlushStart > 0) {
             $duration = microtime(true) - $this->onFlushStart;
-            // Record metrics only if significant or using a more efficient way
-            // For now, let's keep it but maybe optimize registry access if it's a known bottleneck
             $this->recordMetrics($duration);
             $this->onFlushStart = 0.0;
         }
@@ -85,9 +112,26 @@ class DomainEventListener
         }
     }
 
+    private function invalidateStats(): void
+    {
+        $this->needsInvalidation = true;
+    }
+
     private function recordMetrics(float $duration): void
     {
         try {
+            $cacheKey = 'doctrine_flush_duration';
+            $item = $this->appCache->get($cacheKey, fn() => []);
+            $durations = is_array($item) ? $item : [];
+            $durations[] = $duration;
+            if (count($durations) > 10) {
+                array_shift($durations);
+            }
+            // Since $appCache is not always TagAware, just use simple save if possible or re-get/set.
+            // Using Symfony Cache Interface:
+            $this->appCache->delete($cacheKey);
+            $this->appCache->get($cacheKey, fn() => $durations);
+
             $summary = $this->collectorRegistry->getOrRegisterSummary(
                 'app',
                 'doctrine_flush_duration_seconds',
@@ -102,23 +146,7 @@ class DomainEventListener
         }
     }
 
-    private function processEntityEvents(object $entity, UnitOfWork $uow, $em): void
-    {
-        if ($entity instanceof HasDomainEventsInterface) {
-            foreach ($entity->pullDomainEvents() as $event) {
-                if ($event instanceof OrderCreatedEvent) {
-                    $this->createOutboxEvent(OrderEventType::INDEXED, $event->getOrder()->getId(), $uow, $em);
-                    $this->createOutboxEvent(OrderEventType::EMAIL_NOTIFICATION, $event->getOrder()->getId(), $uow, $em);
-                    $this->invalidateStats();
-                } elseif ($event instanceof OrderUpdatedEvent) {
-                    $this->createOutboxEvent(OrderEventType::INDEXED, $event->getOrder()->getId(), $uow, $em);
-                    $this->invalidateStats();
-                }
-            }
-        }
-    }
-
-    private function createOutboxEvent(OrderEventType $type, ?int $orderId, UnitOfWork $uow, $em, array $extra = []): void
+    private function createOutboxEvent(OrderEventType $type, ?int $orderId, $em, array $extra = []): void
     {
         if ($orderId === null) {
             return;
@@ -128,7 +156,5 @@ class DomainEventListener
         $outboxEvent = new OutboxEvent($type, $payloadDto);
 
         $em->persist($outboxEvent);
-        $classMetadata = $em->getClassMetadata(OutboxEvent::class);
-        $uow->computeChangeSet($classMetadata, $outboxEvent);
     }
 }

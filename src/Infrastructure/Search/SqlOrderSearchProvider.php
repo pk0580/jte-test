@@ -37,6 +37,8 @@ readonly class SqlOrderSearchProvider implements OrderSearchInterface
         $qb->select('o')
             ->from(Order::class, 'o');
 
+        error_log(sprintf("SQLSearch: query=%s, status=%s, lastId=%s", $queryDto->originalQuery, $queryDto->status ?? 'NULL', $queryDto->lastId ?? 'NULL'));
+
         if ($queryDto->status !== null) {
             $qb->andWhere('o.status = :status')
                 ->setParameter('status', $queryDto->status);
@@ -44,6 +46,7 @@ readonly class SqlOrderSearchProvider implements OrderSearchInterface
 
         if (!empty($queryDto->originalQuery)) {
             $searchTerm = $queryDto->originalQuery;
+
             // Limit search term length to prevent ReDoS/Heavy queries
             if (strlen($searchTerm) > 100) {
                 $searchTerm = substr($searchTerm, 0, 100);
@@ -55,7 +58,8 @@ readonly class SqlOrderSearchProvider implements OrderSearchInterface
                 'o.customerInfo.name LIKE :query',
                 'o.customerInfo.surname LIKE :query',
                 'o.customerInfo.companyName LIKE :query',
-                'o.description LIKE :query'
+                'o.metadata.description LIKE :query',
+                'o.name LIKE :query'
             ))->setParameter('query', '%' . $searchTerm . '%');
         }
 

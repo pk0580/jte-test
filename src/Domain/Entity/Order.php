@@ -77,7 +77,7 @@ class Order implements HasDomainEventsInterface
     #[ORM\Embedded(class: DeliveryAddress::class)]
     private DeliveryAddress $deliveryAddress;
 
-    #[ORM\ManyToOne(targetEntity: PayType::class)]
+    #[ORM\ManyToOne(targetEntity: PayType::class, cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'pay_type_id', referencedColumnName: 'id', nullable: false)]
     private PayType $payType;
 

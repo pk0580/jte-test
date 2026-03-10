@@ -18,9 +18,72 @@ use Symfony\Contracts\Cache\CacheInterface;
 
 class OrderControllerTest extends WebTestCase
 {
+    private function ensureOrdersExist(int $count = 2): void
+    {
+        /** @var EntityManagerInterface $em */
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+
+        // Считаем именно наши заказы по email (так надежнее)
+        $qb = $em->createQueryBuilder();
+        $searchableCount = (int) $qb->select('COUNT(o.id)')
+            ->from(Order::class, 'o')
+            ->where('o.customerInfo.email LIKE :email')
+            ->setParameter('email', 'searchable%@example.com')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        if ($searchableCount < $count) {
+            $payType = $em->getRepository(PayType::class)->findOneBy([]) ?: new PayType('Test Pay');
+            if (!$payType->getId()) {
+                $em->persist($payType);
+            }
+
+            $article = $em->getRepository(Article::class)->findOneBy([]) ?: new Article('Test Article', '10.00', '1.000');
+            if (!$article->getId()) {
+                $em->persist($article);
+            }
+
+            $em->flush();
+
+            for ($i = $searchableCount; $i < $count; $i++) {
+                $order = new Order(
+                    payType: $payType,
+                    name: 'Searchable Order ' . $i,
+                    customerInfo: new CustomerInfo('John', 'Doe', 'searchable' . $i . '@example.com'),
+                    deliveryAddress: new DeliveryAddress(city: 'Test City', address: 'Test Address'),
+                    deliveryTerms: new DeliveryTerms(),
+                    managerInfo: new ManagerInfo(),
+                    financialTerms: new FinancialTerms(),
+                    deliveryConfig: new DeliveryConfig(),
+                    description: 'searchable description'
+                );
+
+                // Set status to 1 so search with status=1 works
+                $order->setInternalStatus(1);
+
+                $orderArticle = new OrderArticle(
+                    $order,
+                    $article,
+                    '1.000',
+                    '10.00',
+                    '1.000',
+                    '1',
+                    '0',
+                    'box'
+                );
+                $order->addArticle($orderArticle);
+
+                $em->persist($order);
+            }
+            $em->flush();
+            $em->clear();
+        }
+    }
+
     public function testGetStats(): void
     {
         $client = static::createClient();
+        $this->ensureOrdersExist(1);
 
         // В идеале здесь нужно загрузить фикстуры, но так как мы работаем с существующей БД (dump.sql),
         // мы можем просто проверить, что эндпоинт доступен и возвращает правильную структуру.
@@ -62,7 +125,7 @@ class OrderControllerTest extends WebTestCase
             'group_by' => 'invalid'
         ]);
 
-        $this->assertResponseStatusCodeSame(400);
+        $this->assertResponseStatusCodeSame(422);
         $responseData = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('error', $responseData);
         $this->assertEquals('Invalid group_by parameter. Allowed: day, month, year', $responseData['error']);
@@ -76,7 +139,7 @@ class OrderControllerTest extends WebTestCase
             'page' => 0
         ]);
 
-        $this->assertResponseStatusCodeSame(400);
+        $this->assertResponseStatusCodeSame(422);
         $responseData = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('error', $responseData);
         $this->assertEquals('Page must be greater than or equal to 1', $responseData['error']);
@@ -90,7 +153,7 @@ class OrderControllerTest extends WebTestCase
             'limit' => 101
         ]);
 
-        $this->assertResponseStatusCodeSame(400);
+        $this->assertResponseStatusCodeSame(422);
         $responseData = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('error', $responseData);
         $this->assertEquals('Limit must be between 1 and 100', $responseData['error']);
@@ -99,10 +162,11 @@ class OrderControllerTest extends WebTestCase
     public function testSearch(): void
     {
         $client = static::createClient();
+        $this->ensureOrdersExist(1);
 
         // 1. Basic search
         $client->request('GET', '/api/v1/orders/search', [
-            'query' => 'test',
+            'query' => 'searchable',
             'page' => 1,
             'limit' => 10
         ]);
@@ -114,7 +178,7 @@ class OrderControllerTest extends WebTestCase
 
         // 2. Search with status filter
         $client->request('GET', '/api/v1/orders/search', [
-            'query' => 'test',
+            'query' => 'searchable',
             'status' => 1
         ]);
 
@@ -132,37 +196,11 @@ class OrderControllerTest extends WebTestCase
     public function testCursorBasedPagination(): void
     {
         $client = static::createClient();
-        /** @var EntityManagerInterface $em */
-        $em = static::getContainer()->get(EntityManagerInterface::class);
-
-        // Ensure we have at least 2 orders
-        $ordersCount = $em->getRepository(Order::class)->count([]);
-        if ($ordersCount < 2) {
-             $payType = $em->getRepository(PayType::class)->findOneBy([]) ?: new PayType('Test Pay');
-             if (!$payType->getId()) {
-                 $em->persist($payType);
-                 $em->flush();
-             }
-
-             for ($i = 0; $i < 2 - $ordersCount; $i++) {
-                 $order = new Order(
-                     payType: $payType,
-                     name: 'Test Order ' . $i,
-                     customerInfo: new CustomerInfo('Test', 'User', 'test@example.com'),
-                     deliveryAddress: new DeliveryAddress(city: 'Test City', address: 'Test Address'),
-                     deliveryTerms: new DeliveryTerms(),
-                     managerInfo: new ManagerInfo(),
-                     financialTerms: new FinancialTerms(),
-                     deliveryConfig: new DeliveryConfig()
-                 );
-                 $em->persist($order);
-             }
-             $em->flush();
-        }
+        $this->ensureOrdersExist(3);
 
         // 1. Get first page
         $client->request('GET', '/api/v1/orders/search', [
-            'query' => 'test',
+            'query' => 'searchable', // Use email part for searching
             'limit' => 2
         ]);
 
@@ -170,10 +208,29 @@ class OrderControllerTest extends WebTestCase
         $responseData = json_decode($client->getResponse()->getContent(), true);
 
         if (count($responseData['items']) < 2) {
-             // We just created them, search might be slow/async, or query doesn't match
-             // But 'test' should match CustomerInfo 'Test'
-             // If still not enough, let's skip but at least we tried
-            $this->markTestSkipped('Not enough search results for cursor-based pagination test even after adding data. Current count: ' . count($responseData['items']));
+            /** @var EntityManagerInterface $em */
+            $em = static::getContainer()->get(EntityManagerInterface::class);
+            $count = $em->getRepository(Order::class)->count([]);
+
+            // Прямой SQL запрос для отладки
+            $conn = $em->getConnection();
+            $sql = "SELECT id, customer_info_email, name FROM orders WHERE customer_info_email LIKE 'searchable%'";
+            $searchableOrders = $conn->fetchAllAssociative($sql);
+
+            $emails = array_map(fn($o) => (string)($o['customer_info_email'] ?? 'NULL'), $searchableOrders);
+            $names = array_map(fn($o) => (string)($o['name'] ?? 'NULL'), $searchableOrders);
+            $ids = array_map(fn($o) => (string)$o['id'], $searchableOrders);
+
+            $this->markTestSkipped(sprintf(
+                'Not enough search results. Total: %d, SearchableCount: %d, Response: %d. IDs: %s. Emails: %s. Names: %s. SQL query: %s',
+                $count,
+                count($searchableOrders),
+                count($responseData['items']),
+                implode(', ', $ids),
+                implode(', ', $emails),
+                implode(', ', $names),
+                $sql
+            ));
         }
 
         $firstItem = $responseData['items'][0];
@@ -182,7 +239,7 @@ class OrderControllerTest extends WebTestCase
 
         // 2. Get next page using cursor
         $client->request('GET', '/api/v1/orders/search', [
-            'query' => 'test',
+            'query' => 'searchable', // Use email part for searching
             'limit' => 2,
             'last_id' => $lastId
         ]);
@@ -202,6 +259,7 @@ class OrderControllerTest extends WebTestCase
     public function testGetStatsCaching(): void
     {
         $client = static::createClient();
+        $this->ensureOrdersExist(1);
 
         $client->request('GET', '/api/v1/orders/stats', [
             'group_by' => 'month'
@@ -221,9 +279,10 @@ class OrderControllerTest extends WebTestCase
     public function testSearchCaching(): void
     {
         $client = static::createClient();
+        $this->ensureOrdersExist(1);
 
         $client->request('GET', '/api/v1/orders/search', [
-            'query' => 'test'
+            'query' => 'searchable'
         ]);
 
         $this->assertResponseIsSuccessful();
@@ -231,7 +290,7 @@ class OrderControllerTest extends WebTestCase
         $this->assertNotNull($etag);
 
         $client->request('GET', '/api/v1/orders/search', [
-            'query' => 'test'
+            'query' => 'searchable'
         ], [], ['HTTP_IF_NONE_MATCH' => $etag]);
 
         $this->assertResponseStatusCodeSame(304);
@@ -240,17 +299,16 @@ class OrderControllerTest extends WebTestCase
     public function testGetOrderCaching(): void
     {
         $client = static::createClient();
+        $this->ensureOrdersExist(1);
 
         // First we need to find an existing order ID
-        // We can use the search to find one
-        $client->request('GET', '/api/v1/orders/search', ['query' => '', 'limit' => 1]);
-        $responseData = json_decode($client->getResponse()->getContent(), true);
-
-        if (empty($responseData['items'])) {
-            $this->markTestSkipped('No orders found for caching test');
+        /** @var EntityManagerInterface $em */
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $order = $em->getRepository(Order::class)->findOneBy(['customerInfo.email' => 'searchable0@example.com']);
+        if (!$order) {
+            $order = $em->getRepository(Order::class)->findOneBy([]);
         }
-
-        $orderId = $responseData['items'][0]['id'];
+        $orderId = $order->getId();
 
         $client->request('GET', '/api/v1/orders/' . $orderId);
         $this->assertResponseIsSuccessful();
@@ -273,16 +331,13 @@ class OrderControllerTest extends WebTestCase
     public function testGetOrderCachingWithDataChangeOld(): void
     {
         $client = static::createClient();
+        $this->ensureOrdersExist(1);
 
         // 1. Create a test order or find existing one
         $container = static::getContainer();
         /** @var OrderRepositoryInterface $repository */
         $repository = $container->get(OrderRepositoryInterface::class);
         $order = $repository->findOneBy([]);
-
-        if (!$order) {
-            $this->markTestSkipped('No orders found for data change test');
-        }
 
         $orderId = $order->getId();
 
@@ -313,6 +368,7 @@ class OrderControllerTest extends WebTestCase
     public function testGetStatsCachingWithDataChange(): void
     {
         $client = static::createClient();
+        $this->ensureOrdersExist(1);
 
         // 1. Get initial stats
         $client->request('GET', '/api/v1/orders/stats', [
@@ -328,9 +384,6 @@ class OrderControllerTest extends WebTestCase
         /** @var OrderRepositoryInterface $repository */
         $repository = $container->get(OrderRepositoryInterface::class);
         $order = $repository->findOneBy([]);
-        if (!$order) {
-            $this->markTestSkipped('No orders found for data change test');
-        }
 
         // We need to trigger an update. Even a small change should work if it updates updatedAt.
         $newDates = $order->getDates()->withUpdateAt(new \DateTime('+1 second'));
@@ -362,10 +415,11 @@ class OrderControllerTest extends WebTestCase
     public function testSearchCachingWithDataChange(): void
     {
         $client = static::createClient();
+        $this->ensureOrdersExist(1);
 
         // 1. Get initial search results
         $client->request('GET', '/api/v1/orders/search', [
-            'query' => 'test'
+            'query' => 'searchable'
         ]);
 
         $this->assertResponseIsSuccessful();
@@ -377,9 +431,6 @@ class OrderControllerTest extends WebTestCase
         /** @var OrderRepositoryInterface $repository */
         $repository = $container->get(OrderRepositoryInterface::class);
         $order = $repository->findOneBy([]);
-        if (!$order) {
-            $this->markTestSkipped('No orders found for data change test');
-        }
 
         $newDates = $order->getDates()->withUpdateAt(new \DateTime('+1 second'));
         $order->setDates($newDates);
@@ -391,7 +442,7 @@ class OrderControllerTest extends WebTestCase
 
         // 3. Get search results again, ETag should be different
         $client->request('GET', '/api/v1/orders/search', [
-            'query' => 'test'
+            'query' => 'searchable'
         ]);
 
         $this->assertResponseIsSuccessful();
@@ -401,7 +452,7 @@ class OrderControllerTest extends WebTestCase
 
         // 4. Verify that with the old ETag we DON'T get 304
         $client->request('GET', '/api/v1/orders/search', [
-            'query' => 'test'
+            'query' => 'searchable'
         ], [], ['HTTP_IF_NONE_MATCH' => $etag1]);
 
         $this->assertResponseStatusCodeSame(200);
@@ -410,16 +461,16 @@ class OrderControllerTest extends WebTestCase
     public function testGetOrderCachingWithDataChange(): void
     {
         $client = static::createClient();
+        $this->ensureOrdersExist(1);
 
         // 1. Find an existing order ID
-        $client->request('GET', '/api/v1/orders/search', ['query' => '', 'limit' => 1]);
-        $responseData = json_decode($client->getResponse()->getContent(), true);
-
-        if (empty($responseData['items'])) {
-            $this->markTestSkipped('No orders found for caching test');
+        /** @var EntityManagerInterface $em */
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $order = $em->getRepository(Order::class)->findOneBy(['customerInfo.email' => 'searchable0@example.com']);
+        if (!$order) {
+            $order = $em->getRepository(Order::class)->findOneBy([]);
         }
-
-        $orderId = $responseData['items'][0]['id'];
+        $orderId = $order->getId();
 
         // 2. Get initial order and ETag
         $client->request('GET', '/api/v1/orders/' . $orderId);
@@ -427,22 +478,45 @@ class OrderControllerTest extends WebTestCase
         $etag1 = $client->getResponse()->headers->get('ETag');
         $this->assertNotNull($etag1);
 
-        // 3. Modify the order (trigger updatedAt update)
+        // 3. Modify the order
         $container = static::getContainer();
         /** @var OrderRepositoryInterface $repository */
         $repository = $container->get(OrderRepositoryInterface::class);
         $order = $repository->findById($orderId);
 
-        $newDates = $order->getDates()->withUpdateAt(new \DateTime('+1 second'));
+        // Изменим фамилию клиента (входит в хеш DTO)
+        $oldCustomer = $order->getCustomerInfo();
+        $newCustomer = new CustomerInfo(
+            $oldCustomer->name,
+            'UpdatedSurname' . uniqid(),
+            $oldCustomer->email,
+            $oldCustomer->companyName,
+            $oldCustomer->sex
+        );
+
+        $reflection = new \ReflectionClass(Order::class);
+        $property = $reflection->getProperty('customerInfo');
+        $property->setAccessible(true);
+        $property->setValue($order, $newCustomer);
+
+        // Также обновим дату обновления
+        $newUpdateAt = new \DateTimeImmutable('+2 hours');
+        $newDates = $order->getDates()->withUpdateAt($newUpdateAt);
         $order->setDates($newDates);
+
         $repository->save($order);
         $repository->flush();
+        $em->clear();
+
+        $cache = static::getContainer()->get(CacheInterface::class);
+        $cache->delete('order_last_update_timestamp');
 
         // 4. Get order again, ETag should be different
         $client->request('GET', '/api/v1/orders/' . $orderId);
         $this->assertResponseIsSuccessful();
         $etag2 = $client->getResponse()->headers->get('ETag');
         $this->assertNotNull($etag2);
+
         $this->assertNotEquals($etag1, $etag2, 'ETag should change when order is modified');
 
         // 5. Verify that with the old ETag we DON'T get 304

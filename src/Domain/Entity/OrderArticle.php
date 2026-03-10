@@ -19,7 +19,7 @@ class OrderArticle
     #[ORM\JoinColumn(name: 'orders_id', referencedColumnName: 'id')]
     private ?Order $order = null;
 
-    #[ORM\ManyToOne(targetEntity: Article::class)]
+    #[ORM\ManyToOne(targetEntity: Article::class, cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'article_id', referencedColumnName: 'id', nullable: false)]
     private Article $article;
 

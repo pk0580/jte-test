@@ -64,25 +64,25 @@ services:
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT:-9090}:9090"
     depends_on:
       - php
 
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3000:3000"
+      - "${GRAFANA_PORT:-3000}:3000"
     volumes:
       - ./docker/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
 
   mysqld-exporter:
-    image: prom/mysqld-exporter:latest
+    image: prom/mysqld-exporter:v0.14.0
     environment:
       DATA_SOURCE_NAME: "${MYSQL_USER}:${MYSQL_PASSWORD}@(db:3306)/"
     ports:
-      - "9104:9104"
+      - "${MYSQL_EXPORTER_PORT:-9104}:9104"
     depends_on:
       - db
 
@@ -115,7 +115,7 @@ services:
   redis:
     image: redis:alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     deploy:
       resources:
         limits:

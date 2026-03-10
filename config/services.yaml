@@ -20,6 +20,12 @@ services:
         arguments:
             $metricsCache: '@app.metrics_cache'
 
+    App\Infrastructure\Prometheus\DoctrineFlushCollector:
+        public: true
+        tags: ['prometheus_metrics_bundle.metrics_collector']
+        arguments:
+            $appCache: '@cache.app'
+
     App\Infrastructure\Command\CollectMessengerStatsCommand:
         arguments:
             $metricsCache: '@app.metrics_cache'

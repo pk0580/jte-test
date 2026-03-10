@@ -68,42 +68,39 @@ class ManticoreAsyncIndexingTest extends WebTestCase
         $orderId = $order->getId();
 
         // 2. Проверяем наличие в базе outbox_events
-        $outbox = $em->getRepository(\App\Domain\Entity\OutboxEvent::class)->findOneBy([]);
-        $this->assertNotNull($outbox, 'OutboxEvent not created');
+        $outbox = $em->getRepository(\App\Domain\Entity\OutboxEvent::class)->findBy(['processedAt' => null]);
+        $this->assertNotEmpty($outbox, 'No unprocessed OutboxEvents found');
+        $outboxCount = count($outbox);
 
         // 2. Запускаем обработку outbox
         $application = new Application(static::$kernel);
         $application->setAutoExit(false);
-        $application->run(new ArrayInput(['command' => 'app:outbox:process']), new NullOutput());
+        $commandInput = new ArrayInput(['command' => 'app:outbox:process']);
+        $output = new \Symfony\Component\Console\Output\BufferedOutput();
+        $application->run($commandInput, $output);
+        $commandOutput = $output->fetch();
 
-        // Сбросим UnitOfWork или EntityManager, если нужно, но outbox в БД уже должен быть помечен обработанным
+        // Сбросим UnitOfWork или EntityManager, чтобы увидеть изменения в БД
         $em->clear();
+        $outboxProcessed = $em->getRepository(\App\Domain\Entity\OutboxEvent::class)->findBy(['processedAt' => null]);
+        $this->assertCount(0, $outboxProcessed, 'OutboxEvents still not processed. Count: ' . count($outboxProcessed) . '. Command output: ' . $commandOutput);
 
         // 3. Проверяем, что в очереди появилось сообщение
-        /** @var InMemoryTransport $transport */
         $transport = $container->get('messenger.transport.async');
-
-        // В тестах Symfony может потребоваться получить транспорт снова из свежего контейнера
-        // или использовать статический доступ если это WebTestCase
+        $sentCount = count($transport->getSent());
 
         $found = false;
+        $actualMessages = [];
         foreach ($transport->getSent() as $envelope) {
-            if ($envelope->getMessage() instanceof IndexOrderMessage && $envelope->getMessage()->getOrderId() === $orderId) {
+            $msg = $envelope->getMessage();
+            $actualMessages[] = get_class($msg) . (method_exists($msg, 'getOrderId') ? '(' . $msg->getOrderId() . ')' : '');
+            if ($msg instanceof IndexOrderMessage && $msg->getOrderId() === $orderId) {
                 $found = true;
                 break;
             }
         }
 
-        if (!$found && method_exists($transport, 'getAcknowledged')) {
-            foreach ($transport->getAcknowledged() as $envelope) {
-                if ($envelope->getMessage() instanceof IndexOrderMessage && $envelope->getMessage()->getOrderId() === $orderId) {
-                    $found = true;
-                    break;
-                }
-            }
-        }
-
-        $this->assertTrue($found, 'IndexOrderMessage for order not found in transport. Outbox event was: ' . ($outbox ? $outbox->getEventType()->value : 'null'));
+        $this->assertTrue($found, 'IndexOrderMessage for order not found in transport. Sent count: ' . $sentCount . '. Messages: ' . implode(', ', $actualMessages) . '. Expected OrderId: ' . $orderId);
 
         // 4. Проверяем, что в Manticore заказа еще нет (так как мы только в очередь поставили)
         /** @var OrderSearchInterface $search */

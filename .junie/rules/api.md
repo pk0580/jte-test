@@ -148,6 +148,7 @@ Use proper HTTP codes.
 201 Created
 204 No Content
 400 Bad Request
+422 Unprocessable Entity
 404 Not Found
 409 Conflict
 500 Internal Server Error

@@ -11,7 +11,7 @@ class PriceControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request('GET', '/api/v1/price');
 
-        $this->assertResponseStatusCodeSame(400);
+        $this->assertResponseStatusCodeSame(422);
         $data = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('error', $data);
     }

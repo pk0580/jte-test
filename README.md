@@ -107,17 +107,34 @@ docker-compose exec php composer arkitect
 ## 📊 Мониторинг и фоновые задачи
 
 ### Сбор метрик
-Для работы дашбордов Grafana необходимо регулярно собирать метрики.
-**Запуск вручную:**
+Для работы дашбордов Grafana необходимо регулярно собирать метрики и иметь данные в БД.
+
+**Описание метрик:**
+- `app_messenger_queue_messages` — количество сообщений в очереди (таблица `messenger_messages`). Позволяет отслеживать нагрузку на фоновые задачи и задержки обработки.
+- `app_database_response_time_seconds` — время ответа базы данных при выполнении контрольного запроса (`SELECT 1`). Используется для мониторинга доступности и сетевых задержек между PHP и MySQL.
+- `app_doctrine_flush_duration_seconds` — длительность процесса `flush` в Doctrine ORM. Помогает выявить тяжелые транзакции и проблемы при сохранении сущностей в БД.
+
+**Генерация тестовых данных:**
+```bash
+docker-compose exec php bin/console app:generate-sample-data
+```
+
+**Сбор статистики очередей:**
 ```bash
 docker-compose exec php bin/console app:collect-messenger-stats
 ```
 **Настройка Cron:** рекомендуется запускать каждые 10-60 секунд.
+
+**Проверка метрик в Prometheus:**
+После генерации данных перейдите на `http://localhost:9090` и выполните запрос:
+- `app_messenger_queue_messages`
+- `app_database_response_time_seconds`
+- `app_doctrine_flush_duration_seconds`
 
 ### Manticore Search
 - `app:index-orders` — полная переиндексация с поддержкой zero-downtime (используется ротация индексов).
 
 ### Доступ к инструментам:
 - **Prometheus**: `http://localhost:9090`
-- **Grafana**: `http://localhost:3000`
-- **phpMyAdmin**: `http://localhost:8081`
+- **Grafana**: `http://localhost:3000` (Login: `admin`, Password: `admin`)
+- **phpMyAdmin**: `http://localhost:8081` (Login: `root`, Password: `root`)

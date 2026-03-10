@@ -21,7 +21,7 @@ class PriceController extends AbstractController
         if (!$factory || !$collection || !$article) {
             return new JsonResponse([
                 'error' => 'Missing required parameters: factory, collection, article'
-            ], Response::HTTP_BAD_REQUEST);
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         try {

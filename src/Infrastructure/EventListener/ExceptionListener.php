@@ -42,7 +42,7 @@ class ExceptionListener
                 'error' => $exception->getMessage(),
                 'violations' => $exception->violations
             ];
-            $statusCode = 400;
+            $statusCode = 422;
         } elseif ($exception instanceof ValidationFailedException) {
             validation_failed:
             $data = ['error' => 'Validation failed', 'violations' => []];
@@ -55,7 +55,7 @@ class ExceptionListener
             if ($exception->getViolations()->count() > 0) {
                  $data['error'] = $exception->getViolations()[0]->getMessage();
             }
-            $statusCode = 400;
+            $statusCode = 422;
         } elseif ($exception instanceof NotFoundHttpException) {
             $prev = $exception->getPrevious();
             if ($prev instanceof ValidationFailedException) {
