@@ -31,14 +31,14 @@
         4. Вызывается `$response->isNotModified($request)`. Если клиент прислал валидный ETag в `If-None-Match` или дату в `If-Modified-Since`, Symfony прерывает выполнение и возвращает **304 Not Modified** без тела ответа.
         5. Если данные изменились, DTO сериализуется в JSON и отправляется с кодом 200.
 *   **GET `/api/v1/orders/search`** — Полнотекстовый поиск.
-    *   **Цепочка вызовов**: `OrderController::search` -> `SearchOrdersUseCase::execute` -> `CombinedSearchProvider::search`.
+    *   **Цепочка вызовов**: `OrderController::search` -> `SearchOrdersUseCase::execute` -> `FallbackSearchProvider::search`.
     *   **Логика обработки**:
         1. Контроллер использует `MapQueryString` для автоматической валидации параметров запроса в `OrderSearchRequestDto`.
         2. Перед поиском проверяется **ETag**, который зависит от параметров запроса и метки последнего обновления данных в БД (`order_last_update_timestamp` из Redis).
-        3. `CombinedSearchProvider` реализует паттерн **Circuit Breaker**:
-            - Сначала проверяется, не "разомкнута" ли цепь (состояние OPEN) из-за предыдущих ошибок Manticore.
-            - Если Manticore доступен, запрос идет в `ManticoreSearchProvider`.
-            - В случае ошибки Manticore, счетчик неудач увеличивается, и запрос перенаправляется в `FallbackSearchProvider` (прямой поиск в MySQL).
+        3. Поиск выполняется через цепочку декораторов (**Resilience Layer**):
+            - `FallbackSearchProvider` координирует работу основного и резервного провайдеров.
+            - `CircuitBreakerSearchProvider` защищает основной поиск (`ManticoreSearchProvider`) с помощью компонента `CircuitBreaker`.
+            - Если `CircuitBreaker` "размыкает цепь" (состояние OPEN) или Manticore возвращает ошибку, `FallbackSearchProvider` перенаправляет запрос в `DatabaseSearchProvider` (прямой поиск в MySQL).
         4. Результаты (найденные ID и метаданные) возвращаются в виде `SearchResultDto`.
 *   **GET `/api/v1/orders/stats`** — Статистика по заказам.
     *   **Цепочка вызовов**: `OrderController::getStats` -> `GetOrderStatsUseCase::execute` -> `OrderStatsProviderInterface`.
@@ -89,10 +89,15 @@
     3. Обработчик `SendOrderEmailHandler` берет сообщение из очереди и выполняет реальную отправку.
 *   **Зачем**: Это исключает риск "потерянных" писем и не заставляет пользователя ждать, пока ответит внешний SMTP-сервер.
 
-### 2. Circuit Breaker (Предохранитель)
-Реализован в классе `CombinedSearchProvider.php` и `CachedPriceParserDecorator.php`.
-*   **Зачем**: Если основной сервис поиска (Manticore) или внешний парсер начинают выдавать ошибки, "предохранитель" разрывает цепь.
-*   **Как работает**: После N ошибок подряд (failureThreshold) запросы переключаются на запасной вариант (fallback — например, прямой поиск в MySQL) или возвращают данные из кэша, не пытаясь достучаться до упавшего сервиса в течение времени восстановления (recoveryTime).
+### 2. Resilience Layer и Circuit Breaker (Отказоустойчивость)
+Разделение ответственности за стабильность системы реализовано через декораторы в `src/Infrastructure/Search` и универсальный компонент `src/Infrastructure/Resilience`.
+*   **Зачем**: Чтобы сбои в одном компоненте (например, Manticore Search) не приводили к отказу всего API, и чтобы защитить внешние ресурсы от излишней нагрузки при их нестабильности.
+*   **Как работает**: 
+    1.  **Fallback**: `FallbackSearchProvider` пробует выполнить поиск в основном источнике. Если он недоступен — прозрачно для пользователя переключается на MySQL.
+    2.  **Circuit Breaker**: `CircuitBreaker` (Предохранитель) отслеживает количество ошибок. После N неудач подряд (`failureThreshold`) он "разрывает цепь" и сразу возвращает ошибку (или активирует fallback), не пытаясь достучаться до упавшего сервиса в течение времени восстановления (`recoveryTime`).
+*   **Где используется**:
+    - В поиске заказов (цепочка `Fallback` -> `CircuitBreaker` -> `Manticore`).
+    - В парсинге цен (`CachedPriceParserDecorator`).
 
 ### 3. Zero-Downtime переиндексация
 Реализована в `OrderReindexer.php`.

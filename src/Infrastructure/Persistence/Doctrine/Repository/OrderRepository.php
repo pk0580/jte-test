@@ -51,6 +51,8 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
     public function save(Order $order): void
     {
         $this->getEntityManager()->persist($order);
+        $this->getEntityManager()->flush();
+        $this->appCache->delete('order_last_update_timestamp');
     }
 
     public function flush(): void

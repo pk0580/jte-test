@@ -43,7 +43,16 @@ readonly class GetOrderUseCase
             $order->getDates()->updateAt?->format('Y-m-d H:i:s')
         );
 
-        $dto->payloadHash = md5(json_encode($dto));
+        $dto->payloadHash = md5(json_encode([
+            'id' => $dto->id,
+            'clientName' => $dto->clientName,
+            'clientSurname' => $dto->clientSurname,
+            'email' => $dto->email,
+            'payType' => $dto->payType,
+            'createDate' => $dto->createDate,
+            'articles' => $dto->articles,
+            'updateDate' => $dto->updateDate,
+        ]));
 
         return $dto;
     }

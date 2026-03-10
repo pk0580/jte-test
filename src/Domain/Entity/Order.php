@@ -282,6 +282,7 @@ class Order implements HasDomainEventsInterface
     public function setDates(OrderDates $dates): self
     {
         $this->dates = $dates;
+        $this->recordEvent(new OrderUpdatedEvent($this));
         return $this;
     }
 
@@ -297,10 +298,11 @@ class Order implements HasDomainEventsInterface
         return $this;
     }
 
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
     public function updateTimestamp(): void
     {
         $this->dates = $this->dates->withUpdateAt(new \DateTime());
-        $this->recordEvent(new OrderUpdatedEvent($this));
     }
 
     public function recalculateTotals(\App\Domain\Service\OrderPriceCalculator $calculator): void

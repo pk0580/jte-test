@@ -70,18 +70,27 @@ services:
         alias: App\Infrastructure\Persistence\Doctrine\Repository\PayTypeRepository
 
     App\Domain\Repository\OrderSearchInterface:
-        alias: App\Infrastructure\Search\CombinedSearchProvider
+        alias: App\Infrastructure\Search\FallbackSearchProvider
+
+    App\Infrastructure\Resilience\CircuitBreaker:
+        arguments:
+            $cache: '@cache.app'
+            $name: 'manticore_search'
+            $failureThreshold: 3
+            $recoveryTime: 60
+
+    App\Infrastructure\Search\CircuitBreakerSearchProvider:
+        arguments:
+            $inner: '@App\Infrastructure\Search\ManticoreOrderSearch'
+            $circuitBreaker: '@App\Infrastructure\Resilience\CircuitBreaker'
+
+    App\Infrastructure\Search\FallbackSearchProvider:
+        arguments:
+            $primary: '@App\Infrastructure\Search\CircuitBreakerSearchProvider'
+            $fallback: '@App\Infrastructure\Search\SqlOrderSearchProvider'
 
     App\Domain\Repository\OrderStatsProviderInterface:
         alias: App\Infrastructure\Persistence\Doctrine\Repository\OrderStatsProvider
-
-    App\Infrastructure\Search\CombinedSearchProvider:
-        arguments:
-            $primarySearch: '@App\Infrastructure\Search\ManticoreOrderSearch'
-            $fallbackSearch: '@App\Infrastructure\Search\SqlOrderSearchProvider'
-            $appCache: '@cache.app'
-            $failureThreshold: 3
-            $recoveryTime: 60
 
     # Decorators for reference repositories caching
     App\Infrastructure\Persistence\Doctrine\Repository\Decorator\ArticleRepositoryCacheDecorator:

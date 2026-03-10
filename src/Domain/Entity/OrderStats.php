@@ -69,4 +69,11 @@ class OrderStats
         return $this;
     }
 
+    public function addOrder(string $amount): self
+    {
+        $this->orderCount++;
+        $this->totalAmount = (string)($this->totalAmount + $amount);
+        return $this;
+    }
+
 }

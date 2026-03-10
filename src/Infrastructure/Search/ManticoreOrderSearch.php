@@ -9,7 +9,9 @@ use App\Domain\Repository\OrderSearchInterface;
 use App\Domain\Repository\SearchResult;
 use App\Infrastructure\Monitoring\TraceIdContext;
 use Manticoresearch\Client;
+use Manticoresearch\ResultSet;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterface
 {
@@ -35,6 +37,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
      * @param int|null $lastId
      * @param int|null $status
      * @return SearchResult<SearchOrderDto>
+     * @throws Throwable
      */
     public function search(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResult
     {
@@ -75,7 +78,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             }
 
             return new SearchResult($results, $resultSet->getTotal());
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Manticore Search failed: ' . $e->getMessage(), [
                 'query' => $query,
                 'page' => $page,
@@ -89,7 +92,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
         }
     }
 
-    private function fetchIds(\Manticoresearch\ResultSet $resultSet): array
+    private function fetchIds(ResultSet $resultSet): array
     {
         $ids = [];
         foreach ($resultSet as $hit) {
@@ -140,7 +143,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             $this->client->bulk(['body' => [
                 ['replace' => ['index' => self::INDEX, 'id' => $id, 'doc' => $doc]]
             ]]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Manticore Indexing failed: ' . $e->getMessage(), [
                 'order_id' => $order->getId(),
                 'trace_id' => $this->traceIdContext->getTraceId(),
@@ -153,7 +156,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
     {
         try {
             $this->client->sql("DELETE FROM " . self::INDEX . " WHERE id = :id", true, ['id' => $orderId]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Manticore Delete failed: ' . $e->getMessage(), [
                 'order_id' => $orderId,
                 'trace_id' => $this->traceIdContext->getTraceId(),
@@ -162,6 +165,9 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
         }
     }
 
+    /**
+     * @throws Throwable
+     */
     public function recreateIndex(): void
     {
         $this->createIndex(self::INDEX);
@@ -185,7 +191,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
                     description text,
                     status int
                 ) id='bigint' min_infix_len='3'", true);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Manticore Create Index failed: ' . $e->getMessage(), [
                 'index' => $index,
                 'trace_id' => $this->traceIdContext->getTraceId(),
@@ -247,7 +253,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             if (!empty($currentBatch)) {
                 $this->client->bulk(['body' => $currentBatch]);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Manticore Bulk Indexing failed: ' . $e->getMessage(), [
                 'index' => $index,
                 'count' => count($rows),
@@ -275,7 +281,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             try {
                 $this->client->sql("DESCRIBE `$main`", true);
                 $mainExists = true;
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Main does not exist, it's fine
             }
 
@@ -287,12 +293,12 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             // 2. Try to rename tmp to main
             try {
                 $this->client->sql("ALTER TABLE `$tmp` RENAME TO `$main`", true);
-            } catch (\Throwable $renameError) {
+            } catch (Throwable $renameError) {
                 // If rename tmp -> main fails, try to restore main from main_old
                 if ($mainExists) {
                     try {
                         $this->client->sql("ALTER TABLE `$mainOld` RENAME TO `$main`", true);
-                    } catch (\Throwable $restoreError) {
+                    } catch (Throwable $restoreError) {
                         $this->logger->critical('CRITICAL: Manticore failed to restore main index after failed swap!', [
                             'main' => $main,
                             'main_old' => $mainOld,
@@ -308,7 +314,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             if ($mainExists) {
                 $this->client->sql("DROP TABLE IF EXISTS `$mainOld`", true);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Manticore Swap Index failed: ' . $e->getMessage(), [
                 'tmp' => $tmp,
                 'main' => $main,
@@ -323,7 +329,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
         try {
             $this->client->sql('SELECT 1', true);
             return true;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->warning('Manticore Health-check failed: ' . $e->getMessage());
             return false;
         }

@@ -39,16 +39,26 @@ class SoapController extends AbstractController
         $soapServer = $soapServerFactory->create($soapOrderService);
 
         try {
+            ob_start();
             $soapServer->handle($request->getContent());
-            return new Response('', 200, ['Content-Type' => 'text/xml; charset=utf-8']);
+            $responseContent = ob_get_clean();
+
+            return new Response($responseContent, 200, ['Content-Type' => 'text/xml; charset=utf-8']);
         } catch (Throwable $e) {
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
             $logger->error('SOAP Handle error: ' . $e->getMessage(), [
                 'trace_id' => $traceIdContext->getTraceId(),
                 'request' => $request->getContent(),
                 'exception' => $e
             ]);
+
+            ob_start();
             $soapServer->fault('Receiver', $e->getMessage());
-            return new Response('', 500, ['Content-Type' => 'text/xml; charset=utf-8']);
+            $faultContent = ob_get_clean();
+
+            return new Response($faultContent, 500, ['Content-Type' => 'text/xml; charset=utf-8']);
         }
     }
 }

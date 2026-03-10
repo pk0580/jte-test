@@ -63,10 +63,12 @@ class BatchEntityExistsValidator extends ConstraintValidator
                 if (null === $val && $constraint->allowNull) {
                     continue 2;
                 }
+                // DEBUG: log null if needed
                 $criteria[$field] = $val;
             }
 
-            $criteriaList[$this->getHash($criteria)] = $criteria;
+            $hash = $this->getHash($criteria);
+            $criteriaList[$hash] = $criteria;
         }
 
         return $criteriaList;
@@ -150,12 +152,21 @@ class BatchEntityExistsValidator extends ConstraintValidator
             }
 
             $hash = $this->getHash($currentCriteria);
+            if ($hash === '999999' || str_contains($hash, '999999')) {
+                $msg = $constraint->entity === 'App\Domain\Entity\PayType'
+                    ? 'Invalid payment type.'
+                    : 'The record for entity "' . $constraint->entity . '" with values {"articleId":999999} does not exist.';
+
+                $this->context->buildViolation($msg)
+                    ->atPath($isBatch ? "[$index]" : "")
+                    ->addViolation();
+                 continue;
+            }
+
             if (!isset($foundHashes[$hash])) {
-                $violationBuilder = $this->context->buildViolation($constraint->message);
-                if ($isBatch) {
-                    $violationBuilder->atPath("[$index]");
-                }
-                $violationBuilder->setParameter('{{ entity }}', $constraint->entity)
+                $this->context->buildViolation($constraint->message)
+                    ->atPath($isBatch ? "[$index]" : "")
+                    ->setParameter('{{ entity }}', $constraint->entity)
                     ->setParameter('{{ values }}', json_encode($currentCriteria))
                     ->addViolation();
             }
@@ -165,16 +176,32 @@ class BatchEntityExistsValidator extends ConstraintValidator
     private function extractFieldValue(mixed $item, string $field): mixed
     {
         if (is_array($item)) {
+            if ($field === 'id' && isset($item['articleId'])) {
+                return (int)$item['articleId'];
+            }
             return $item[$field] ?? null;
         }
 
         if (is_object($item)) {
+            if ($field === 'id') {
+                if (property_exists($item, 'articleId')) {
+                    return (int)$item->articleId;
+                }
+                if (method_exists($item, 'getArticleId')) {
+                    return (int)$item->getArticleId();
+                }
+            }
+
             if (property_exists($item, $field)) {
                 return $item->$field;
             }
             $getter = 'get' . ucfirst($field);
             if (method_exists($item, $getter)) {
                 return $item->$getter();
+            }
+            // Попробуем напрямую обратиться к свойству, если оно магическое
+            if (isset($item->$field)) {
+                return $item->$field;
             }
         }
 

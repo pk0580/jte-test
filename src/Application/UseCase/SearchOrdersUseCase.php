@@ -21,20 +21,26 @@ readonly class SearchOrdersUseCase
      * @param int|null $status
      * @return SearchResultDto
      */
-    public function execute(string $query, int $page = 1, int $limit = 10, ?int $lastId = null, ?int $status = null): SearchResultDto
+    public function execute(
+        string $query,
+        int $page = 1,
+        int $limit = 10,
+        ?int $lastId = null,
+        ?int $status = null
+    ): SearchResultDto
     {
         $searchResult = $this->orderSearch->search($query, $page, $limit, $lastId, $status);
 
         $items = array_map(function (SearchOrderDto $order) {
             return new SearchOrderResponseDto(
-                id: $order->id,
-                number: $order->number,
-                email: $order->email,
-                clientName: $order->clientName,
-                clientSurname: $order->clientSurname,
-                companyName: $order->companyName,
-                description: $order->description,
-                status: $order->status,
+                $order->id,
+                $order->number,
+                $order->email,
+                $order->clientName,
+                $order->clientSurname,
+                $order->companyName,
+                $order->description,
+                $order->status,
             );
         }, $searchResult->items);
 

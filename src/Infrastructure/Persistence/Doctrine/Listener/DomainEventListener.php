@@ -11,6 +11,9 @@ use App\Domain\Enum\OrderEventType;
 use App\Domain\Event\OrderCreatedEvent;
 use App\Domain\Event\OrderUpdatedEvent;
 use App\Domain\Event\OrderDeletedEvent;
+use App\Domain\Event\DomainEventInterface;
+use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
+use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\ORM\Event\PostFlushEventArgs;
@@ -18,6 +21,8 @@ use Prometheus\CollectorRegistry;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
+#[AsDoctrineListener(event: Events::onFlush)]
+#[AsDoctrineListener(event: Events::postFlush)]
 class DomainEventListener
 {
     private bool $needsInvalidation = false;
@@ -72,6 +77,9 @@ class DomainEventListener
             $this->appCache->delete('order_last_update_timestamp');
             $this->appCache->get('order_last_update_timestamp', fn() => $timestamp);
 
+            // Wait a tiny bit to ensure next request gets a different timestamp if microtime is too fast
+            usleep(5000);
+
             $this->messageBus->dispatch(new InvalidateStatsCacheMessage());
             $this->needsInvalidation = false;
         }
@@ -98,21 +106,13 @@ class DomainEventListener
     {
         if ($entity instanceof HasDomainEventsInterface) {
             foreach ($entity->pullDomainEvents() as $event) {
-                if ($event instanceof OrderCreatedEvent || $event instanceof OrderUpdatedEvent) {
+                if ($event instanceof OrderCreatedEvent) {
+                    $this->createOutboxEvent(OrderEventType::INDEXED, $event->getOrder()->getId(), $uow, $em);
+                    $this->createOutboxEvent(OrderEventType::EMAIL_NOTIFICATION, $event->getOrder()->getId(), $uow, $em);
+                    $this->invalidateStats();
+                } elseif ($event instanceof OrderUpdatedEvent) {
                     $this->createOutboxEvent(OrderEventType::INDEXED, $event->getOrder()->getId(), $uow, $em);
                     $this->invalidateStats();
-
-                    if ($event instanceof OrderCreatedEvent) {
-                        $order = $event->getOrder();
-                        // Упрощаем: не формируем payload для письма здесь,
-                        // переносим это в обработчик Outbox.
-                        $this->createOutboxEvent(
-                            OrderEventType::EMAIL_NOTIFICATION,
-                            $order->getId(),
-                            $uow,
-                            $em
-                        );
-                    }
                 }
             }
         }
@@ -128,6 +128,7 @@ class DomainEventListener
         $outboxEvent = new OutboxEvent($type, $payloadDto);
 
         $em->persist($outboxEvent);
-        $uow->computeChangeSet($em->getClassMetadata(OutboxEvent::class), $outboxEvent);
+        $classMetadata = $em->getClassMetadata(OutboxEvent::class);
+        $uow->computeChangeSet($classMetadata, $outboxEvent);
     }
 }

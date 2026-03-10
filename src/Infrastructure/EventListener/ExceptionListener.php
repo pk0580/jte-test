@@ -12,6 +12,7 @@ use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 #[AsEventListener(event: KernelEvents::EXCEPTION, priority: 10)]
 class ExceptionListener
@@ -21,10 +22,14 @@ class ExceptionListener
         $request = $event->getRequest();
         $exception = $event->getThrowable();
 
-        // Проверяем, является ли это API-запросом или SOAP (SOAP обычно обрабатывается самим SoapServer, но мы добавим поддержку)
-        if (str_starts_with($request->getPathInfo(), '/api/v1/') && !str_contains($request->getPathInfo(), '/soap')) {
+        // Проверяем, является ли это API-запросом или SOAP
+        if (str_starts_with($request->getPathInfo(), '/api/v1/') || str_starts_with($request->getPathInfo(), '/api/v2/') || str_starts_with($request->getPathInfo(), '/api/')) {
             $this->handleApiException($event, $exception);
             return;
+        }
+
+        if (str_contains($request->getPathInfo(), '/soap')) {
+             return; // SoapServer handle errors itself
         }
     }
 
@@ -38,9 +43,31 @@ class ExceptionListener
                 'violations' => $exception->violations
             ];
             $statusCode = 400;
-        } elseif ($exception instanceof NotFoundHttpException && (str_contains($exception->getMessage(), 'request query parameters are invalid') || str_contains($exception->getMessage(), 'App\Application\Dto'))) {
-            $data = ['error' => $exception->getPrevious()?->getMessage() ?: $exception->getMessage()];
+        } elseif ($exception instanceof ValidationFailedException) {
+            validation_failed:
+            $data = ['error' => 'Validation failed', 'violations' => []];
+            foreach ($exception->getViolations() as $violation) {
+                $data['violations'][] = [
+                    'field' => $violation->getPropertyPath(),
+                    'message' => $violation->getMessage()
+                ];
+            }
+            if ($exception->getViolations()->count() > 0) {
+                 $data['error'] = $exception->getViolations()[0]->getMessage();
+            }
             $statusCode = 400;
+        } elseif ($exception instanceof NotFoundHttpException) {
+            $prev = $exception->getPrevious();
+            if ($prev instanceof ValidationFailedException) {
+                $exception = $prev;
+                goto validation_failed;
+            }
+            $message = $exception->getMessage();
+            $data = ['error' => $message];
+            $statusCode = $exception->getStatusCode();
+        } elseif ($exception instanceof BadRequestHttpException) {
+             $data = ['error' => $exception->getMessage()];
+             $statusCode = 400;
         } elseif ($exception instanceof HttpExceptionInterface) {
             $data = ['error' => $exception->getMessage()];
             $statusCode = $exception->getStatusCode();

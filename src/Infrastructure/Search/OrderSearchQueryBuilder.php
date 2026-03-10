@@ -6,17 +6,27 @@ use App\Infrastructure\Search\Dto\SearchQueryDto;
 
 class OrderSearchQueryBuilder
 {
+    /**
+     * Формирует DTO поискового запроса на основе переданных параметров.
+     *
+     * @param string $query Строка поиска
+     * @param int $page Номер страницы
+     * @param int $limit Количество результатов на странице
+     * @param int|null $lastId ID последнего элемента для курсорной пагинации
+     * @param int|null $status Фильтр по статусу
+     * @return SearchQueryDto
+     */
     public function build(string $query, int $page, int $limit, ?int $lastId = null, ?int $status = null): SearchQueryDto
     {
         $isCursorPagination = $lastId !== null && $lastId > 0;
 
         if ($isCursorPagination) {
             $offset = 0;
-            // Cursor pagination always needs predictable sort
+            // Для курсорной пагинации всегда нужна предсказуемая сортировка
             $sort = ['id' => 'desc'];
         } else {
-            // High load optimization: limit max OFFSET to prevent performance degradation
-            // If page is too high, we should encourage UI to use cursor pagination
+            // Оптимизация при высокой нагрузке: ограничиваем максимальный OFFSET для предотвращения деградации производительности
+            // Если номер страницы слишком велик, следует рекомендовать UI использовать курсорную пагинацию
             $maxOffset = 10000;
             $offset = ($page - 1) * $limit;
 
@@ -27,10 +37,10 @@ class OrderSearchQueryBuilder
             $sort = [];
         }
 
-        // Apply weights for matching
+        // Применяем веса для совпадений
         $weightedQuery = "@number ^5 | @email ^3 | @client_name ^2 | @client_surname ^2 | @company_name ^1 | $query";
         if (str_contains($query, '|') || str_contains($query, '@') || str_contains($query, '^')) {
-            // If user already uses special syntax, don't overwrite it
+            // Если пользователь уже использует специальный синтаксис, не перезаписываем его
             $weightedQuery = $query;
         }
 
