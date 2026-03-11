@@ -138,3 +138,5 @@ docker-compose exec php bin/console app:collect-messenger-stats
 - **Prometheus**: `http://localhost:9090`
 - **Grafana**: `http://localhost:3000` (Login: `admin`, Password: `admin`)
 - **phpMyAdmin**: `http://localhost:8081` (Login: `root`, Password: `root`)
+- **Sentry**: Для работы мониторинга ошибок настройте `SENTRY_DSN` в `.env.local`. Отчеты доступны в вашем аккаунте Sentry.
+    - Проверка конфигурации: `docker-compose exec php bin/console sentry:test`

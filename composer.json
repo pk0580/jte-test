@@ -10,6 +10,7 @@
         "artprima/prometheus-metrics-bundle": "^1.21",
         "monolog/monolog": "^3.10",
         "predis/predis": "^3.4",
+        "sentry/sentry-symfony": "^5.9",
         "symfony/asset": "8.0.*",
         "symfony/console": "8.0.*",
         "symfony/doctrine-messenger": "8.0.*",

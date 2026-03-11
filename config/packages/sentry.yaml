@@ -1,0 +1,15 @@
+sentry:
+    dsn: '%env(SENTRY_DSN)%'
+
+    # These options are recommended for many projects
+    register_error_listener: true
+    register_error_handler: true
+
+    # Configuration for the tracing feature
+    tracing:
+        enabled: true
+
+    # Configuration for the messenger integration
+    messenger:
+        enabled: true
+        capture_soft_fails: true
