@@ -224,19 +224,38 @@ docker-compose exec php bin/console sentry:test
 *   **Grafana**: Панель визуализации графиков.
 *   **Redis**: Используется как промежуточное хранилище для некоторых метрик.
 
-### Как реализован сбор данных:
-1.  **Очереди (Messenger)**: Консольная команда `CollectMessengerStatsCommand.php` периодически считает количество сообщений в БД (`SELECT COUNT(*) FROM messenger_messages`) и сохраняет число в Redis. Это сделано специально, так как прямой подсчет в Prometheus при каждом запросе был бы слишком тяжелым.
-2.  **Экспозитор метрик**: Класс `MessengerQueueCollector.php` забирает готовое число из Redis и отдает его Prometheus по запросу.
-3.  **Производительность БД**: 
-    - `DatabasePerformanceCollector`: При каждом входящем HTTP-запросе выполняет тестовый `SELECT 1` и замеряет время отклика соединения (Summary `database_response_time_seconds`).
-    - `DomainEventListener`: Замеряет время выполнения процесса `onFlush` в Doctrine (Summary `doctrine_flush_duration_seconds`). Это критическая метрика для отслеживания "тяжелых" транзакций и проблем с производительностью записи.
-### 4. Новые системные и бизнес-метрики:
-    - `app_http_requests_total` / `app_http_errors_total` — общее количество запросов и ошибок (4xx, 5xx). Позволяет вычислять **Error Rate**.
-    - `app_http_request_duration_seconds` — время обработки HTTP запросов с поддержкой квантилей (p50, p95, p99). Сбор реализован через `HttpRequestSubscriber` на событиях Symfony.
-    - `app_redis_cache_hits_total` / `app_redis_cache_misses_total` — статистика попаданий и промахов в кэше Redis. Реализовано через `CacheMetricsTrait`, который интегрирован в ключевые сервисы (парсеры цен, репозитории), что обеспечивает точный учет даже при использовании Sentry или других прослоек.
-    - `app_node_cpu_seconds_total` / `app_node_memory_available_bytes` — системные метрики (CPU/Memory), собираемые напрямую из `/proc/stat` и `/proc/meminfo` контейнера через `SystemMetricsCollector`.
-    - `app_orders_created_total` / `app_emails_sent_total` — счетчики бизнес-событий (создание заказов и отправка писем), инкрементируемые в соответствующих обработчиках и слушателях.
-5.  **Трассировка**: Описана выше. Уникальные ID позволяют коррелировать метрики с конкретными запросами в логах.
+### Сбор и состав метрик:
+
+В приложении настроен сбор четырех групп метрик: **бизнес-метрики**, **производительность БД и очередей**, **системные метрики (Node)** и **статистика HTTP-трафика**.
+
+#### 1. Бизнес-метрики (Domain Metrics)
+Позволяют отслеживать активность пользователей и выполнение ключевых бизнес-процессов.
+*   `app_orders_created_total` — Общее количество созданных заказов. Инкрементируется в `DomainEventListener` при успешном сохранении сущности `Order` в БД.
+*   `app_emails_sent_total` — Общее количество отправленных писем. Инкрементируется в `SendOrderEmailHandler` после успешного вызова `MailerInterface`.
+
+#### 2. Производительность БД и очередей (Infrastructure Metrics)
+Критические показатели стабильности инфраструктуры.
+*   `app_database_response_time_seconds` — Время отклика соединения с БД (замер `SELECT 1`). Собирается `DatabasePerformanceCollector` при каждом запросе.
+*   `app_doctrine_flush_duration_seconds` — Время выполнения `EntityManager::flush()`. Позволяет выявлять "тяжелые" транзакции. Собирается `DoctrineFlushCollector`.
+*   `app_messenger_queue_messages` — Количество сообщений в очереди `messenger_messages`. Подсчитывается фоновой командой `CollectMessengerStatsCommand` и отдается через `MessengerQueueCollector`.
+
+#### 3. Статистика кэша и HTTP (Traffic Metrics)
+Позволяет оценивать эффективность кэширования и нагрузку на API.
+*   `app_http_requests_total` — Счетчик всех входящих HTTP-запросов.
+*   `app_http_errors_total` — Счетчик запросов, завершившихся с ошибкой (код >= 400). Позволяет вычислять **Error Rate**.
+*   `app_http_request_duration_seconds` — Длительность обработки запросов (квантили p50, p95, p99).
+    *   *Реализация*: Все три HTTP-метрики собираются через `HttpRequestSubscriber`, слушающий события `kernel.request` и `kernel.terminate`.
+*   `app_redis_cache_hits_total` / `app_redis_cache_misses_total` — Статистика эффективности Redis.
+    *   *Реализация*: Используется `CacheMetricsTrait`, интегрированный в декораторы репозиториев и парсер цен. Это гарантирует учет попаданий даже при использовании сложных цепочек декораторов или Sentry.
+
+#### 4. Системные метрики (Node Metrics)
+Мониторинг ресурсов контейнера без использования внешних агентов (node_exporter). Собираются `SystemMetricsCollector`.
+*   `app_node_cpu_seconds_total` — Потребление процессорного времени по режимам (user, system, idle и т.д.). Данные берутся из `/proc/stat`.
+*   `app_node_memory_available_bytes` — Объем доступной оперативной памяти в контейнере. Данные из `/proc/meminfo`.
+
+### Трассировка и визуализация:
+*   **Grafana**: Все метрики выведены на дашборд `Extended Metrics`, включающий графики Error Rate, Latency (p99), интенсивность заказов и состояние очередей.
+*   **Трассировка**: Уникальные `Trace ID` позволяют коррелировать аномалии на графиках (например, всплеск `doctrine_flush_duration`) с конкретными запросами в логах и ошибками в Sentry.
 
 ---
 
