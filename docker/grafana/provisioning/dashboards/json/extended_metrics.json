@@ -1,0 +1,138 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 2,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "panels": [],
+      "title": "HTTP Traffic",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "id": 2,
+      "targets": [
+        { "expr": "sum(rate(app_http_requests_total[5m]))", "legendFormat": "Requests/sec", "refId": "A" }
+      ],
+      "title": "HTTP Request Rate (Total)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "id": 3,
+      "targets": [
+        { "expr": "sum(rate(app_http_errors_total[5m])) / sum(rate(app_http_requests_total[5m]))", "legendFormat": "Error Rate", "refId": "A" }
+      ],
+      "title": "HTTP Error Rate",
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "id": 4,
+      "targets": [
+        { "expr": "app_http_request_duration_seconds{quantile=\"0.5\"}", "legendFormat": "p50", "refId": "A" },
+        { "expr": "app_http_request_duration_seconds{quantile=\"0.95\"}", "legendFormat": "p95", "refId": "B" },
+        { "expr": "app_http_request_duration_seconds{quantile=\"0.99\"}", "legendFormat": "p99", "refId": "C" }
+      ],
+      "title": "HTTP Latency",
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 5,
+      "panels": [],
+      "title": "Redis & System",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "id": 6,
+      "targets": [
+        { "expr": "sum(rate(app_redis_cache_hits_total[5m]))", "legendFormat": "Hits", "refId": "A" },
+        { "expr": "sum(rate(app_redis_cache_misses_total[5m]))", "legendFormat": "Misses", "refId": "B" }
+      ],
+      "title": "Redis Cache Stats",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 10 },
+      "id": 7,
+      "targets": [
+        { "expr": "rate(app_node_cpu_seconds_total[5m])", "legendFormat": "CPU {{cpu}} {{mode}}", "refId": "A" }
+      ],
+      "title": "CPU Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
+      "id": 8,
+      "targets": [
+        { "expr": "app_node_memory_available_bytes", "legendFormat": "Available", "refId": "A" }
+      ],
+      "title": "Memory Available",
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 10,
+      "panels": [],
+      "title": "Business Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "id": 11,
+      "targets": [
+        { "expr": "app_orders_created_total", "legendFormat": "Total Orders", "refId": "A" }
+      ],
+      "title": "Orders Created",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+      "id": 12,
+      "targets": [
+        { "expr": "app_emails_sent_total", "legendFormat": "Total Emails", "refId": "A" }
+      ],
+      "title": "Emails Sent",
+      "type": "stat"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "title": "New Metrics Dashboard",
+  "uid": "new_metrics_dashboard",
+  "version": 1
+}

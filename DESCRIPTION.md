@@ -230,7 +230,13 @@ docker-compose exec php bin/console sentry:test
 3.  **Производительность БД**: 
     - `DatabasePerformanceCollector`: При каждом входящем HTTP-запросе выполняет тестовый `SELECT 1` и замеряет время отклика соединения (Summary `database_response_time_seconds`).
     - `DomainEventListener`: Замеряет время выполнения процесса `onFlush` в Doctrine (Summary `doctrine_flush_duration_seconds`). Это критическая метрика для отслеживания "тяжелых" транзакций и проблем с производительностью записи.
-4.  **Трассировка**: Описана выше. Уникальные ID позволяют коррелировать метрики с конкретными запросами в логах.
+### 4. Новые системные и бизнес-метрики:
+    - `app_http_requests_total` / `app_http_errors_total` — общее количество запросов и ошибок (4xx, 5xx). Позволяет вычислять **Error Rate**.
+    - `app_http_request_duration_seconds` — время обработки HTTP запросов с поддержкой квантилей (p50, p95, p99). Сбор реализован через `HttpRequestSubscriber` на событиях Symfony.
+    - `app_redis_cache_hits_total` / `app_redis_cache_misses_total` — статистика попаданий и промахов в кэше Redis. Реализовано через `CacheMetricsTrait`, который интегрирован в ключевые сервисы (парсеры цен, репозитории), что обеспечивает точный учет даже при использовании Sentry или других прослоек.
+    - `app_node_cpu_seconds_total` / `app_node_memory_available_bytes` — системные метрики (CPU/Memory), собираемые напрямую из `/proc/stat` и `/proc/meminfo` контейнера через `SystemMetricsCollector`.
+    - `app_orders_created_total` / `app_emails_sent_total` — счетчики бизнес-событий (создание заказов и отправка писем), инкрементируемые в соответствующих обработчиках и слушателях.
+5.  **Трассировка**: Описана выше. Уникальные ID позволяют коррелировать метрики с конкретными запросами в логах.
 
 ---
 

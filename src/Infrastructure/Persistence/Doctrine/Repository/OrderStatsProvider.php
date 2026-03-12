@@ -4,24 +4,28 @@ namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
 use App\Domain\Entity\OrderStats;
 use App\Domain\Repository\OrderStatsProviderInterface;
+use App\Infrastructure\Cache\CacheMetricsTrait;
 use Doctrine\ORM\EntityManagerInterface;
+use Prometheus\CollectorRegistry;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareItemInterface;
 
 readonly class OrderStatsProvider implements OrderStatsProviderInterface
 {
+    use CacheMetricsTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private CacheInterface $statsCache
+        private CacheInterface $statsCache,
+        private CollectorRegistry $metricsRegistry
     ) {}
 
     public function getStats(string $groupBy, int $page, int $limit): array
     {
         $cacheKey = sprintf('stats_%s_%d_%d', $groupBy, $page, $limit);
 
-        return $this->statsCache->get($cacheKey, function (ItemInterface $item) use ($groupBy, $page, $limit) {
-            $item->expiresAfter(600); // 10 minutes cache for stats
+        return $this->trackCache($this->statsCache, $cacheKey, function (ItemInterface $item) use ($groupBy, $page, $limit) {
             if ($item instanceof TagAwareItemInterface) {
                 $item->tag(['stats', 'stats_' . $groupBy]);
             }
@@ -54,6 +58,6 @@ readonly class OrderStatsProvider implements OrderStatsProviderInterface
                 ], $stats),
                 'total' => $total,
             ];
-        });
+        }, 600);
     }
 }

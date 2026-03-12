@@ -81,6 +81,7 @@ class DomainEventListener
                     $this->createOutboxEvent(OrderEventType::INDEXED, $event->getOrder()->getId(), $em);
                     $this->createOutboxEvent(OrderEventType::EMAIL_NOTIFICATION, $event->getOrder()->getId(), $em);
                     $this->invalidateStats();
+                    $this->incrementAppCounter('orders_created_count');
                 } elseif ($event instanceof OrderUpdatedEvent) {
                     $this->createOutboxEvent(OrderEventType::INDEXED, $event->getOrder()->getId(), $em);
                     $this->invalidateStats();
@@ -140,7 +141,7 @@ class DomainEventListener
                 600,
                 [0.5, 0.9, 0.99]
             );
-            $summary->observe($duration);
+            $summary->observe($duration, []);
         } catch (\Exception $e) {
             // Prevent monitoring from breaking the main flow
         }
@@ -156,5 +157,15 @@ class DomainEventListener
         $outboxEvent = new OutboxEvent($type, $payloadDto);
 
         $em->persist($outboxEvent);
+    }
+
+    private function incrementAppCounter(string $name): void
+    {
+        try {
+            $val = (int)$this->appCache->get($name, fn() => 0);
+            $this->appCache->delete($name);
+            $this->appCache->get($name, fn() => $val + 1);
+        } catch (\Exception) {
+        }
     }
 }

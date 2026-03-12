@@ -35,7 +35,7 @@ class DatabasePerformanceCollector implements MetricsCollectorInterface, PreRequ
         try {
             $this->connection->executeQuery('SELECT 1');
             $duration = microtime(true) - $start;
-            $summary->observe($duration);
+            $summary->observe($duration, []);
         } catch (\Exception) {
             // Ignore connection errors during collection
         }

@@ -34,7 +34,7 @@ class DoctrineFlushCollector implements MetricsCollectorInterface, PreRequestMet
             $durations = $this->appCache->get('doctrine_flush_duration', fn() => []);
             if (is_array($durations)) {
                 foreach ($durations as $duration) {
-                    $summary->observe((float) $duration);
+                    $summary->observe((float) $duration, []);
                 }
             }
         } catch (\Exception) {

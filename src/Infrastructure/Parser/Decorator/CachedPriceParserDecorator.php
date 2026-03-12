@@ -4,12 +4,16 @@ namespace App\Infrastructure\Parser\Decorator;
 
 use App\Domain\Dto\PriceDto;
 use App\Domain\Service\PriceParserInterface;
+use App\Infrastructure\Cache\CacheMetricsTrait;
+use Prometheus\CollectorRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class CachedPriceParserDecorator implements PriceParserInterface
 {
+    use CacheMetricsTrait;
+
     private const string CB_KEY = 'cb_price_parser_failures';
     private const int CB_THRESHOLD = 3;
     private const int CB_RECOVERY_SECONDS = 60;
@@ -18,34 +22,31 @@ class CachedPriceParserDecorator implements PriceParserInterface
     public function __construct(
         private readonly PriceParserInterface $inner,
         private readonly CacheInterface $appCache,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly CollectorRegistry $metricsRegistry
     ) {}
 
     public function parse(string $factory, string $collection, string $article): PriceDto
     {
         $cacheKey = sprintf('price_%s_%s_%s', md5($factory), md5($collection), md5($article));
 
-        // Circuit breaker check
-        if ($this->isCircuitOpen()) {
-            $this->logger->warning('PriceParser circuit is OPEN, serving from cache if available', [
-                'factory' => $factory,
-                'collection' => $collection,
-                'article' => $article,
-            ]);
-            $cached = $this->appCache->get($cacheKey, function (ItemInterface $item) {
-                // Don't cache miss here; just immediate failure
-                $item->expiresAfter(1);
-                throw new \RuntimeException('Circuit open and no cached price');
-            });
-            return $cached;
-        }
-
         try {
+            // Circuit breaker check
+            if ($this->isCircuitOpen()) {
+                $this->logger->warning('PriceParser circuit is OPEN, serving from cache if available', [
+                    'factory' => $factory,
+                    'collection' => $collection,
+                    'article' => $article,
+                ]);
+                return $this->trackCache($this->appCache, $cacheKey, function (ItemInterface $item) {
+                    throw new \RuntimeException('Circuit open and no cached price');
+                }, 1);
+            }
+
             // Use cache for successful responses
-            return $this->appCache->get($cacheKey, function (ItemInterface $item) use ($factory, $collection, $article) {
-                $item->expiresAfter(self::TTL_SECONDS);
+            return $this->trackCache($this->appCache, $cacheKey, function (ItemInterface $item) use ($factory, $collection, $article) {
                 return $this->inner->parse($factory, $collection, $article);
-            });
+            }, self::TTL_SECONDS);
         } catch (\Throwable $e) {
             $this->recordFailure();
             $this->logger->error('PriceParser failed', [
@@ -56,10 +57,13 @@ class CachedPriceParserDecorator implements PriceParserInterface
             ]);
 
             // On failure, try to return stale cache if exists
-            return $this->appCache->get($cacheKey, function (ItemInterface $item) {
-                $item->expiresAfter(1);
-                throw new \RuntimeException('No cached value available after failure');
-            });
+            try {
+                return $this->trackCache($this->appCache, $cacheKey, function (ItemInterface $item) {
+                    throw new \RuntimeException('No cached value available after failure');
+                }, 1);
+            } catch (\Throwable) {
+                throw $e;
+            }
         }
     }
 

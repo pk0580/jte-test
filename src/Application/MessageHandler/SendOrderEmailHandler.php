@@ -6,13 +6,15 @@ use App\Application\Message\SendOrderEmailMessage;
 use App\Domain\Repository\OrderRepositoryInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Contracts\Cache\CacheInterface;
 
 #[AsMessageHandler]
 readonly class SendOrderEmailHandler
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        private CacheInterface $appCache
     ) {}
 
     public function __invoke(SendOrderEmailMessage $message): void
@@ -38,5 +40,13 @@ readonly class SendOrderEmailHandler
         ));
 
         // Здесь должна быть реальная логика через MailerInterface
+
+        try {
+            $name = 'emails_sent_count';
+            $val = (int)$this->appCache->get($name, fn() => 0);
+            $this->appCache->delete($name);
+            $this->appCache->get($name, fn() => $val + 1);
+        } catch (\Exception) {
+        }
     }
 }

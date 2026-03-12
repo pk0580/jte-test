@@ -63,7 +63,7 @@ docker-compose exec php bin/console app:index-orders
 - `GET /api/v1/orders/stats` — статистика заказов со сгруппировкой (day, month, year).
 - `GET /api/v1/price` — получение актуальной цены (парсинг внешних источников).
     - Параметры: `factory`, `collection`, `article`.
-- `GET /api/v1/health` — проверка работоспособности сервисов (Manticore, DB).
+- `GET /api/v1/health` — проверка работоспособности сервисов (Manticore, DB, Redis).
 
 ### SOAP API
 Эндпоинт: `/soap`
@@ -110,14 +110,29 @@ docker-compose exec php composer arkitect
 Для работы дашбордов Grafana необходимо регулярно собирать метрики и иметь данные в БД.
 
 **Описание метрик:**
+- `app_http_requests_total` — общее количество HTTP-запросов (сгруппировано по методу, роуту и статусу).
+- `app_http_errors_total` — общее количество ошибок HTTP (статусы >= 400). Позволяет вычислять **Error Rate**.
+- `app_http_request_duration_seconds` — время обработки HTTP-запросов (поддержка квантилей p50, p95, p99).
+- `app_redis_cache_hits_total` / `app_redis_cache_misses_total` — статистика попаданий и промахов в кэше Redis. Собирается напрямую из сервисов, использующих кэш.
+- `app_node_cpu_seconds_total` — время работы процессора по ядрам и режимам (user, system, idle), читается из `/proc/stat`.
+- `app_node_memory_available_bytes` — объем доступной оперативной памяти в байтах, читается из `/proc/meminfo`.
+- `app_orders_created_total` — счетчик успешно созданных заказов.
+- `app_emails_sent_total` — счетчик отправленных уведомлений (через фоновые задачи).
 - `app_messenger_queue_messages` — количество сообщений в очереди (таблица `messenger_messages`). Позволяет отслеживать нагрузку на фоновые задачи и задержки обработки.
 - `app_database_response_time_seconds` — время ответа базы данных при выполнении контрольного запроса (`SELECT 1`). Используется для мониторинга доступности и сетевых задержек между PHP и MySQL.
 - `app_doctrine_flush_duration_seconds` — длительность процесса `flush` в Doctrine ORM. Помогает выявить тяжелые транзакции и проблемы при сохранении сущностей в БД.
 
 **Генерация тестовых данных:**
+Для наполнения графиков (HTTP-запросы, ошибки, заказы, Redis) используйте команду:
 ```bash
-docker-compose exec php bin/console app:generate-sample-data
+docker-compose exec php bin/console app:generate-sample-data --orders=50 --requests=100 --with-errors
 ```
+Параметры:
+- `--orders` (`-o`) — количество создаваемых заказов (бизнес-метрика `app_orders_created_total`).
+- `--requests` (`-r`) — количество имитируемых HTTP-запросов к API (метрики `app_http_requests_total`, `app_http_request_duration_seconds`, `app_redis_cache_hits_total`).
+- `--with-errors` — симуляция ошибок 404 (метрика `app_http_errors_total` и расчет **Error Rate**).
+
+Команда также автоматически запускает `app:outbox:process` и `messenger:consume` для наполнения метрик очередей и отправленных писем (`emails_sent_total`).
 
 **Сбор статистики очередей:**
 ```bash
@@ -130,6 +145,8 @@ docker-compose exec php bin/console app:collect-messenger-stats
 - `app_messenger_queue_messages`
 - `app_database_response_time_seconds`
 - `app_doctrine_flush_duration_seconds`
+- `app_http_requests_total`
+- `app_redis_cache_hits_total`
 
 ### Manticore Search
 - `app:index-orders` — полная переиндексация с поддержкой zero-downtime (используется ротация индексов).
