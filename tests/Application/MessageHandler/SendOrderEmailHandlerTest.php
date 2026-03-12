@@ -9,6 +9,7 @@ use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\ValueObject\CustomerInfo;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class SendOrderEmailHandlerTest extends TestCase
 {
@@ -27,7 +28,8 @@ class SendOrderEmailHandlerTest extends TestCase
         $repository->method('findById')->with($orderId)->willReturn($order);
 
         $logger = $this->createMock(LoggerInterface::class);
-        $handler = new SendOrderEmailHandler($repository, $logger);
+        $cache = $this->createMock(CacheInterface::class);
+        $handler = new SendOrderEmailHandler($repository, $logger, $cache);
 
         $message = new SendOrderEmailMessage($orderId);
 

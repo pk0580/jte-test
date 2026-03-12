@@ -4,6 +4,7 @@ namespace App\Tests\Controller\Api\v1;
 
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
+use App\Domain\Entity\Article;
 use App\Domain\Entity\PayType;
 use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\ValueObject\DeliveryAddress;
@@ -68,6 +69,7 @@ class OrderControllerTest extends WebTestCase
                     '10.00',
                     '1.000',
                     '1',
+                    '0',
                     '0',
                     'box'
                 );
