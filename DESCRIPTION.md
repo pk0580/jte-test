@@ -58,6 +58,157 @@
         6. Успешный результат кэшируется на 1 час.
         7. Если внешний сайт недоступен, декоратор записывает ошибку в Circuit Breaker и пытается вернуть ранее кэшированное значение (даже если оно устарело) или выбрасывает исключение, предотвращая лавинообразную нагрузку на систему при сбоях внешнего сервиса.
 
+---
+
+## 📊 Мониторинг и логирование (Prometheus & Sentry)
+
+В приложении реализована продвинутая система мониторинга на базе **Prometheus** (метрики) и **Sentry** (ошибки и трейсинг).
+
+### 1. Prometheus: Написание новых метрик
+
+Для сбора метрик используется бандл `artprima/prometheus-metrics-bundle`.
+
+#### Как добавить новую метрику:
+1.  **Создайте класс коллектора**:
+    Класс должен находиться в `src/Infrastructure/Prometheus/` и реализовывать `MetricsCollectorInterface`.
+    ```php
+    namespace App\Infrastructure\Prometheus;
+
+    use Artprima\PrometheusMetricsBundle\Metrics\MetricsCollectorInitTrait;
+    use Artprima\PrometheusMetricsBundle\Metrics\MetricsCollectorInterface;
+    use Artprima\PrometheusMetricsBundle\Metrics\PreRequestMetricsCollectorInterface;
+    use Symfony\Component\HttpKernel\Event\RequestEvent;
+
+    class MyCustomCollector implements MetricsCollectorInterface, PreRequestMetricsCollectorInterface
+    {
+        use MetricsCollectorInitTrait;
+
+        public function collectStart(RequestEvent $event): void
+        {
+            // Регистрация и установка значения метрики
+            $gauge = $this->collectionRegistry->getOrRegisterGauge(
+                $this->namespace,
+                'my_custom_metric_name',
+                'Описание метрики',
+                ['label_name'] // список имен меток
+            );
+            $gauge->set(123.45, ['label_value']);
+        }
+    }
+    ```
+2.  **Зарегистрируйте коллектор в `config/services.yaml`**:
+    ```yaml
+    App\Infrastructure\Prometheus\MyCustomCollector:
+        tags: ['prometheus_metrics_bundle.metrics_collector']
+        arguments:
+            $namespace: '%prometheus_metrics_bundle.namespace%'
+    ```
+3.  **Типы метрик**:
+    *   `Counter` — только увеличивается (например, количество запросов).
+    *   `Gauge` — может увеличиваться и уменьшаться (например, использование памяти).
+    *   `Histogram` / `Summary` — для распределений (например, длительность запроса).
+
+#### Использование в бизнес-логике (incremental metrics):
+Если нужно зафиксировать событие глубоко в логике (например, "заказ создан"), рекомендуется использовать временное хранилище (Redis/Cache), так как Prometheus в PHP работает по модели "scrape", собирая данные в момент запроса к `/metrics`.
+Пример (как в `DomainMetricsCollector`):
+1. В коде: `$cache->get('my_counter', fn() => 0); $cache->delete('my_counter'); $cache->get('my_counter', fn() => $val + 1);`
+2. В коллекторе: считать значение из кэша, вызвать `$counter->incBy($val)`, очистить кэш.
+
+#### Grafana:
+- Метрики доступны по адресу `/metrics`.
+- Prometheus настроен на сбор данных с этого эндпоинта (см. `docker/prometheus/prometheus.yml`).
+- В Grafana используйте **PromQL** для построения графиков. Пример: `sum(rate(app_http_requests_total[5m])) by (status)`.
+
+---
+
+### 4. Мониторинг ошибок и производительности (Sentry)
+Приложение интегрировано с **Sentry** для автоматического отслеживания сбоев и анализа быстродействия.
+
+**Что можно проверять и отслеживать через Sentry:**
+
+*   **Ошибки (Exceptions)**:
+    *   **HTTP-исключения**: Автоматически перехватываются все необработанные исключения в контроллерах. Даже если `ExceptionListener` превращает их в JSON-ответ, Sentry фиксирует событие до обработки слушателем.
+    *   **Консольные ошибки**: Ошибки при выполнении CLI-команд (например, `app:outbox:process`) отправляются в Sentry.
+    *   **Ошибки Messenger**: Если обработчик сообщения (например, `SendOrderEmailHandler`) падает, Sentry фиксирует это вместе с контекстом сообщения (класс сообщения, очередь).
+*   **Производительность (Performance & Tracing)**:
+    *   **Трассировка запросов (Transactions)**: Можно видеть полные цепочки вызовов (Spans) для каждого HTTP-запроса.
+    *   **SQL-запросы**: Sentry интегрирован с Doctrine и логирует время выполнения каждого запроса. Это помогает находить N+1 запросы и медленные выборки.
+    *   **Внешние HTTP-вызовы**: Фиксируется время ответа внешних сервисов (например, при парсинге цен через `HttpClient`).
+*   **Контекст и отладка**:
+    *   **Breadcrumbs (Хлебные крошки)**: Sentry записывает последовательность событий, предшествующих ошибке (логи, SQL-запросы, HTTP-запросы).
+    *   **Trace ID**: Приложение прокидывает 128-битный идентификатор в заголовках. По нему можно найти конкретное событие в Sentry, сопоставив его с логами или жалобой пользователя.
+    *   **User Context**: Если пользователь аутентифицирован, его ID автоматически привязывается к отчету.
+
+**Настройка и использование:**
+
+1.  **Настройка**:
+    - **DSN**: Укажите в `.env` переменную `SENTRY_DSN`.
+    - **Конфиг**: `config/packages/sentry.yaml`. Включены `register_error_listener` (авто-отлов исключений), `tracing` (отслеживание производительности) и `messenger` (ошибки в очередях).
+
+2.  **Добавление нового события или данных (через `HubInterface`):**
+    Для ручного управления событиями используйте `Sentry\State\HubInterface`.
+
+    - **Добавление контекста и тегов (Scope):**
+      Используйте `configureScope`, чтобы добавить метаданные к *будущим* событиям в рамках текущего запроса:
+      ```php
+      use Sentry\State\Scope;
+      use Sentry\State\HubInterface;
+
+      public function someMethod(HubInterface $hub): void {
+          $hub->configureScope(function (Scope $scope): void {
+              $scope->setTag('order_type', 'wholesale'); // Теги (индексируются, по ним можно искать)
+              $scope->setContext('order', ['id' => 123, 'total' => 5000]); // Контекст (доп. данные)
+              $scope->setUser(['id' => 'user_456']); // Привязка к пользователю
+          });
+      }
+      ```
+
+    - **Ручной захват исключений (captureException):**
+      Если вы перехватываете исключение в `try-catch`, но всё равно хотите отправить его в Sentry:
+      ```php
+      try {
+          // какой-то код
+      } catch (\Throwable $e) {
+          $hub->captureException($e);
+          // обработка ошибки
+      }
+      ```
+
+    - **Отправка текстовых сообщений (captureMessage):**
+      Для логирования важных событий без исключений:
+      ```php
+      use Sentry\Severity;
+
+      $hub->captureMessage('Заказ был отменен вручную администратором', Severity::info());
+      ```
+
+3.  **Логирование через Monolog**:
+    Любой лог уровня `ERROR` и выше автоматически отправляется в Sentry (если настроен соответствующий хендлер в `monolog.yaml`).
+    ```php
+    $this->logger->error('Something went wrong', ['order_id' => 123]);
+    ```
+
+4.  **Трейсинг производительности (Transactions)**:
+    Для замера длительности специфического блока кода:
+    ```php
+    $transactionContext = \Sentry\Tracing\TransactionContext::make()
+        ->setName('Heavy Calculation')
+        ->setOp('calc');
+    $transaction = \Sentry\startTransaction($transactionContext);
+
+    // ... ваш код ...
+
+    $transaction->finish();
+    ```
+
+**Как проверить работу:**
+Выполните команду в контейнере для отправки тестового события:
+```bash
+docker-compose exec php bin/console sentry:test
+```
+
+---
+
 ### 2. SOAP API (`src/Controller/Api/v1/SoapController.php`)
 
 *   **Endpoint**: `/soap`
@@ -151,67 +302,6 @@
 *   **Request ID**: Генерируется `RequestIdListener` (или берется из заголовка `X-Request-Id`). Используется для идентификации конкретного HTTP-запроса внутри приложения.
 *   **Логирование**: Оба идентификатора автоматически подмешиваются в контекст логов. Это позволяет найти все связанные события в логах (например, через ELK или Grafana Loki) по любому из идентификаторов.
 
-### 4. Мониторинг ошибок и производительности (Sentry)
-Приложение интегрировано с **Sentry** для автоматического отслеживания сбоев и анализа быстродействия.
-
-**Что можно проверять и отслеживать через Sentry:**
-
-*   **Ошибки (Exceptions)**:
-    *   **HTTP-исключения**: Автоматически перехватываются все необработанные исключения в контроллерах. Даже если `ExceptionListener` превращает их в JSON-ответ, Sentry фиксирует событие до обработки слушателем.
-    *   **Консольные ошибки**: Ошибки при выполнении CLI-команд (например, `app:outbox:process`) отправляются в Sentry.
-    *   **Ошибки Messenger**: Если обработчик сообщения (например, `SendOrderEmailHandler`) падает, Sentry фиксирует это вместе с контекстом сообщения (класс сообщения, очередь).
-*   **Производительность (Performance & Tracing)**:
-    *   **Трассировка запросов (Transactions)**: Можно видеть полные цепочки вызовов (Spans) для каждого HTTP-запроса.
-    *   **SQL-запросы**: Sentry интегрирован с Doctrine и логирует время выполнения каждого запроса. Это помогает находить N+1 запросы и медленные выборки.
-    *   **Внешние HTTP-вызовы**: Фиксируется время ответа внешних сервисов (например, при парсинге цен через `HttpClient`).
-*   **Контекст и отладка**:
-    *   **Breadcrumbs (Хлебные крошки)**: Sentry записывает последовательность событий, предшествующих ошибке (логи, SQL-запросы, HTTP-запросы).
-    *   **Trace ID**: Приложение прокидывает 128-битный идентификатор в заголовках. По нему можно найти конкретное событие в Sentry, сопоставив его с логами или жалобой пользователя.
-    *   **User Context**: Если пользователь аутентифицирован, его ID автоматически привязывается к отчету.
-
-**Как добавить новое отслеживаемое событие или данные:**
-
-Для ручного управления событиями используйте `Sentry\State\HubInterface`.
-
-1.  **Добавление контекста и тегов (Scope):**
-    Используйте `configureScope`, чтобы добавить метаданные к *будущим* событиям в рамках текущего запроса:
-    ```php
-    use Sentry\State\Scope;
-    use Sentry\State\HubInterface;
-
-    public function someMethod(HubInterface $hub): void {
-        $hub->configureScope(function (Scope $scope): void {
-            $scope->setTag('order_type', 'wholesale'); // Теги (индексируются, по ним можно искать)
-            $scope->setContext('order', ['id' => 123, 'total' => 5000]); // Контекст (доп. данные)
-            $scope->setUser(['id' => 'user_456']); // Привязка к пользователю
-        });
-    }
-    ```
-
-2.  **Ручной захват исключений (captureException):**
-    Если вы перехватываете исключение в `try-catch`, но всё равно хотите отправить его в Sentry:
-    ```php
-    try {
-        // какой-то код
-    } catch (\Throwable $e) {
-        $hub->captureException($e);
-        // обработка ошибки
-    }
-    ```
-
-3.  **Отправка текстовых сообщений (captureMessage):**
-    Для логирования важных событий без исключений:
-    ```php
-    use Sentry\Severity;
-
-    $hub->captureMessage('Заказ был отменен вручную администратором', Severity::info());
-    ```
-
-**Как проверить работу:**
-Выполните команду в контейнере для отправки тестового события:
-```bash
-docker-compose exec php bin/console sentry:test
-```
 
 ---
 
