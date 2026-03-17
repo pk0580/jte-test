@@ -305,6 +305,25 @@ docker-compose exec php bin/console sentry:test
 
 ---
 
+## 🛠 Инструменты отладки и разработки
+
+### 1. Xdebug 3
+
+Для глубокой отладки PHP-кода в контейнере предустановлен Xdebug.
+
+*   **Конфигурация (`docker/php/xdebug.ini`):**
+    *   `xdebug.mode=debug` — включен полнофункциональный отладчик.
+    *   `xdebug.client_port=9003` — стандартный порт для Xdebug 3.
+    *   `xdebug.start_with_request=yes` — попытка запуска отладки при каждом запросе.
+    *   `xdebug.discover_client_host=yes` — автоматическое определение IP хоста (полезно для Linux/Docker Desktop).
+
+*   **Интеграция с Docker (`docker-compose.yml`):**
+    *   `XDEBUG_CONFIG: "client_host=host.docker.internal"` — принудительный адрес для соединения с IDE.
+    *   `PHP_IDE_CONFIG: "serverName=jte-test"` — имя сервера, которое IDE должна использовать для маппинга путей.
+    *   `extra_hosts: ["host.docker.internal:host-gateway"]` — проброс IP хоста внутрь контейнера.
+
+---
+
 ## 📊 Мониторинг и метрики
 
 Для отслеживания состояния системы используются **Prometheus** и **Grafana**.

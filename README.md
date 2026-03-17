@@ -102,6 +102,18 @@ docker-compose exec php composer ecs:fix
 docker-compose exec php composer arkitect
 ```
 
+### 5. Отладка (Xdebug)
+В PHP-контейнере установлен и настроен **Xdebug 3**:
+- **Режим**: `debug`
+- **Порт**: `9003`
+- **IDE Key**: `PHPSTORM`
+- **Client Host**: `host.docker.internal` (настроен через `extra_hosts`)
+
+Для отладки в PhpStorm:
+1. Установите `serverName=jte-test` в настройках PHP -> Servers.
+2. Настройте маппинг путей: проектная директория -> `/var/www/html`.
+3. Включите прослушивание входящих соединений ("Start Listening for PHP Debug Connections").
+
 ---
 
 ## 📊 Мониторинг и фоновые задачи

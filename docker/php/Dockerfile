@@ -8,6 +8,7 @@ RUN apk add --no-cache \
     libzip-dev \
     oniguruma-dev \
     zlib-dev \
+    linux-headers \
     $PHPIZE_DEPS
 
 # Install PHP extensions
@@ -19,8 +20,12 @@ RUN docker-php-ext-install \
     bcmath \
     mbstring
 
-# Install Redis extension (using pecl or fallback to manual)
-RUN pecl update-channels && pecl install --force redis && docker-php-ext-enable redis
+# Install Redis and Xdebug extensions
+RUN pecl update-channels && \
+    pecl install --force redis xdebug && \
+    docker-php-ext-enable redis xdebug
+
+COPY docker/php/xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
