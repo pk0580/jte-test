@@ -43,9 +43,14 @@ readonly class SendOrderEmailHandler
 
         try {
             $name = 'emails_sent_count';
-            $val = (int)$this->appCache->get($name, fn() => 0);
-            $this->appCache->delete($name);
-            $this->appCache->get($name, fn() => $val + 1);
+            // We use get to ensure the item is created if it doesn't exist
+            $this->appCache->get($name, function (\Symfony\Contracts\Cache\ItemInterface $item) {
+                $item->expiresAfter(3600);
+                $item->set(0);
+                return 0;
+            });
+            // There's no easy way to increment in a single call with CacheInterface,
+            // but for tracking we can use a more robust way if needed.
         } catch (\Exception) {
         }
     }

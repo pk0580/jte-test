@@ -5,7 +5,7 @@ namespace App\Infrastructure\Soap;
 use App\Application\Service\WsdlProviderInterface;
 use SoapServer;
 
-class SoapServerFactory
+readonly class SoapServerFactory
 {
     public function __construct(
         private WsdlProviderInterface $wsdlProvider,

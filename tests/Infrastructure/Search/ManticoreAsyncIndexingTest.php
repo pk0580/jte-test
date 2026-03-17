@@ -16,6 +16,7 @@ use App\Domain\ValueObject\ManagerInfo;
 use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\Repository\OrderSearchInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
@@ -23,6 +24,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 
 class ManticoreAsyncIndexingTest extends WebTestCase
 {
+    #[RunInSeparateProcess]
     public function testAsyncIndexingOnSave(): void
     {
         $client = static::createClient();

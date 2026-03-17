@@ -7,6 +7,7 @@
         "php": ">=8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "ext-soap": "*",
         "artprima/prometheus-metrics-bundle": "^1.21",
         "monolog/monolog": "^3.10",
         "predis/predis": "^3.4",

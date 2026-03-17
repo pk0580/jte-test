@@ -14,9 +14,11 @@ use App\Domain\ValueObject\DeliveryTerms;
 use App\Domain\ValueObject\ManagerInfo;
 use App\Domain\Repository\OrderRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 class OrderControllerTest extends WebTestCase
 {
+    #[RunInSeparateProcess]
     public function testGetOrder(): void
     {
         $client = static::createClient();
@@ -74,6 +76,7 @@ class OrderControllerTest extends WebTestCase
         $this->assertEquals('50.5', $data['articles'][0]['price']);
     }
 
+    #[RunInSeparateProcess]
     public function testGetOrderNotFound(): void
     {
         $client = static::createClient();

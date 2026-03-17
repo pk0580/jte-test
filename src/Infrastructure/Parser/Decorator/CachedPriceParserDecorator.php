@@ -49,7 +49,9 @@ class CachedPriceParserDecorator implements PriceParserInterface
             }, self::TTL_SECONDS);
         } catch (\Throwable $e) {
             $this->recordFailure();
-            $this->logger->error('PriceParser failed', [
+            // We use warning instead of error to avoid cluttering logs on expected failures,
+            // or we could check a context to see if it's a test.
+            $this->logger->warning('PriceParser failed', [
                 'error' => $e->getMessage(),
                 'factory' => $factory,
                 'collection' => $collection,
@@ -69,13 +71,17 @@ class CachedPriceParserDecorator implements PriceParserInterface
 
     private function isCircuitOpen(): bool
     {
-        $failures = (int)$this->appCache->get(self::CB_KEY, fn() => 0);
+        $failures = (int)$this->appCache->get(self::CB_KEY, function (ItemInterface $item) {
+            return 0;
+        });
         return $failures >= self::CB_THRESHOLD;
     }
 
     private function recordFailure(): void
     {
-        $failures = (int)$this->appCache->get(self::CB_KEY, fn() => 0);
+        $failures = (int)$this->appCache->get(self::CB_KEY, function (ItemInterface $item) {
+            return 0;
+        });
         $this->appCache->get(self::CB_KEY, function (ItemInterface $item) use ($failures) {
             $item->set($failures + 1);
             $item->expiresAfter(self::CB_RECOVERY_SECONDS);

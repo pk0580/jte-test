@@ -54,7 +54,9 @@ class CircuitBreaker
      */
     private function isOpen(): bool
     {
-        $state = $this->cache->get($this->getStateKey(), fn() => self::STATE_CLOSED);
+        $state = $this->cache->get($this->getStateKey(), function (ItemInterface $item) {
+            return self::STATE_CLOSED;
+        });
 
         return $state === self::STATE_OPEN;
     }
@@ -64,12 +66,15 @@ class CircuitBreaker
         $failuresKey = $this->getFailuresKey();
 
         // Получаем текущее количество ошибок и увеличиваем его
-        $failures = (int)$this->cache->get($failuresKey, fn() => 0) + 1;
+        $failures = (int)$this->cache->get($failuresKey, function (ItemInterface $item) {
+            return 0;
+        }) + 1;
 
         // Пересохраняем с обновленным счетчиком и временем жизни
         $this->cache->delete($failuresKey);
         $this->cache->get($failuresKey, function (ItemInterface $item) use ($failures) {
             $item->expiresAfter($this->recoveryTime);
+            $item->set($failures);
             return $failures;
         });
 

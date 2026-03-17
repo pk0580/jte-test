@@ -28,16 +28,19 @@ readonly class FallbackSearchProvider implements OrderSearchInterface
         ?int $status = null
     ): SearchResult {
         try {
-            return $this->primary->search($query, $page, $limit, $lastId, $status);
+            $result = $this->primary->search($query, $page, $limit, $lastId, $status);
+            if ($result->total > 0) {
+                return $result;
+            }
         } catch (\Throwable $e) {
             $this->logger->warning('Primary search failed, using fallback', [
                 'error' => $e->getMessage(),
                 'query' => $query,
                 'trace_id' => $this->traceIdContext->getTraceId()
             ]);
-
-            return $this->fallback->search($query, $page, $limit, $lastId, $status);
         }
+
+        return $this->fallback->search($query, $page, $limit, $lastId, $status);
     }
 
     public function index(Order $order): void

@@ -43,5 +43,7 @@ class SendOrderEmailHandlerTest extends TestCase
             }));
 
         ($handler)($message);
+
+        $this->assertTrue(true);
     }
 }

@@ -33,9 +33,11 @@ class FallbackSearchProviderTest extends TestCase
 
     public function testSearchUsesPrimary(): void
     {
+        $result = new \App\Domain\Repository\SearchResult([], 1);
+
         $this->primary->expects($this->once())
             ->method('search')
-            ->willReturn($this->createMock(\App\Domain\Repository\SearchResult::class));
+            ->willReturn($result);
 
         $this->fallback->expects($this->never())->method('search');
 

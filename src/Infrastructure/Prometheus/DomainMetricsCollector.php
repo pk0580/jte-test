@@ -9,6 +9,7 @@ use Artprima\PrometheusMetricsBundle\Metrics\MetricsCollectorInterface;
 use Artprima\PrometheusMetricsBundle\Metrics\PreRequestMetricsCollectorInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class DomainMetricsCollector implements MetricsCollectorInterface, PreRequestMetricsCollectorInterface
 {
@@ -36,8 +37,12 @@ class DomainMetricsCollector implements MetricsCollectorInterface, PreRequestMet
         );
 
         try {
-            $orders = (int) $this->appCache->get('orders_created_count', fn() => 0);
-            $emails = (int) $this->appCache->get('emails_sent_count', fn() => 0);
+            $orders = (int) $this->appCache->get('orders_created_count', function (ItemInterface $item) {
+                return 0;
+            });
+            $emails = (int) $this->appCache->get('emails_sent_count', function (ItemInterface $item) {
+                return 0;
+            });
 
             if ($orders > 0) {
                 $ordersCounter = $this->collectionRegistry->getOrRegisterCounter(

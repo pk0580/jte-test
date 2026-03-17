@@ -55,3 +55,15 @@ Prefer:
 AI behavior
 
 Prefer maintainable architecture over shortcuts.
+
+---
+
+# Execution Guidelines (STRICT)
+
+All commands (tests, composer, bin/console) must be executed inside the `jte-test-php-1` container.
+
+Example:
+
+`docker exec jte-test-php-1 bin/phpunit`
+`docker exec jte-test-php-1 composer install`
+`docker exec jte-test-php-1 bin/console`

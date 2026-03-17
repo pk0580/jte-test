@@ -15,11 +15,10 @@ use App\Domain\Event\DomainEventInterface;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\OnFlushEventArgs;
-use Doctrine\ORM\UnitOfWork;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Prometheus\CollectorRegistry;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 #[AsDoctrineListener(event: Events::onFlush)]
 #[AsDoctrineListener(event: Events::postFlush)]
@@ -103,7 +102,10 @@ class DomainEventListener
             // Update last update timestamp in cache for ETag
             $timestamp = (string)microtime(true);
             $this->appCache->delete('order_last_update_timestamp');
-            $this->appCache->get('order_last_update_timestamp', fn() => $timestamp);
+            $this->appCache->get('order_last_update_timestamp', function (ItemInterface $item) use ($timestamp) {
+                $item->set($timestamp);
+                return $timestamp;
+            });
 
             // Wait a tiny bit to ensure next request gets a different timestamp if microtime is too fast
             usleep(5000);
@@ -122,7 +124,9 @@ class DomainEventListener
     {
         try {
             $cacheKey = 'doctrine_flush_duration';
-            $item = $this->appCache->get($cacheKey, fn() => []);
+            $item = $this->appCache->get($cacheKey, function (ItemInterface $item) {
+                return [];
+            });
             $durations = is_array($item) ? $item : [];
             $durations[] = $duration;
             if (count($durations) > 10) {
@@ -131,7 +135,10 @@ class DomainEventListener
             // Since $appCache is not always TagAware, just use simple save if possible or re-get/set.
             // Using Symfony Cache Interface:
             $this->appCache->delete($cacheKey);
-            $this->appCache->get($cacheKey, fn() => $durations);
+            $this->appCache->get($cacheKey, function (ItemInterface $item) use ($durations) {
+                $item->set($durations);
+                return $durations;
+            });
 
             $summary = $this->collectorRegistry->getOrRegisterSummary(
                 'app',
@@ -162,9 +169,14 @@ class DomainEventListener
     private function incrementAppCounter(string $name): void
     {
         try {
-            $val = (int)$this->appCache->get($name, fn() => 0);
+            $val = (int)$this->appCache->get($name, function (ItemInterface $item) {
+                return 0;
+            });
             $this->appCache->delete($name);
-            $this->appCache->get($name, fn() => $val + 1);
+            $this->appCache->get($name, function (ItemInterface $item) use ($val) {
+                $item->set($val + 1);
+                return $val + 1;
+            });
         } catch (\Exception) {
         }
     }

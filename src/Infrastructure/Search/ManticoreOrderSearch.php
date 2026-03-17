@@ -143,6 +143,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
             $this->client->bulk(['body' => [
                 ['replace' => ['index' => self::INDEX, 'id' => $id, 'doc' => $doc]]
             ]]);
+            $this->client->sql('FLUSH RTINDEX ' . self::INDEX);
         } catch (Throwable $e) {
             $this->logger->error('Manticore Indexing failed: ' . $e->getMessage(), [
                 'order_id' => $order->getId(),

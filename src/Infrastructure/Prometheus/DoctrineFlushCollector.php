@@ -9,6 +9,7 @@ use Artprima\PrometheusMetricsBundle\Metrics\MetricsCollectorInterface;
 use Artprima\PrometheusMetricsBundle\Metrics\PreRequestMetricsCollectorInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class DoctrineFlushCollector implements MetricsCollectorInterface, PreRequestMetricsCollectorInterface
 {
@@ -31,7 +32,9 @@ class DoctrineFlushCollector implements MetricsCollectorInterface, PreRequestMet
         );
 
         try {
-            $durations = $this->appCache->get('doctrine_flush_duration', fn() => []);
+            $durations = $this->appCache->get('doctrine_flush_duration', function (ItemInterface $item) {
+                return [];
+            });
             if (is_array($durations)) {
                 foreach ($durations as $duration) {
                     $summary->observe((float) $duration, []);

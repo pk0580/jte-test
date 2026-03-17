@@ -3,9 +3,11 @@
 namespace App\Tests\Controller\Api\v1;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 class PriceControllerTest extends WebTestCase
 {
+    #[RunInSeparateProcess]
     public function testGetPriceMissingParams(): void
     {
         $client = static::createClient();
@@ -16,6 +18,7 @@ class PriceControllerTest extends WebTestCase
         $this->assertArrayHasKey('error', $data);
     }
 
+    #[RunInSeparateProcess]
     public function testGetPriceSuccess(): void
     {
         $client = static::createClient();

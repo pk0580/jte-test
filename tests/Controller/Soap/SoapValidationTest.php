@@ -3,9 +3,11 @@
 namespace App\Tests\Controller\Soap;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 class SoapValidationTest extends WebTestCase
 {
+    #[RunInSeparateProcess]
     public function testCreateOrderWithInvalidEmail(): void
     {
         $client = static::createClient();
@@ -48,6 +50,7 @@ XML;
         $this->assertStringNotContainsString('<success>true</success>', $content);
     }
 
+    #[RunInSeparateProcess]
     public function testCreateOrderWithMissingFields(): void
     {
         $client = static::createClient();
@@ -79,6 +82,7 @@ XML;
         $this->assertStringContainsString('clientSurname', $content);
     }
 
+    #[RunInSeparateProcess]
     public function testCreateOrderWithNonExistentArticle(): void
     {
         $client = static::createClient();
@@ -121,6 +125,7 @@ XML;
         $this->assertStringContainsString('does not exist', $content);
     }
 
+    #[RunInSeparateProcess]
     public function testCreateOrderWithInvalidPayType(): void
     {
         $client = static::createClient();

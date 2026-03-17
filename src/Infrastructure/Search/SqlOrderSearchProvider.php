@@ -37,16 +37,15 @@ readonly class SqlOrderSearchProvider implements OrderSearchInterface
         $qb->select('o')
             ->from(Order::class, 'o');
 
-        error_log(sprintf("SQLSearch: query=%s, status=%s, lastId=%s", $queryDto->originalQuery, $queryDto->status ?? 'NULL', $queryDto->lastId ?? 'NULL'));
+        // Extract original query to avoid Manticore-specific syntax if it was wrapped
+        $searchTerm = $queryDto->originalQuery;
 
         if ($queryDto->status !== null) {
             $qb->andWhere('o.status = :status')
                 ->setParameter('status', $queryDto->status);
         }
 
-        if (!empty($queryDto->originalQuery)) {
-            $searchTerm = $queryDto->originalQuery;
-
+        if (!empty($searchTerm)) {
             // Limit search term length to prevent ReDoS/Heavy queries
             if (strlen($searchTerm) > 100) {
                 $searchTerm = substr($searchTerm, 0, 100);
