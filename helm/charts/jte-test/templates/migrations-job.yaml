@@ -1,0 +1,57 @@
+{{- if .Values.migrations.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "jte-test.fullname" . }}-migrations-{{ .Release.Revision }}
+  labels:
+    {{- include "jte-test.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    spec:
+      containers:
+        - name: migrations
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Wait for database
+              # We use php to parse DATABASE_URL and check connection if possible,
+              # or just try to run migrations in a loop.
+              # Since we don't have mysql-client easily available in the php image without install,
+              # we use a simple php script to wait for the DB.
+              php -r '
+              $url = getenv("DATABASE_URL");
+              $params = parse_url($url);
+              $host = $params["host"];
+              $port = $params["port"] ?? 3306;
+              $maxTries = 30;
+              while ($maxTries--) {
+                  $fp = @fsockopen($host, $port, $errno, $errstr, 2);
+                  if ($fp) {
+                      fclose($fp);
+                      exit(0);
+                  }
+                  echo "Waiting for database $host:$port...\n";
+                  sleep(2);
+              }
+              exit(1);
+              '
+              php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
+          env:
+            - name: APP_ENV
+              value: {{ .Values.env.APP_ENV | quote }}
+            - name: APP_DEBUG
+              value: {{ .Values.env.APP_DEBUG | quote }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jte-test.fullname" . }}-db
+                  key: database-url
+      restartPolicy: OnFailure
+  backoffLimit: 4
+{{- end }}
