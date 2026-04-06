@@ -1,0 +1,30 @@
+name: 'Setup PHP'
+description: 'Standard PHP setup for CI/CD'
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, zip, bcmath, redis, soap
+        coverage: pcov
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      shell: bash
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ steps.composer-cache.outputs.dir }}
+          vendor
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+    - name: Install dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 5
+        max_attempts: 3
+        command: composer install --no-progress --prefer-dist --optimize-autoloader
