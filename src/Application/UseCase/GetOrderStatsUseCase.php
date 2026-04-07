@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\UseCase;
 
 use App\Application\Dto\OrderStatsDto;
@@ -10,19 +12,22 @@ readonly class GetOrderStatsUseCase
 {
     public function __construct(
         private OrderStatsProviderInterface $statsProvider
-    ) {}
+    ) {
+    }
 
     public function execute(string $groupBy, int $page, int $limit): OrderStatsDto
     {
         $statsData = $this->statsProvider->getStats($groupBy, $page, $limit);
 
-        $items = array_map(fn (array $item) =>
+        $items = array_map(
+            fn (array $item) =>
             new OrderStatsItemDto(
                 period: $item['period'],
                 orderCount: $item['orderCount'],
                 totalAmount: $item['totalAmount']
             ),
-            $statsData['items']);
+            $statsData['items']
+        );
 
         $totalItems = $statsData['total'];
         $totalPages = (int) ceil($totalItems / $limit);

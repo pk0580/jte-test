@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Dto\Search;
 
 readonly class SearchOrderDto
@@ -13,5 +15,6 @@ readonly class SearchOrderDto
         public string $companyName,
         public string $description,
         public int $status,
-    ) {}
+    ) {
+    }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Search\Dto;
 
 readonly class SearchQueryDto
@@ -12,5 +14,6 @@ readonly class SearchQueryDto
         public ?int    $lastId = null,
         public array   $sort = [],
         public ?int    $status = null
-    ) {}
+    ) {
+    }
 }

@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\UseCase;
 
+use App\Application\Common\TransactionManagerInterface;
 use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
+use App\Application\Dto\Soap\SoapOrderArticleDto;
 use App\Application\Dto\Soap\SoapOrderResponseDto;
 use App\Domain\Dto\CreateOrderDto;
 use App\Domain\Dto\OrderArticleDto;
 use App\Domain\Factory\OrderFactory;
 use App\Domain\Repository\OrderRepositoryInterface;
-use App\Application\Common\TransactionManagerInterface;
 
 readonly class CreateOrderUseCase
 {
@@ -16,18 +19,26 @@ readonly class CreateOrderUseCase
         private OrderRepositoryInterface   $orderRepository,
         private OrderFactory               $orderFactory,
         private TransactionManagerInterface $transactionManager
-    ) {}
+    ) {
+    }
 
     public function execute(CreateOrderSoapRequestDto $request): SoapOrderResponseDto
     {
         $articles = array_map(
-            function($a) {
+            /** @param SoapOrderArticleDto|array<string, mixed> $a */
+            function ($a) {
+                // Если пришел массив (из-за особенностей денормализации SOAP вложенных объектов), приведем к DTO
                 if (is_array($a)) {
-                    $id = (int)($a['id'] ?? $a['articleId'] ?? 0);
-                    return new OrderArticleDto($id, (float)$a['amount'], (float)$a['price'], (float)$a['weight']);
+                    $a = new SoapOrderArticleDto(
+                        id: (int)($a['articleId'] ?? 0),
+                        amount: (string)($a['amount'] ?? '0'),
+                        price: (string)($a['price'] ?? '0'),
+                        weight: (string)($a['weight'] ?? '0')
+                    );
                 }
-                $id = (int)($a->id ?? $a->articleId ?? 0);
-                return new OrderArticleDto($id, (float)$a->amount, (float)$a->price, (float)$a->weight);
+
+                /** @var SoapOrderArticleDto $a */
+                return new OrderArticleDto($a->id, (float)$a->amount, (float)$a->price, (float)$a->weight);
             },
             $request->articles
         );

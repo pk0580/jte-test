@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dto;
 
 readonly class OrderArticleDto
@@ -12,5 +14,6 @@ readonly class OrderArticleDto
         public ?float $priceEur,
         public string $currency,
         public string $measure,
-    ) {}
+    ) {
+    }
 }

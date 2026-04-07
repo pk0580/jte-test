@@ -1,19 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Application\UseCase;
 
 use App\Application\UseCase\GetOrderUseCase;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\PayType;
-use App\Domain\ValueObject\CustomerInfo;
-use App\Domain\ValueObject\FinancialTerms;
-use App\Domain\ValueObject\DeliveryConfig;
-use App\Domain\ValueObject\DeliveryAddress;
-use App\Domain\ValueObject\DeliveryTerms;
-use App\Domain\ValueObject\ManagerInfo;
-use App\Domain\ValueObject\OrderMetadata;
-use App\Domain\ValueObject\OrderDates;
 use App\Domain\Repository\OrderRepositoryInterface;
+use App\Domain\ValueObject\CustomerInfo;
+use App\Domain\ValueObject\DeliveryAddress;
+use App\Domain\ValueObject\DeliveryConfig;
+use App\Domain\ValueObject\DeliveryTerms;
+use App\Domain\ValueObject\FinancialTerms;
+use App\Domain\ValueObject\ManagerInfo;
+use App\Domain\ValueObject\OrderDates;
+use App\Domain\ValueObject\OrderMetadata;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 

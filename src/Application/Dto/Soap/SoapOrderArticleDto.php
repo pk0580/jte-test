@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dto\Soap;
 
-use Symfony\Component\Serializer\Annotation\SerializedName;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class SoapOrderArticleDto
@@ -12,17 +14,15 @@ class SoapOrderArticleDto
         #[Assert\Positive]
         #[SerializedName('articleId')]
         public int $id = 0,
-
         #[Assert\NotBlank]
         #[Assert\Positive]
         public string $amount = '0',
-
         #[Assert\NotBlank]
         #[Assert\Positive]
         public string $price = '0',
-
         #[Assert\NotBlank]
         #[Assert\Positive]
         public string $weight = '0'
-    ) {}
+    ) {
+    }
 }

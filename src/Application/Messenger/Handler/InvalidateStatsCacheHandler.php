@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Messenger\Handler;
 
 use App\Application\Messenger\Message\InvalidateStatsCacheMessage;
@@ -12,7 +14,8 @@ readonly class InvalidateStatsCacheHandler
 {
     public function __construct(
         private TagAwareCacheInterface $statsCache
-    ) {}
+    ) {
+    }
 
     /**
      * @throws InvalidArgumentException

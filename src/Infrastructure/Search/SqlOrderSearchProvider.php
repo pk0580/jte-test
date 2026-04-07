@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Search;
 
 use App\Domain\Dto\Search\SearchOrderDto;
@@ -13,7 +15,8 @@ readonly class SqlOrderSearchProvider implements OrderSearchInterface
     public function __construct(
         private EntityManagerInterface $entityManager,
         private OrderSearchQueryBuilder $queryBuilder
-    ) {}
+    ) {
+    }
 
     /**
      * @param string $query
@@ -29,8 +32,7 @@ readonly class SqlOrderSearchProvider implements OrderSearchInterface
         int $limit = 10,
         ?int $lastId = null,
         ?int $status = null
-    ): SearchResult
-    {
+    ): SearchResult {
         $queryDto = $this->queryBuilder->build($query, $page, $limit, $lastId, $status);
 
         $qb = $this->entityManager->createQueryBuilder();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Validator\Constraints;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -11,7 +13,8 @@ class BatchEntityExistsValidator extends ConstraintValidator
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager
-    ) {}
+    ) {
+    }
 
     public function validate(mixed $value, Constraint $constraint): void
     {
@@ -98,7 +101,7 @@ class BatchEntityExistsValidator extends ConstraintValidator
                     ->where($qb->expr()->in("e.$field", ':v'))
                     ->setParameter('v', $values);
             } else {
-                $qb->select('partial e.{'.implode(',', $fields).'}');
+                $qb->select('partial e.{' . implode(',', $fields) . '}');
                 $orX = $qb->expr()->orX();
 
                 foreach ($chunk as $i => $criteria) {
@@ -160,7 +163,7 @@ class BatchEntityExistsValidator extends ConstraintValidator
                 $this->context->buildViolation($msg)
                     ->atPath($isBatch ? "[$index]" : "")
                     ->addViolation();
-                 continue;
+                continue;
             }
 
             if (!isset($foundHashes[$hash])) {

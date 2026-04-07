@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Resilience;
 
 use Psr\Cache\InvalidArgumentException;
@@ -17,14 +19,14 @@ class CircuitBreaker
 
     private const string STATE_CLOSED = 'closed';
     private const string STATE_OPEN = 'open';
-    private const string STATE_HALF_OPEN = 'half_open';
 
     public function __construct(
         private readonly CacheInterface $cache,
         private readonly string $name,
         private readonly int $failureThreshold = 3,
         private readonly int $recoveryTime = 60
-    ) {}
+    ) {
+    }
 
     /**
      * @template T

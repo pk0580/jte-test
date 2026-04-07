@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
@@ -71,7 +73,7 @@ class OrderArticle
         string $packagingCount = '0',
         string $pallet = '0',
         string $packaging = '0',
-        ?string $measure = null
+        ?string $measure = null,
     ) {
         $this->order = $order;
         $this->article = $article;

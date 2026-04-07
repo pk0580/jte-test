@@ -16,6 +16,7 @@ jobs:
     name: Lint & Static Analysis
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/php-setup
 
       - name: Coding Style (ECS)
@@ -46,6 +47,7 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/php-setup
       - name: Run Unit Tests
         run: vendor/bin/phpunit --testsuite unit
@@ -71,6 +73,7 @@ jobs:
           --health-retries=3
           --tmpfs /var/lib/mysql
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/php-setup
 
       - name: Wait for MySQL

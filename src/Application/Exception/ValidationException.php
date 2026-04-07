@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Exception;
 
 use Symfony\Component\HttpKernel\Exception\HttpException;
-
-use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 class ValidationException extends HttpException
 {
@@ -26,5 +26,4 @@ class ValidationException extends HttpException
         $this->violations = $violations;
         parent::__construct(422, $message, $previous, $headers, $code);
     }
-
 }

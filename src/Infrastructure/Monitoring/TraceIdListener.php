@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Monitoring;
 
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -13,7 +15,8 @@ class TraceIdListener
 
     public function __construct(
         private TraceIdContext $traceIdContext
-    ) {}
+    ) {
+    }
 
     public function __invoke(RequestEvent $event): void
     {

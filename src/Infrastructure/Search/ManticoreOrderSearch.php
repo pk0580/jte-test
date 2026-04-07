@@ -1,15 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Search;
 
 use App\Domain\Dto\Search\SearchOrderDto;
 use App\Domain\Entity\Order;
-use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\Repository\OrderSearchInterface;
 use App\Domain\Repository\SearchResult;
 use App\Infrastructure\Monitoring\TraceIdContext;
 use Manticoresearch\Client;
-use Manticoresearch\ResultSet;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -22,7 +22,6 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
     public function __construct(
         string $host,
         int $port,
-        private readonly OrderRepositoryInterface $orderRepository,
         private readonly OrderSearchQueryBuilder $queryBuilder,
         private readonly LoggerInterface $logger,
         private readonly TraceIdContext $traceIdContext
@@ -90,40 +89,6 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
 
             throw $e;
         }
-    }
-
-    private function fetchIds(ResultSet $resultSet): array
-    {
-        $ids = [];
-        foreach ($resultSet as $hit) {
-            $ids[] = (int)$hit->getId();
-        }
-        return $ids;
-    }
-
-    /**
-     * @param int[] $ids
-     * @return Order[]
-     */
-    private function hydrateOrders(array $ids): array
-    {
-        // Use findByIds to avoid N+1 and pre-fetch articles
-        $orders = $this->orderRepository->findByIds($ids);
-
-        // Sort by the order returned by search engine
-        $orderMap = [];
-        foreach ($orders as $order) {
-            $orderMap[$order->getId()] = $order;
-        }
-
-        $sortedOrders = [];
-        foreach ($ids as $id) {
-            if (isset($orderMap[$id])) {
-                $sortedOrders[] = $orderMap[$id];
-            }
-        }
-
-        return $sortedOrders;
     }
 
     public function index(Order $order): void

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Infrastructure\Search;
 
 use App\Infrastructure\Search\OrderSearchQueryBuilder;

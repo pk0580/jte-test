@@ -1,13 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Controller\Soap;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 class SoapControllerTest extends WebTestCase
 {
-    #[RunInSeparateProcess]
     public function testCreateOrderSoap(): void
     {
         $client = static::createClient();
@@ -49,7 +49,6 @@ XML;
         $this->assertStringContainsString('<orderId>', $client->getResponse()->getContent());
     }
 
-    #[RunInSeparateProcess]
     public function testGetWsdl(): void
     {
         $client = static::createClient();

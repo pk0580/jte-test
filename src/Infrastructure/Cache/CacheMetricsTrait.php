@@ -28,9 +28,10 @@ trait CacheMetricsTrait
 
     private function incrementCacheCounter(string $name): void
     {
-        // We use the collector registry directly if it's available as $this->metricsRegistry
+        // @phpstan-ignore-next-line
         if (property_exists($this, 'metricsRegistry') && $this->metricsRegistry instanceof CollectorRegistry) {
             try {
+                // @phpstan-ignore-next-line
                 $this->metricsRegistry->getOrRegisterCounter(
                     'app',
                     $name,

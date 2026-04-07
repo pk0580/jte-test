@@ -1,15 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller\Api\v1;
 
 use App\Domain\Repository\OrderSearchInterface;
 use Doctrine\DBAL\Connection;
+use Doctrine\Migrations\DependencyFactory;
 use Predis\ClientInterface;
-use Doctrine\Migrations\DependencyInjection\DependencyInjectionAdapter;
-use Doctrine\Migrations\Metadata\Storage\TableMetadataStorageConfiguration;
-use Doctrine\Migrations\MigrationsRepository;
-use Doctrine\Migrations\Plan\MigrationPlanCalculator;
-use Doctrine\Migrations\Version\MigrationStatusCalculator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,8 +32,7 @@ class HealthController extends AbstractController
         Connection $connection,
         ClientInterface $redis,
         TransportInterface $messenger_transport_async,
-        MigrationStatusCalculator $statusCalculator,
-        MigrationsRepository $migrationsRepository
+        DependencyFactory $dependencyFactory
     ): JsonResponse {
         $isManticoreHealthy = $orderSearch->ping();
 
@@ -55,6 +52,7 @@ class HealthController extends AbstractController
 
         $isMigrationsUpToDate = true;
         try {
+            $statusCalculator = $dependencyFactory->getMigrationStatusCalculator();
             $newMigrations = $statusCalculator->getNewMigrations();
             $isMigrationsUpToDate = count($newMigrations) === 0;
         } catch (\Exception) {

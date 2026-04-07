@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Dto;
 
 readonly class PriceDto
@@ -10,5 +12,6 @@ readonly class PriceDto
         public string $collection,
         public string $article,
         public string $currency = 'EUR',
-    ) {}
+    ) {
+    }
 }

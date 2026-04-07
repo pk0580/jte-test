@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Persistence\Doctrine\Repository\Decorator;
 
 use App\Domain\Entity\Article;
@@ -17,7 +19,8 @@ class ArticleRepositoryCacheDecorator implements ArticleRepositoryInterface
         private readonly ArticleRepositoryInterface $inner,
         private readonly CacheInterface $referenceCache,
         private readonly CollectorRegistry $metricsRegistry
-    ) {}
+    ) {
+    }
 
     public function findById(int $id): ?Article
     {

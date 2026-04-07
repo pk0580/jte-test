@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dto\Soap;
 
 use App\Application\Validator\Constraints as AppAssert;
 use App\Domain\Entity\Article;
 use App\Domain\Entity\PayType;
-use Symfony\Component\Serializer\Annotation\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class CreateOrderSoapRequestDto
@@ -14,25 +15,22 @@ class CreateOrderSoapRequestDto
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
         public string $clientName = '',
-
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
         public string $clientSurname = '',
-
         #[Assert\NotBlank]
         #[Assert\Email]
         #[Assert\Length(max: 150)]
         public string $email = '',
-
         #[Assert\NotBlank]
         #[Assert\Positive]
         #[AppAssert\BatchEntityExists(entity: PayType::class, message: 'Invalid payment type.')]
         public int $payType = 0,
-
-        /** @var array<int, SoapOrderArticleDto> */
+        /** @var array<int, SoapOrderArticleDto|array<string, mixed>> */
         #[Assert\NotBlank]
         #[Assert\Valid]
         #[AppAssert\BatchEntityExists(entity: Article::class, fields: ['id'])]
         public array $articles = []
-    ) {}
+    ) {
+    }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\UseCase;
 
 use App\Application\Dto\Search\SearchOrderResponseDto;
@@ -11,7 +13,8 @@ readonly class SearchOrdersUseCase
 {
     public function __construct(
         private OrderSearchInterface $orderSearch
-    ) {}
+    ) {
+    }
 
     /**
      * @param string $query
@@ -27,8 +30,7 @@ readonly class SearchOrdersUseCase
         int $limit = 10,
         ?int $lastId = null,
         ?int $status = null
-    ): SearchResultDto
-    {
+    ): SearchResultDto {
         $searchResult = $this->orderSearch->search($query, $page, $limit, $lastId, $status);
 
         $items = array_map(function (SearchOrderDto $order) {

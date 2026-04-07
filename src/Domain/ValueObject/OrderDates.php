@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\ValueObject;
 
 use Doctrine\ORM\Mapping as ORM;
@@ -10,28 +12,20 @@ final readonly class OrderDates
     public function __construct(
         #[ORM\Column(type: 'datetime_immutable', options: ['default' => 'CURRENT_TIMESTAMP'])]
         public \DateTimeImmutable $createAt = new \DateTimeImmutable(),
-
         #[ORM\Column(type: 'datetime', nullable: true)]
         public ?\DateTimeInterface $updateAt = null,
-
         #[ORM\Column(type: 'datetime', nullable: true)]
         public ?\DateTimeInterface $payDateExecution = null,
-
         #[ORM\Column(type: 'datetime', nullable: true)]
         public ?\DateTimeInterface $offsetDate = null,
-
         #[ORM\Column(type: 'datetime', nullable: true)]
         public ?\DateTimeInterface $proposedDate = null,
-
         #[ORM\Column(type: 'datetime', nullable: true)]
         public ?\DateTimeInterface $shipDate = null,
-
         #[ORM\Column(type: 'datetime', nullable: true)]
         public ?\DateTimeInterface $cancelDate = null,
-
         #[ORM\Column(type: 'datetime', nullable: true)]
         public ?\DateTimeInterface $fullPaymentDate = null,
-
         #[ORM\Column(type: 'smallint', nullable: true, options: ['unsigned' => true])]
         public ?int $offsetReason = null
     ) {

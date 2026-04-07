@@ -1,18 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Domain\Entity;
 
+use App\Domain\Entity\Article;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
-use App\Domain\Entity\Article;
 use App\Domain\Entity\PayType;
+use App\Domain\Exception\InvalidOrderStateException;
 use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\ValueObject\DeliveryAddress;
 use App\Domain\ValueObject\DeliveryConfig;
 use App\Domain\ValueObject\DeliveryTerms;
 use App\Domain\ValueObject\FinancialTerms;
 use App\Domain\ValueObject\ManagerInfo;
-use App\Domain\Exception\InvalidOrderStateException;
 use PHPUnit\Framework\TestCase;
 
 class OrderTest extends TestCase

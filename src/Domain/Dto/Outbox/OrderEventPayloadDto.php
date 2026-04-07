@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Dto\Outbox;
 
 class OrderEventPayloadDto
@@ -7,7 +9,8 @@ class OrderEventPayloadDto
     public function __construct(
         public int $id,
         public array $extra = []
-    ) {}
+    ) {
+    }
 
     public function toArray(): array
     {

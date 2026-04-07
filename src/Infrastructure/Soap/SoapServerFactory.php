@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Soap;
 
 use App\Application\Service\WsdlProviderInterface;
@@ -10,7 +12,8 @@ readonly class SoapServerFactory
     public function __construct(
         private WsdlProviderInterface $wsdlProvider,
         private bool $cacheEnabled = false
-    ) {}
+    ) {
+    }
 
     public function create(object $service): SoapServer
     {

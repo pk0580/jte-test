@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Infrastructure\Resilience;
 
 use App\Infrastructure\Resilience\CircuitBreaker;
@@ -19,36 +21,39 @@ class CircuitBreakerTest extends TestCase
 
     public function testCallSuccess(): void
     {
-        $result = $this->cb->call(fn() => 'ok');
+        $result = $this->cb->call(fn () => 'ok');
         $this->assertEquals('ok', $result);
     }
 
     public function testOpensAfterFailures(): void
     {
         try {
-            $this->cb->call(fn() => throw new \Exception('fail 1'));
-        } catch (\Throwable) {}
+            $this->cb->call(fn () => throw new \Exception('fail 1'));
+        } catch (\Throwable) {
+        }
 
         try {
-            $this->cb->call(fn() => throw new \Exception('fail 2'));
-        } catch (\Throwable) {}
+            $this->cb->call(fn () => throw new \Exception('fail 2'));
+        } catch (\Throwable) {
+        }
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage("Circuit breaker 'test_cb' is open");
 
-        $this->cb->call(fn() => 'should not be called');
+        $this->cb->call(fn () => 'should not be called');
     }
 
     public function testResetsAfterSuccess(): void
     {
         try {
-            $this->cb->call(fn() => throw new \Exception('fail 1'));
-        } catch (\Throwable) {}
+            $this->cb->call(fn () => throw new \Exception('fail 1'));
+        } catch (\Throwable) {
+        }
 
-        $this->cb->call(fn() => 'ok');
+        $this->cb->call(fn () => 'ok');
 
         // Should not be open
-        $result = $this->cb->call(fn() => 'still ok');
+        $result = $this->cb->call(fn () => 'still ok');
         $this->assertEquals('still ok', $result);
     }
 }

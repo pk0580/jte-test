@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\UseCase;
 
 use App\Domain\Dto\PriceDto;
@@ -9,7 +11,8 @@ readonly class GetPriceUseCase
 {
     public function __construct(
         private PriceParserInterface $priceParser
-    ) {}
+    ) {
+    }
 
     public function execute(string $factory, string $collection, string $article): PriceDto
     {

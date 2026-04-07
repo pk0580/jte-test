@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Search;
 
 use App\Domain\Entity\Order;
@@ -15,7 +17,8 @@ readonly class CircuitBreakerSearchProvider implements OrderSearchInterface
     public function __construct(
         private OrderSearchInterface $inner,
         private CircuitBreaker $circuitBreaker
-    ) {}
+    ) {
+    }
 
     public function search(
         string $query,
@@ -25,21 +28,21 @@ readonly class CircuitBreakerSearchProvider implements OrderSearchInterface
         ?int $status = null
     ): SearchResult {
         return $this->circuitBreaker->call(
-            fn() => $this->inner->search($query, $page, $limit, $lastId, $status)
+            fn () => $this->inner->search($query, $page, $limit, $lastId, $status)
         );
     }
 
     public function index(Order $order): void
     {
         $this->circuitBreaker->call(
-            fn() => $this->inner->index($order)
+            fn () => $this->inner->index($order)
         );
     }
 
     public function delete(int $orderId): void
     {
         $this->circuitBreaker->call(
-            fn() => $this->inner->delete($orderId)
+            fn () => $this->inner->delete($orderId)
         );
     }
 
@@ -47,7 +50,7 @@ readonly class CircuitBreakerSearchProvider implements OrderSearchInterface
     {
         try {
             return $this->circuitBreaker->call(
-                fn() => $this->inner->ping()
+                fn () => $this->inner->ping()
             );
         } catch (\Throwable) {
             return false;

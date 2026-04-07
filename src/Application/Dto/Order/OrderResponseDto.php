@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dto\Order;
 
 class OrderResponseDto
@@ -17,5 +19,6 @@ class OrderResponseDto
         public array $articles,
         public ?string $updateDate = null,
         public ?string $payloadHash = null,
-    ) {}
+    ) {
+    }
 }

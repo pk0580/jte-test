@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\UseCase;
 
 use App\Application\Dto\Order\OrderArticleResponseDto;
@@ -11,7 +13,8 @@ readonly class GetOrderUseCase
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository
-    ) {}
+    ) {
+    }
 
     public function execute(int $id): OrderResponseDto
     {
@@ -24,23 +27,23 @@ readonly class GetOrderUseCase
         $articles = [];
         foreach ($order->getArticles() as $article) {
             $articles[] = new OrderArticleResponseDto(
-                (int)$article->getId(),
-                (int)$article->getArticle()->getId(),
+                (int) $article->getId(),
+                (int) $article->getArticle()->getId(),
                 $article->getAmount(),
                 $article->getPrice(),
-                $article->getWeight()
+                $article->getWeight(),
             );
         }
 
         $dto = new OrderResponseDto(
-            (int)$order->getId(),
+            (int) $order->getId(),
             $order->getCustomerInfo()->name ?? '',
             $order->getCustomerInfo()->surname ?? '',
             $order->getCustomerInfo()->email ?? '',
-            (int)$order->getPayType()->getId(),
+            (int) $order->getPayType()->getId(),
             $order->getDates()->createAt->format('Y-m-d H:i:s'),
             $articles,
-            $order->getDates()->updateAt?->format('Y-m-d H:i:s')
+            $order->getDates()->updateAt?->format('Y-m-d H:i:s'),
         );
 
         $dto->payloadHash = md5(json_encode([

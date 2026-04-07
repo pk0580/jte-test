@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\EventListener;
 
 use App\Application\Exception\ValidationException;
@@ -7,12 +9,11 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Validator\Exception\ValidationFailedException;
-use Symfony\Component\Messenger\Exception\HandlerFailedException;
-use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
 
 #[AsEventListener(event: KernelEvents::EXCEPTION, priority: 10)]
 class ExceptionListener
@@ -29,7 +30,7 @@ class ExceptionListener
         }
 
         if (str_contains($request->getPathInfo(), '/soap')) {
-             return; // SoapServer handle errors itself
+            return; // SoapServer handle errors itself
         }
     }
 
@@ -53,7 +54,7 @@ class ExceptionListener
                 ];
             }
             if ($exception->getViolations()->count() > 0) {
-                 $data['error'] = $exception->getViolations()[0]->getMessage();
+                $data['error'] = $exception->getViolations()[0]->getMessage();
             }
             $statusCode = 422;
         } elseif ($exception instanceof NotFoundHttpException) {
@@ -66,8 +67,8 @@ class ExceptionListener
             $data = ['error' => $message];
             $statusCode = $exception->getStatusCode();
         } elseif ($exception instanceof BadRequestHttpException) {
-             $data = ['error' => $exception->getMessage()];
-             $statusCode = 400;
+            $data = ['error' => $exception->getMessage()];
+            $statusCode = 400;
         } elseif ($exception instanceof HttpExceptionInterface) {
             $data = ['error' => $exception->getMessage()];
             $statusCode = $exception->getStatusCode();

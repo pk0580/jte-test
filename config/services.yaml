@@ -148,3 +148,14 @@ services:
         arguments:
             $wsdlProvider: '@App\Infrastructure\Soap\WsdlProvider'
             $cacheEnabled: '%env(bool:SOAP_CACHE_ENABLED)%'
+
+    Predis\ClientInterface:
+        class: Predis\Client
+        arguments:
+            - '%env(REDIS_URL)%'
+
+    Symfony\Component\Messenger\Transport\TransportInterface $messenger_transport_async:
+        alias: 'messenger.transport.async'
+
+    Doctrine\Migrations\DependencyFactory:
+        alias: 'doctrine.migrations.dependency_factory'
