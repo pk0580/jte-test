@@ -11,7 +11,6 @@ use App\Domain\Repository\OrderSearchInterface;
 use App\Domain\Repository\SearchResult;
 use App\Infrastructure\Monitoring\TraceIdContext;
 use Manticoresearch\Client;
-use Manticoresearch\ResultSet;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
