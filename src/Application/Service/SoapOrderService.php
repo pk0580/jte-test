@@ -6,6 +6,8 @@ namespace App\Application\Service;
 
 use App\Application\Soap\SoapConverter;
 use App\Application\UseCase\CreateOrderUseCase;
+use SoapFault;
+use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 readonly class SoapOrderService
@@ -20,7 +22,7 @@ readonly class SoapOrderService
     /**
      * @param mixed $parameters
      * @return array<string, mixed>
-     * @throws \SoapFault
+     * @throws SoapFault|ExceptionInterface
      */
     public function createOrder(mixed $parameters): array
     {
@@ -37,7 +39,7 @@ readonly class SoapOrderService
                 ];
             }
 
-            throw new \SoapFault('Client', $faultString, null, $detail);
+            throw new SoapFault('Client', $faultString, null, $detail);
         }
 
         $responseDto = $this->useCase->execute($dto);

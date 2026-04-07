@@ -10,6 +10,7 @@ use App\Application\Dto\Soap\SoapOrderArticleDto;
 use App\Application\Dto\Soap\SoapOrderResponseDto;
 use App\Domain\Dto\CreateOrderDto;
 use App\Domain\Dto\OrderArticleDto;
+use App\Domain\Exception\ArticleNotFoundException;
 use App\Domain\Factory\OrderFactory;
 use App\Domain\Repository\OrderRepositoryInterface;
 
@@ -58,7 +59,7 @@ readonly class CreateOrderUseCase
                 $this->orderRepository->save($order);
 
                 return new SoapOrderResponseDto(true, $order->getId());
-            } catch (\App\Domain\Exception\ArticleNotFoundException $e) {
+            } catch (ArticleNotFoundException $e) {
                 return new SoapOrderResponseDto(false, null, $e->getMessage());
             } catch (\Exception $e) {
                 return new SoapOrderResponseDto(false, null, 'An unexpected error occurred during order creation');
