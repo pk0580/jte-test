@@ -6,7 +6,6 @@ namespace App\Infrastructure\Search;
 
 use App\Domain\Dto\Search\SearchOrderDto;
 use App\Domain\Entity\Order;
-use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\Repository\OrderSearchInterface;
 use App\Domain\Repository\SearchResult;
 use App\Infrastructure\Monitoring\TraceIdContext;
