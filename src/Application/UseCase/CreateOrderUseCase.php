@@ -37,10 +37,7 @@ readonly class CreateOrderUseCase
                     );
                 }
 
-                if (!$a instanceof SoapOrderArticleDto) {
-                    throw new \InvalidArgumentException('Article must be an instance of SoapOrderArticleDto or an array');
-                }
-
+                /** @var SoapOrderArticleDto $a */
                 return new OrderArticleDto($a->id, (float)$a->amount, (float)$a->price, (float)$a->weight);
             },
             $request->articles
