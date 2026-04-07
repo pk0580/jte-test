@@ -1,0 +1,225 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*.*.*" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/php-setup
+
+      - name: Coding Style (ECS)
+        run: vendor/bin/ecs check
+
+      - name: Static Analysis (PHPStan)
+        run: vendor/bin/phpstan analyse src --level 5
+
+      - name: Composer Audit
+        run: composer audit
+
+      - name: Symfony container lint
+        run: php bin/console lint:container
+
+      - name: YAML lint
+        run: php bin/console lint:yaml config/
+
+      - name: Twig lint
+        run: php bin/console lint:twig templates/
+
+      - name: Validate Doctrine schema
+        run: php bin/console doctrine:schema:validate --skip-sync --env=test
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
+
+  unit-tests:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/php-setup
+      - name: Run Unit Tests
+        run: vendor/bin/phpunit --testsuite unit
+
+  integration-tests:
+    name: Integration Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/app_test?serverVersion=8.0
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: app_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+          --tmpfs /var/lib/mysql
+    steps:
+      - uses: ./.github/actions/php-setup
+
+      - name: Wait for MySQL
+        run: until mysqladmin ping -h 127.0.0.1 --silent; do sleep 2; done
+
+      - name: Check Migrations (Forward & Backward)
+        run: |
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
+          php bin/console doctrine:migrations:migrate prev --no-interaction --env=test
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
+
+      - name: Run Integration Tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: vendor/bin/phpunit --testsuite integration --coverage-text
+
+  package:
+    name: Build & Push Docker Image
+    needs: [lint, unit-tests, integration-tests]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,format=long
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{ github.ref == 'refs/heads/main' }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/php/Dockerfile.prod
+          push: true
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: package
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+      - name: Deploy
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG_STAGING }}
+        run: |
+          helm upgrade --install jte-test ./helm/charts/jte-test \
+            --set image.tag=${{ needs.package.outputs.image_tag }} \
+            --set image.repository=ghcr.io/${{ github.repository }} \
+            --values ./helm/charts/jte-test/values-staging.yaml \
+            --namespace staging --create-namespace \
+            --wait --atomic
+
+  smoke-tests:
+    name: Smoke Tests (Staging)
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health Check
+        run: |
+          LIVE_URL="https://staging.jte-test.local/api/v1/health/live"
+          READY_URL="https://staging.jte-test.local/api/v1/health/ready"
+
+          echo "Checking Liveness..."
+          for i in {1..5}; do
+            curl -f -k $LIVE_URL && break || true
+            echo "Staging liveness check failed, retrying... ($i/5)"
+            sleep 10
+            if [ $i -eq 5 ]; then exit 1; fi
+          done
+
+          echo "Checking Readiness..."
+          for i in {1..5}; do
+            curl -f -k $READY_URL && exit 0 || true
+            echo "Staging readiness check failed, retrying... ($i/5)"
+            sleep 10
+          done
+          exit 1
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [package, smoke-tests]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+
+      - name: Deploy (Canary/Rolling)
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          helm upgrade --install jte-test ./helm/charts/jte-test \
+            --set image.tag=${{ needs.package.outputs.image_tag }} \
+            --set image.repository=ghcr.io/${{ github.repository }} \
+            --set podAnnotations.buildSha=${{ github.sha }} \
+            --values ./helm/charts/jte-test/values-prod.yaml \
+            --namespace production --create-namespace \
+            --wait --atomic
+
+      - name: Post-deploy health check
+        run: |
+          READY_URL="https://jte-test.local/api/v1/health/ready"
+          for i in {1..5}; do
+            curl -f -k $READY_URL && exit 0 || true
+            echo "Production health check failed, retrying... ($i/5)"
+            sleep 5
+          done
+          exit 1

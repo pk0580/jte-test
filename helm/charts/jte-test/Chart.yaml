@@ -1,0 +1,7 @@
+# Application Definition
+apiVersion: v1
+name: jte-test
+description: A Helm chart for JTE Test Symfony application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

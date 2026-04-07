@@ -64,6 +64,38 @@
 
 В приложении реализована продвинутая система мониторинга на базе **Prometheus** (метрики) и **Sentry** (ошибки и трейсинг).
 
+---
+
+## 🚀 CI/CD и Deployment
+
+Для обеспечения качества и автоматизации развертывания настроен CI/CD пайплайн через **GitHub Actions**.
+
+### Этапы CI/CD:
+1.  **Build & Test** (настройка в `.github/workflows/ci-cd.yml`):
+    *   Установка PHP зависимостей (`composer install`).
+    *   Статический анализ кода (`PHPStan`, конфиг `phpstan.neon`).
+    *   Проверка безопасности зависимостей (`Symfony Security Checker`).
+    *   Запуск Unit и Integration тестов (`PHPUnit`, конфиг `phpunit.dist.xml`).
+2.  **Package** (сборка Docker-образа):
+    *   Сборка оптимизированного Docker-образа для Production (`docker/php/Dockerfile.prod`).
+    *   Используется multi-stage build для минимизации размера образа и исключения dev-зависимостей.
+    *   Пуш образа в **GitHub Container Registry (GHCR)**.
+3.  **Deploy** (развертывание через Helm):
+    *   Развертывание в кластер **Kubernetes** с использованием **Helm** (конфигурация в `helm/charts/jte-test`).
+    *   Автоматическое обновление версии образа.
+    *   Обеспечение Zero Downtime Deployment.
+
+### Инфраструктура в Kubernetes (Helm):
+Все шаблоны и настройки инфраструктуры находятся в директории `helm/charts/jte-test`:
+*   **Deployment & Service** (`templates/deployment.yaml`, `templates/service.yaml`): Описание подов приложения и доступа к ним.
+*   **Horizontal Pod Autoscaler (HPA)** (`templates/hpa.yaml`): Автоматическое масштабирование количества подов (от 3 до 10) в зависимости от нагрузки на CPU и Memory.
+*   **Resource Quotas**: Четкие лимиты и запросы ресурсов для стабильности кластера (настроены в `values.yaml`).
+*   **Liveness & Readiness Probes**: Автоматическое обнаружение и перезапуск зависших контейнеров, а также исключение неготовых подов из балансировки трафика.
+*   **ConfigMaps & Secrets** (`templates/configmap.yaml`, `templates/secrets.yaml`): Разделение конфигурации и чувствительных данных (DB_URL).
+*   **Nginx Ingress** (`templates/ingress.yaml`): Управление входящим трафиком и TLS-терминация.
+
+---
+
 ### 1. Prometheus: Написание новых метрик
 
 Для сбора метрик используется бандл `artprima/prometheus-metrics-bundle`.
