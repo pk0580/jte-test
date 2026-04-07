@@ -25,6 +25,7 @@ readonly class CreateOrderUseCase
     public function execute(CreateOrderSoapRequestDto $request): SoapOrderResponseDto
     {
         $articles = array_map(
+            /** @param SoapOrderArticleDto|array $a */
             function ($a) {
                 // Если пришел массив (из-за особенностей денормализации SOAP вложенных объектов), приведем к DTO
                 if (is_array($a)) {
@@ -34,6 +35,10 @@ readonly class CreateOrderUseCase
                         price: (string)($a['price'] ?? '0'),
                         weight: (string)($a['weight'] ?? '0')
                     );
+                }
+
+                if (!$a instanceof SoapOrderArticleDto) {
+                    throw new \InvalidArgumentException('Article must be an instance of SoapOrderArticleDto or an array');
                 }
 
                 return new OrderArticleDto($a->id, (float)$a->amount, (float)$a->price, (float)$a->weight);
