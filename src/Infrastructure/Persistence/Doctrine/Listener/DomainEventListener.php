@@ -127,10 +127,10 @@ class DomainEventListener
     {
         try {
             $cacheKey = 'doctrine_flush_duration';
-            $item = $this->appCache->get($cacheKey, function (ItemInterface $item) {
+            /** @var float[] $durations */
+            $durations = $this->appCache->get($cacheKey, function (ItemInterface $item) {
                 return [];
             });
-            $durations = $item;
             $durations[] = $duration;
             if (count($durations) > 10) {
                 array_shift($durations);
