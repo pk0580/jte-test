@@ -67,3 +67,5 @@ Example:
 `docker exec jte-test-php-1 bin/phpunit`
 `docker exec jte-test-php-1 composer install`
 `docker exec jte-test-php-1 bin/console`
+
+Общайся на русском языке
