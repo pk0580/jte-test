@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\MessageHandler;
 
 use App\Application\Message\DeleteOrderMessage;
@@ -11,7 +13,8 @@ readonly class DeleteOrderHandler
 {
     public function __construct(
         private OrderSearchInterface $orderSearch
-    ) {}
+    ) {
+    }
 
     public function __invoke(DeleteOrderMessage $message): void
     {

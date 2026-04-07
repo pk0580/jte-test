@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Dto;
 
 readonly class CreateOrderDto
@@ -13,5 +15,6 @@ readonly class CreateOrderDto
         public string $email,
         public int $payType,
         public array $articles,
-    ) {}
+    ) {
+    }
 }

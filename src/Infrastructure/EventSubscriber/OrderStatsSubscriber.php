@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\EventSubscriber;
 
 use App\Domain\Entity\Order;
@@ -15,7 +17,8 @@ readonly class OrderStatsSubscriber
 {
     public function __construct(
         private TagAwareCacheInterface $statsCache
-    ) {}
+    ) {
+    }
 
     public function postPersist(PostPersistEventArgs $args): void
     {

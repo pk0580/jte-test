@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dto\Search;
 
 class SearchOrderResponseDto
@@ -13,5 +15,6 @@ class SearchOrderResponseDto
         public string $companyName,
         public string $description,
         public int $status,
-    ) {}
+    ) {
+    }
 }

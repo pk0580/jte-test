@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\MessageHandler;
 
 use App\Application\Message\SendOrderEmailMessage;
@@ -15,7 +17,8 @@ readonly class SendOrderEmailHandler
         private OrderRepositoryInterface $orderRepository,
         private LoggerInterface $logger,
         private CacheInterface $appCache
-    ) {}
+    ) {
+    }
 
     public function __invoke(SendOrderEmailMessage $message): void
     {

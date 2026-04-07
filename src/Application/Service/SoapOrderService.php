@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Service;
 
-use App\Application\UseCase\CreateOrderUseCase;
 use App\Application\Soap\SoapConverter;
+use App\Application\UseCase\CreateOrderUseCase;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 readonly class SoapOrderService
@@ -12,7 +14,8 @@ readonly class SoapOrderService
         private CreateOrderUseCase    $useCase,
         private ValidatorInterface    $validator,
         private SoapConverter         $soapConverter
-    ) {}
+    ) {
+    }
 
     /**
      * @param mixed $parameters

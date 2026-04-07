@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Logging\Monolog;
 
 use App\Infrastructure\Logging\RequestIdProvider;
@@ -12,7 +14,8 @@ class RequestIdProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly RequestIdProvider $requestIdProvider
-    ) {}
+    ) {
+    }
 
     public function __invoke(LogRecord $record): LogRecord
     {

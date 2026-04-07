@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Controller\Api\v1;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class PriceControllerTest extends WebTestCase
 {
@@ -35,6 +37,6 @@ class PriceControllerTest extends WebTestCase
         // Если парсер упадет (т.к. нет реального URL), мы получим 500, что тоже ок для проверки контроллера.
         // Но лучше если он вернет данные.
         $status = $client->getResponse()->getStatusCode();
-        $this->assertTrue(in_array($status, [200, 500]));
+        $this->assertTrue(in_array($status, [200, 500], true));
     }
 }

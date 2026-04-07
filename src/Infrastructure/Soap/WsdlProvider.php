@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Soap;
 
 use App\Application\Service\WsdlProviderInterface;
@@ -9,7 +11,8 @@ readonly class WsdlProvider implements WsdlProviderInterface
 {
     public function __construct(
         private string $wsdlPath
-    ) {}
+    ) {
+    }
 
     public function getWsdlPath(): string
     {

@@ -1,15 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller\Api\v1;
 
 use App\Domain\Repository\OrderSearchInterface;
 use Doctrine\DBAL\Connection;
-use Predis\ClientInterface;
-use Doctrine\Migrations\DependencyInjection\DependencyInjectionAdapter;
-use Doctrine\Migrations\Metadata\Storage\TableMetadataStorageConfiguration;
 use Doctrine\Migrations\MigrationsRepository;
-use Doctrine\Migrations\Plan\MigrationPlanCalculator;
 use Doctrine\Migrations\Version\MigrationStatusCalculator;
+use Predis\ClientInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;

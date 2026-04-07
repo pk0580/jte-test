@@ -1,21 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Factory;
 
-use App\Domain\Entity\PayType;
+use App\Domain\Dto\CreateOrderDto;
+use App\Domain\Entity\Order;
+use App\Domain\Entity\OrderArticle;
+use App\Domain\Repository\ArticleRepositoryInterface;
+use App\Domain\Repository\PayTypeRepositoryInterface;
+use App\Domain\Service\OrderPriceCalculator;
 use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\ValueObject\DeliveryAddress;
 use App\Domain\ValueObject\DeliveryConfig;
 use App\Domain\ValueObject\DeliveryTerms;
 use App\Domain\ValueObject\FinancialTerms;
 use App\Domain\ValueObject\ManagerInfo;
-use App\Domain\Dto\CreateOrderDto;
-use App\Domain\Entity\Order;
-use App\Domain\Entity\OrderArticle;
-
-use App\Domain\Repository\ArticleRepositoryInterface;
-use App\Domain\Repository\PayTypeRepositoryInterface;
-use App\Domain\Service\OrderPriceCalculator;
 
 class OrderFactory
 {
@@ -23,7 +23,8 @@ class OrderFactory
         private readonly OrderPriceCalculator $priceCalculator,
         private readonly ArticleRepositoryInterface $articleRepository,
         private readonly PayTypeRepositoryInterface $payTypeRepository
-    ) {}
+    ) {
+    }
 
     public function create(CreateOrderDto $dto): Order
     {

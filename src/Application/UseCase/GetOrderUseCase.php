@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\UseCase;
 
 use App\Application\Dto\Order\OrderArticleResponseDto;
@@ -11,7 +13,8 @@ readonly class GetOrderUseCase
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository
-    ) {}
+    ) {
+    }
 
     public function execute(int $id): OrderResponseDto
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Search;
 
 use App\Domain\Entity\Order;
@@ -18,7 +20,8 @@ readonly class FallbackSearchProvider implements OrderSearchInterface
         private OrderSearchInterface $fallback,
         private LoggerInterface $logger,
         private TraceIdContext $traceIdContext
-    ) {}
+    ) {
+    }
 
     public function search(
         string $query,

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dto\Search;
 
 readonly class SearchResultDto
@@ -14,5 +16,6 @@ readonly class SearchResultDto
         public int   $limit = 10,
         public ?int  $lastId = null,
         public ?int  $status = null,
-    ) {}
+    ) {
+    }
 }

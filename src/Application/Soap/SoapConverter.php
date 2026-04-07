@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Soap;
 
 use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
@@ -14,7 +16,8 @@ readonly class SoapConverter
     public function __construct(
         private NormalizerInterface   $normalizer,
         private DenormalizerInterface $denormalizer
-    ) {}
+    ) {
+    }
 
     /**
      * @param mixed $parameters
@@ -28,10 +31,10 @@ readonly class SoapConverter
 
         // Если пришло из SoapServer в режиме document/literal, параметры могут быть обернуты
         if (isset($parametersArray['clientName']) === false && count($parametersArray) === 1) {
-             $firstKey = array_key_first($parametersArray);
-             if (is_object($parametersArray[$firstKey]) || is_array($parametersArray[$firstKey])) {
-                 $parametersArray = (array)$parametersArray[$firstKey];
-             }
+            $firstKey = array_key_first($parametersArray);
+            if (is_object($parametersArray[$firstKey]) || is_array($parametersArray[$firstKey])) {
+                $parametersArray = (array)$parametersArray[$firstKey];
+            }
         }
 
         // Если передан массив объектов, нормализуем articles.item
@@ -42,7 +45,7 @@ readonly class SoapConverter
                 if (is_object($items)) {
                     $parametersArray['articles'] = [(array)$items];
                 } elseif (is_array($items)) {
-                    $parametersArray['articles'] = array_map(fn($item) => is_object($item) ? (array)$item : $item, $items);
+                    $parametersArray['articles'] = array_map(fn ($item) => is_object($item) ? (array)$item : $item, $items);
                 }
             }
         }
@@ -67,10 +70,10 @@ readonly class SoapConverter
         // SoapServer при использовании associative array игнорирует null, что убирает теги из XML.
         // Чтобы теги <orderId> и <message> ПРИСУТСТВОВАЛИ (как того ожидает тест), заменим null на дефолты.
         if (!isset($data['orderId']) || $data['orderId'] === null) {
-             $data['orderId'] = 0;
+            $data['orderId'] = 0;
         }
         if (!isset($data['message']) || $data['message'] === null) {
-             $data['message'] = '';
+            $data['message'] = '';
         }
 
         return $data;

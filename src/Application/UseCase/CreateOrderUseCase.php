@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\UseCase;
 
+use App\Application\Common\TransactionManagerInterface;
 use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
 use App\Application\Dto\Soap\SoapOrderResponseDto;
 use App\Domain\Dto\CreateOrderDto;
 use App\Domain\Dto\OrderArticleDto;
 use App\Domain\Factory\OrderFactory;
 use App\Domain\Repository\OrderRepositoryInterface;
-use App\Application\Common\TransactionManagerInterface;
 
 readonly class CreateOrderUseCase
 {
@@ -16,12 +18,13 @@ readonly class CreateOrderUseCase
         private OrderRepositoryInterface   $orderRepository,
         private OrderFactory               $orderFactory,
         private TransactionManagerInterface $transactionManager
-    ) {}
+    ) {
+    }
 
     public function execute(CreateOrderSoapRequestDto $request): SoapOrderResponseDto
     {
         $articles = array_map(
-            function($a) {
+            function ($a) {
                 if (is_array($a)) {
                     $id = (int)($a['id'] ?? $a['articleId'] ?? 0);
                     return new OrderArticleDto($id, (float)$a['amount'], (float)$a['price'], (float)$a['weight']);

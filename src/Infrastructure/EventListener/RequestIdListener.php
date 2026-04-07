@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\EventListener;
 
 use App\Infrastructure\Logging\RequestIdProvider;
@@ -12,7 +14,8 @@ class RequestIdListener
 {
     public function __construct(
         private readonly RequestIdProvider $requestIdProvider
-    ) {}
+    ) {
+    }
 
     #[AsEventListener(event: KernelEvents::REQUEST, priority: 255)]
     public function onKernelRequest(RequestEvent $event): void

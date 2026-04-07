@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dto\Order;
 
 use App\Application\Dto\OrderArticleDto;
@@ -18,5 +20,6 @@ readonly class OrderDto
         public float  $totalPrice,
         /** @var OrderArticleDto[] */
         public array  $articles,
-    ) {}
+    ) {
+    }
 }

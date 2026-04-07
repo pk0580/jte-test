@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Application\Dto\Soap;
+declare(strict_types=1);
 
-use Symfony\Component\Serializer\Annotation\SerializedName;
+namespace App\Application\Dto\Soap;
 
 readonly class SoapOrderResponseDto
 {
@@ -10,5 +10,6 @@ readonly class SoapOrderResponseDto
         public bool $success,
         public ?int $orderId = null,
         public ?string $message = null
-    ) {}
+    ) {
+    }
 }

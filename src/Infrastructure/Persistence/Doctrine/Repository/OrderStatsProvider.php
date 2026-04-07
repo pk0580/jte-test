@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
 use App\Domain\Entity\OrderStats;
@@ -19,7 +21,8 @@ readonly class OrderStatsProvider implements OrderStatsProviderInterface
         private EntityManagerInterface $entityManager,
         private CacheInterface $statsCache,
         private CollectorRegistry $metricsRegistry
-    ) {}
+    ) {
+    }
 
     public function getStats(string $groupBy, int $page, int $limit): array
     {
@@ -51,7 +54,7 @@ readonly class OrderStatsProvider implements OrderStatsProviderInterface
             $total = (int)$countQb->getQuery()->getSingleScalarResult();
 
             return [
-                'items' => array_map(fn(OrderStats $item) => [
+                'items' => array_map(fn (OrderStats $item) => [
                     'period' => $item->getPeriod(),
                     'orderCount' => $item->getOrderCount(),
                     'totalAmount' => (float)$item->getTotalAmount(),

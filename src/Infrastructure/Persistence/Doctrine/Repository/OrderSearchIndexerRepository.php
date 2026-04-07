@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
+use App\Domain\Dto\Search\SearchOrderDto;
 use App\Domain\Entity\Order;
 use App\Domain\Repository\OrderSearchIndexerRepositoryInterface;
-use App\Domain\Dto\Search\SearchOrderDto;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -31,7 +33,7 @@ class OrderSearchIndexerRepository extends ServiceEntityRepository implements Or
             ->getQuery()
             ->getResult();
 
-        return array_map(fn(SearchOrderDto $dto) => (array)$dto, $data);
+        return array_map(fn (SearchOrderDto $dto) => (array)$dto, $data);
     }
 
     public function getIterableForIndexing(): iterable

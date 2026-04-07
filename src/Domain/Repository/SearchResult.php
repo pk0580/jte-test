@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Repository;
 
 /**
@@ -14,5 +16,6 @@ readonly class SearchResult
     public function __construct(
         public array $items,
         public int $total
-    ) {}
+    ) {
+    }
 }

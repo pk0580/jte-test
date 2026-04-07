@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Messenger\Middleware;
 
 use App\Infrastructure\Logging\RequestIdProvider;
@@ -10,7 +12,9 @@ use Symfony\Component\Messenger\Stamp\StampInterface;
 
 class RequestIdStamp implements StampInterface
 {
-    public function __construct(private readonly string $requestId) {}
+    public function __construct(private readonly string $requestId)
+    {
+    }
 
     public function getRequestId(): string
     {
@@ -22,7 +26,8 @@ class RequestIdMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private readonly RequestIdProvider $requestIdProvider
-    ) {}
+    ) {
+    }
 
     public function handle(Envelope $envelope, StackInterface $stack): Envelope
     {

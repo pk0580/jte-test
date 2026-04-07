@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\MessageHandler;
 
 use App\Application\Message\IndexOrderMessage;
@@ -13,7 +15,8 @@ readonly class IndexOrderHandler
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
         private OrderSearchInterface $orderSearch
-    ) {}
+    ) {
+    }
 
     public function __invoke(IndexOrderMessage $message): void
     {

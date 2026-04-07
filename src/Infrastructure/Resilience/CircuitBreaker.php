@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Resilience;
 
 use Psr\Cache\InvalidArgumentException;
@@ -24,7 +26,8 @@ class CircuitBreaker
         private readonly string $name,
         private readonly int $failureThreshold = 3,
         private readonly int $recoveryTime = 60
-    ) {}
+    ) {
+    }
 
     /**
      * @template T

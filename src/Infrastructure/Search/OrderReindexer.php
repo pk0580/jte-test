@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Search;
 
 use Doctrine\DBAL\Connection;
@@ -16,7 +18,8 @@ class OrderReindexer
     public function __construct(
         private readonly Connection $connection,
         private readonly SearchIndexerInterface $searchIndexer,
-    ) {}
+    ) {
+    }
 
     public function reindex(?SymfonyStyle $io = null, int $batchSize = self::DEFAULT_BATCH, int $resumeId = 0): void
     {
@@ -28,7 +31,6 @@ class OrderReindexer
             $this->runMainPass($tmpIndex, $resumeId, $maxIdAtStart, $batchSize, $io);
             $this->runCatchUpPass($tmpIndex, $maxIdAtStart, $batchSize, $io);
             $this->finalizeReindex($tmpIndex, $io);
-
         } catch (Throwable $e) {
             if ($io) {
                 $io->error($e->getMessage());

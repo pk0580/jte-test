@@ -1,21 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Persistence\Doctrine\Listener;
 
-use App\Domain\Contract\HasDomainEventsInterface;
 use App\Application\Messenger\Message\InvalidateStatsCacheMessage;
+use App\Domain\Contract\HasDomainEventsInterface;
 use App\Domain\Dto\Outbox\OrderEventPayloadDto;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OutboxEvent;
 use App\Domain\Enum\OrderEventType;
-use App\Domain\Event\OrderCreatedEvent;
-use App\Domain\Event\OrderUpdatedEvent;
-use App\Domain\Event\OrderDeletedEvent;
 use App\Domain\Event\DomainEventInterface;
+use App\Domain\Event\OrderCreatedEvent;
+use App\Domain\Event\OrderDeletedEvent;
+use App\Domain\Event\OrderUpdatedEvent;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
-use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
+use Doctrine\ORM\Events;
 use Prometheus\CollectorRegistry;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -34,7 +36,8 @@ class DomainEventListener
         private readonly MessageBusInterface $messageBus,
         private readonly \Symfony\Contracts\Cache\CacheInterface $appCache,
         private readonly CollectorRegistry $collectorRegistry
-    ) {}
+    ) {
+    }
 
     public function onFlush(OnFlushEventArgs $args): void
     {

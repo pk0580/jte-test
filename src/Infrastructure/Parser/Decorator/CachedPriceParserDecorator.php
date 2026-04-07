@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Parser\Decorator;
 
 use App\Domain\Dto\PriceDto;
@@ -24,7 +26,8 @@ class CachedPriceParserDecorator implements PriceParserInterface
         private readonly CacheInterface $appCache,
         private readonly LoggerInterface $logger,
         private readonly CollectorRegistry $metricsRegistry
-    ) {}
+    ) {
+    }
 
     public function parse(string $factory, string $collection, string $article): PriceDto
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dto\Order;
 
 class OrderArticleResponseDto
@@ -10,5 +12,6 @@ class OrderArticleResponseDto
         public string $amount,
         public string $price,
         public string $weight
-    ) {}
+    ) {
+    }
 }

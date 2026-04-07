@@ -1,24 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Controller\Api\v1;
 
+use App\Domain\Entity\Article;
 use App\Domain\Entity\Order;
 use App\Domain\Entity\OrderArticle;
-use App\Domain\Entity\Article;
 use App\Domain\Entity\PayType;
+use App\Domain\Repository\OrderRepositoryInterface;
 use App\Domain\ValueObject\CustomerInfo;
 use App\Domain\ValueObject\DeliveryAddress;
+use App\Domain\ValueObject\DeliveryConfig;
 use App\Domain\ValueObject\DeliveryTerms;
 use App\Domain\ValueObject\FinancialTerms;
 use App\Domain\ValueObject\ManagerInfo;
-use App\Domain\ValueObject\DeliveryConfig;
-use App\Domain\Repository\OrderRepositoryInterface;
+use App\Infrastructure\Search\SearchIndexerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Contracts\Cache\CacheInterface;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
-
-use App\Infrastructure\Search\SearchIndexerInterface;
 
 class OrderControllerTest extends WebTestCase
 {
@@ -232,9 +233,9 @@ class OrderControllerTest extends WebTestCase
             $sql = "SELECT id, customer_info_email, name FROM orders WHERE customer_info_email LIKE 'searchable%'";
             $searchableOrders = $conn->fetchAllAssociative($sql);
 
-            $emails = array_map(fn($o) => (string)($o['customer_info_email'] ?? 'NULL'), $searchableOrders);
-            $names = array_map(fn($o) => (string)($o['name'] ?? 'NULL'), $searchableOrders);
-            $ids = array_map(fn($o) => (string)$o['id'], $searchableOrders);
+            $emails = array_map(fn ($o) => (string)($o['customer_info_email'] ?? 'NULL'), $searchableOrders);
+            $names = array_map(fn ($o) => (string)($o['name'] ?? 'NULL'), $searchableOrders);
+            $ids = array_map(fn ($o) => (string)$o['id'], $searchableOrders);
 
             $this->markTestSkipped(sprintf(
                 'Not enough search results. Total: %d, SearchableCount: %d, Response: %d. IDs: %s. Emails: %s. Names: %s. SQL query: %s',
@@ -411,7 +412,7 @@ class OrderControllerTest extends WebTestCase
 
         static::getContainer()->get(CacheInterface::class)->delete('order_last_update_timestamp');
         // Ensure Redis has something different
-        static::getContainer()->get(CacheInterface::class)->get('order_last_update_timestamp', fn() => (string)(microtime(true) + 0.01));
+        static::getContainer()->get(CacheInterface::class)->get('order_last_update_timestamp', fn () => (string)(microtime(true) + 0.01));
 
         // 3. Get stats again, ETag should be different
         $client->request('GET', '/api/v1/orders/stats', [
@@ -458,7 +459,7 @@ class OrderControllerTest extends WebTestCase
 
         static::getContainer()->get(CacheInterface::class)->delete('order_last_update_timestamp');
         // Ensure Redis has something different
-        static::getContainer()->get(CacheInterface::class)->get('order_last_update_timestamp', fn() => (string)(microtime(true) + 0.01));
+        static::getContainer()->get(CacheInterface::class)->get('order_last_update_timestamp', fn () => (string)(microtime(true) + 0.01));
 
         // 3. Get search results again, ETag should be different
         $client->request('GET', '/api/v1/orders/search', [

@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Command;
 
-use App\Domain\Dto\Outbox\OrderEventPayloadDto;
 use App\Application\Message\DeleteOrderMessage;
 use App\Application\Message\IndexOrderMessage;
 use App\Application\Message\SendOrderEmailMessage;
@@ -90,7 +91,8 @@ class ProcessOutboxCommand extends Command
                     $delaySeconds = (2 ** ($event->getAttempts() - 1)) * 60;
                     $event->setScheduledAt((new \DateTimeImmutable())->modify(sprintf('+%d seconds', $delaySeconds)));
 
-                    $output->writeln(sprintf('Error processing event %d (attempt %d): %s. Rescheduled for %s',
+                    $output->writeln(sprintf(
+                        'Error processing event %d (attempt %d): %s. Rescheduled for %s',
                         $event->getId(),
                         $event->getAttempts(),
                         $e->getMessage(),

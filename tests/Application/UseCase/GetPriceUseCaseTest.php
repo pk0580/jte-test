@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Application\UseCase;
 
-use App\Domain\Dto\PriceDto;
 use App\Application\UseCase\GetPriceUseCase;
+use App\Domain\Dto\PriceDto;
 use App\Domain\Service\PriceParserInterface;
 use PHPUnit\Framework\TestCase;
 

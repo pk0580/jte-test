@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Entity;
 
+use App\Domain\Dto\Outbox\OrderEventPayloadDto;
 use App\Domain\Enum\OrderEventType;
 use Doctrine\ORM\Mapping as ORM;
-
-use App\Domain\Dto\Outbox\OrderEventPayloadDto;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'outbox_events')]

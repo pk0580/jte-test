@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\ValueObject;
 
 use Doctrine\ORM\Mapping as ORM;
@@ -10,13 +12,10 @@ final readonly class OrderPricing
     public function __construct(
         #[ORM\Column(type: 'decimal', precision: 12, scale: 2, options: ['default' => '0.00'])]
         public string $totalAmount = '0.00',
-
         #[ORM\Column(type: 'decimal', precision: 12, scale: 3, options: ['default' => '0.000'])]
         public string $totalWeight = '0.000',
-
         #[ORM\Column(type: 'decimal', precision: 12, scale: 2, nullable: true)]
         public ?string $deliveryPriceEuro = null,
-
         #[ORM\Column(type: 'boolean', nullable: true)]
         public ?bool $specPrice = null,
     ) {

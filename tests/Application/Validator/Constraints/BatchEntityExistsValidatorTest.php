@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Application\Validator\Constraints;
 
 use App\Application\Validator\Constraints\BatchEntityExists;
 use App\Application\Validator\Constraints\BatchEntityExistsValidator;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;

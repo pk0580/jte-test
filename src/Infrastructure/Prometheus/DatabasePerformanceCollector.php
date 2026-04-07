@@ -8,7 +8,6 @@ use Artprima\PrometheusMetricsBundle\Metrics\MetricsCollectorInitTrait;
 use Artprima\PrometheusMetricsBundle\Metrics\MetricsCollectorInterface;
 use Artprima\PrometheusMetricsBundle\Metrics\PreRequestMetricsCollectorInterface;
 use Doctrine\DBAL\Connection;
-use Prometheus\CollectorRegistry;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 
 class DatabasePerformanceCollector implements MetricsCollectorInterface, PreRequestMetricsCollectorInterface

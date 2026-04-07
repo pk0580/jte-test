@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller\Api\v1;
 
 use App\Application\Dto\OrderStatsRequestDto;
@@ -21,7 +23,8 @@ class OrderController extends AbstractController
     public function __construct(
         private readonly OrderRepositoryInterface $orderRepository,
         private readonly CacheInterface $appCache
-    ) {}
+    ) {
+    }
 
     private function getLastUpdateTimestamp(): string
     {
@@ -32,7 +35,8 @@ class OrderController extends AbstractController
 
     #[Route('/api/v1/orders/stats', name: 'api_v1_orders_stats', methods: ['GET'])]
     public function getStats(
-        #[MapQueryString] OrderStatsRequestDto $dto,
+        #[MapQueryString]
+        OrderStatsRequestDto $dto,
         GetOrderStatsUseCase $useCase,
         SerializerInterface $serializer,
         Request $request,
@@ -64,7 +68,8 @@ class OrderController extends AbstractController
 
     #[Route('/api/v1/orders/search', name: 'api_v1_orders_search', methods: ['GET'])]
     public function search(
-        #[MapQueryString] OrderSearchRequestDto $dto,
+        #[MapQueryString]
+        OrderSearchRequestDto $dto,
         SearchOrdersUseCase $useCase,
         SerializerInterface $serializer,
         Request $request,

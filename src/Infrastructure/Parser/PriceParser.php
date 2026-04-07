@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Parser;
 
 use App\Domain\Dto\PriceDto;
 use App\Domain\Service\PriceParserInterface;
+use RuntimeException;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use RuntimeException;
 
 class PriceParser implements PriceParserInterface
 {
@@ -14,7 +16,8 @@ class PriceParser implements PriceParserInterface
 
     public function __construct(
         private readonly HttpClientInterface $httpClient
-    ) {}
+    ) {
+    }
 
     public function parse(string $factory, string $collection, string $article): PriceDto
     {
