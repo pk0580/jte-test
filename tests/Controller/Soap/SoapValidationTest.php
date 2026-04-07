@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Controller\Soap;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class SoapValidationTest extends WebTestCase
 {

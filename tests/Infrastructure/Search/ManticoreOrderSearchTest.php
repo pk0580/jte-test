@@ -1,20 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Infrastructure\Search;
 
-use App\Domain\Entity\Order;
-use App\Domain\Entity\PayType;
-use App\Domain\ValueObject\CustomerInfo;
-use App\Domain\ValueObject\DeliveryAddress;
-use App\Domain\ValueObject\DeliveryTerms;
-use App\Domain\ValueObject\ManagerInfo;
-use App\Domain\ValueObject\FinancialTerms;
-use App\Domain\ValueObject\DeliveryConfig;
 use App\Domain\Repository\OrderRepositoryInterface;
-use App\Domain\Repository\SearchResult;
+use App\Infrastructure\Monitoring\TraceIdContext;
 use App\Infrastructure\Search\ManticoreOrderSearch;
 use App\Infrastructure\Search\OrderSearchQueryBuilder;
-use App\Infrastructure\Monitoring\TraceIdContext;
 use Manticoresearch\Client;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -89,7 +82,7 @@ class ManticoreOrderSearchTest extends TestCase
         // Expected 3 calls: 1000, 1000, 500
         $client->expects($this->exactly(3))
             ->method('bulk')
-            ->willReturnCallback(function($params) use (&$callCount) {
+            ->willReturnCallback(function ($params) use (&$callCount) {
                 $callCount++;
                 if ($callCount === 1) {
                     $this->assertCount(1000, $params['body']);
