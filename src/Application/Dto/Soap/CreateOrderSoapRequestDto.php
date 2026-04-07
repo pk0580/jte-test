@@ -26,7 +26,7 @@ class CreateOrderSoapRequestDto
         #[Assert\Positive]
         #[AppAssert\BatchEntityExists(entity: PayType::class, message: 'Invalid payment type.')]
         public int $payType = 0,
-        /** @var array<int, SoapOrderArticleDto> */
+        /** @var array<int, SoapOrderArticleDto|array<string, mixed>> */
         #[Assert\NotBlank]
         #[Assert\Valid]
         #[AppAssert\BatchEntityExists(entity: Article::class, fields: ['id'])]
