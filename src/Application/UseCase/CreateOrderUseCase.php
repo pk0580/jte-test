@@ -25,7 +25,7 @@ readonly class CreateOrderUseCase
     public function execute(CreateOrderSoapRequestDto $request): SoapOrderResponseDto
     {
         $articles = array_map(
-            /** @param SoapOrderArticleDto|array $a */
+            /** @param mixed $a */
             function ($a) {
                 // Если пришел массив (из-за особенностей денормализации SOAP вложенных объектов), приведем к DTO
                 if (is_array($a)) {
