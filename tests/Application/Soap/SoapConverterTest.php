@@ -7,8 +7,8 @@ namespace App\Tests\Application\Soap;
 use App\Application\Dto\Soap\SoapOrderResponseDto;
 use App\Application\Soap\SoapConverter;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class SoapConverterTest extends TestCase
 {
