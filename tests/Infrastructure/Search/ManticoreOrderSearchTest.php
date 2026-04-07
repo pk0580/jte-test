@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Infrastructure\Search;
 
-use App\Domain\Repository\OrderRepositoryInterface;
 use App\Infrastructure\Monitoring\TraceIdContext;
 use App\Infrastructure\Search\ManticoreOrderSearch;
 use App\Infrastructure\Search\OrderSearchQueryBuilder;
