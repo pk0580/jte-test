@@ -110,7 +110,6 @@ class Order implements HasDomainEventsInterface
         FinancialTerms $financialTerms,
         DeliveryConfig $deliveryConfig,
         string $locale = 'ru',
-        string $currency = 'EUR',
         string $measure = 'm',
         ?string $hash = null,
         ?string $token = null,

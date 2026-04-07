@@ -69,10 +69,10 @@ readonly class SoapConverter
 
         // SoapServer при использовании associative array игнорирует null, что убирает теги из XML.
         // Чтобы теги <orderId> и <message> ПРИСУТСТВОВАЛИ (как того ожидает тест), заменим null на дефолты.
-        if (!isset($data['orderId']) || $data['orderId'] === null) {
+        if (!isset($data['orderId']) || $data['orderId'] === 0) {
             $data['orderId'] = 0;
         }
-        if (!isset($data['message']) || $data['message'] === null) {
+        if (!isset($data['message']) || $data['message'] === '') {
             $data['message'] = '';
         }
 

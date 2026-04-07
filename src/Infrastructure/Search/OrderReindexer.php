@@ -80,9 +80,7 @@ class OrderReindexer
                 $io->progressAdvance($processedCount);
             }
 
-            if (self::THROTTLE_US > 0) {
-                usleep(self::THROTTLE_US);
-            }
+            usleep(self::THROTTLE_US);
         }
 
         if ($io) {

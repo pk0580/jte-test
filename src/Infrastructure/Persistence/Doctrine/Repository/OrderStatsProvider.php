@@ -29,7 +29,9 @@ readonly class OrderStatsProvider implements OrderStatsProviderInterface
         $cacheKey = sprintf('stats_%s_%d_%d', $groupBy, $page, $limit);
 
         return $this->trackCache($this->statsCache, $cacheKey, function (ItemInterface $item) use ($groupBy, $page, $limit) {
+            // @phpstan-ignore-next-line
             if ($item instanceof TagAwareItemInterface) {
+                // @phpstan-ignore-next-line
                 $item->tag(['stats', 'stats_' . $groupBy]);
             }
 

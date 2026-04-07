@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Dto\Soap;
 
-use Symfony\Component\Serializer\Annotation\SerializedName;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class SoapOrderArticleDto
