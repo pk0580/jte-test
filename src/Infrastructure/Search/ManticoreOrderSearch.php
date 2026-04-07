@@ -23,7 +23,6 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
     public function __construct(
         string $host,
         int $port,
-        private readonly OrderRepositoryInterface $orderRepository,
         private readonly OrderSearchQueryBuilder $queryBuilder,
         private readonly LoggerInterface $logger,
         private readonly TraceIdContext $traceIdContext
