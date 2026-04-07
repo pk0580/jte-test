@@ -3,20 +3,20 @@
 namespace App\Domain\Entity;
 
 use App\Domain\Contract\HasDomainEventsInterface;
-use App\Domain\ValueObject\CustomerInfo;
-use App\Domain\ValueObject\DeliveryAddress;
-use App\Domain\ValueObject\DeliveryTerms;
-use App\Domain\ValueObject\ManagerInfo;
-use App\Domain\ValueObject\FinancialTerms;
-use App\Domain\ValueObject\DeliveryConfig;
-use App\Domain\ValueObject\OrderLogistics;
-use App\Domain\ValueObject\OrderPricing;
-use App\Domain\ValueObject\OrderDates;
-use App\Domain\ValueObject\OrderMetadata;
-use App\Domain\ValueObject\OrderReview;
-use App\Domain\Trait\AggregateRootTrait;
 use App\Domain\Event\OrderCreatedEvent;
 use App\Domain\Event\OrderUpdatedEvent;
+use App\Domain\Trait\AggregateRootTrait;
+use App\Domain\ValueObject\CustomerInfo;
+use App\Domain\ValueObject\DeliveryAddress;
+use App\Domain\ValueObject\DeliveryConfig;
+use App\Domain\ValueObject\DeliveryTerms;
+use App\Domain\ValueObject\FinancialTerms;
+use App\Domain\ValueObject\ManagerInfo;
+use App\Domain\ValueObject\OrderDates;
+use App\Domain\ValueObject\OrderLogistics;
+use App\Domain\ValueObject\OrderMetadata;
+use App\Domain\ValueObject\OrderPricing;
+use App\Domain\ValueObject\OrderReview;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -37,7 +37,6 @@ class Order implements HasDomainEventsInterface
     public const STATUS_SHIPPED = 3;
     public const STATUS_DELIVERED = 4;
     public const STATUS_CANCELLED = 5;
-
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

@@ -13,15 +13,15 @@ readonly class OrderSearchRequestDto
         public string $query,
 
         #[Assert\GreaterThanOrEqual(value: 1, message: 'Page must be greater than or equal to 1')]
-        public int    $page = 1,
+        public int $page = 1,
 
         #[Assert\Range(min: 1, max: 100, notInRangeMessage: 'Limit must be between 1 and 100')]
-        public int    $limit = 10,
+        public int $limit = 10,
 
         #[Assert\Type(type: 'integer', message: 'Last ID must be an integer')]
-        public ?int   $lastId = null,
+        public ?int $lastId = null,
 
         #[Assert\Type(type: 'integer', message: 'Status must be an integer')]
-        public ?int   $status = null,
+        public ?int $status = null,
     ) {}
 }

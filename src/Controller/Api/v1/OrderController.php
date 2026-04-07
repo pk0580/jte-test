@@ -2,19 +2,19 @@
 
 namespace App\Controller\Api\v1;
 
-use App\Application\Dto\Search\OrderSearchRequestDto;
 use App\Application\Dto\OrderStatsRequestDto;
+use App\Application\Dto\Search\OrderSearchRequestDto;
 use App\Application\UseCase\GetOrderStatsUseCase;
 use App\Application\UseCase\GetOrderUseCase;
 use App\Application\UseCase\SearchOrdersUseCase;
 use App\Domain\Repository\OrderRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class OrderController extends AbstractController
 {
@@ -25,8 +25,8 @@ class OrderController extends AbstractController
 
     private function getLastUpdateTimestamp(): string
     {
-        return (string)$this->appCache->get('order_last_update_timestamp', function () {
-            return (string)($this->orderRepository->getLastUpdateTimestamp() ?? time());
+        return (string) $this->appCache->get('order_last_update_timestamp', function () {
+            return (string) ($this->orderRepository->getLastUpdateTimestamp() ?? time());
         });
     }
 
@@ -55,7 +55,7 @@ class OrderController extends AbstractController
                 'page' => $stats->page,
                 'limit' => $stats->limit,
                 'total_pages' => $stats->totalPages,
-            ]
+            ],
         ], 'json'));
         $response->headers->set('Content-Type', 'application/json');
 
