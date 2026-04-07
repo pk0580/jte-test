@@ -91,8 +91,8 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
                 return null;
             }
 
-            if ($result instanceof \DateTimeInterface) {
-                return $result->getTimestamp();
+            if (is_numeric($result)) {
+                return (int) $result;
             }
 
             try {
