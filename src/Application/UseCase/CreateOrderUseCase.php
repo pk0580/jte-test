@@ -6,6 +6,7 @@ namespace App\Application\UseCase;
 
 use App\Application\Common\TransactionManagerInterface;
 use App\Application\Dto\Soap\CreateOrderSoapRequestDto;
+use App\Application\Dto\Soap\SoapOrderArticleDto;
 use App\Application\Dto\Soap\SoapOrderResponseDto;
 use App\Domain\Dto\CreateOrderDto;
 use App\Domain\Dto\OrderArticleDto;

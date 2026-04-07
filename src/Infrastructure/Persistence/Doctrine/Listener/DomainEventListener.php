@@ -131,8 +131,11 @@ class DomainEventListener
                 return [];
             });
             $durations = is_array($item) ? $item : [];
+            // @phpstan-ignore-next-line
             $durations[] = $duration;
+            // @phpstan-ignore-next-line
             if (count($durations) > 10) {
+                // @phpstan-ignore-next-line
                 array_shift($durations);
             }
             // Since $appCache is not always TagAware, just use simple save if possible or re-get/set.

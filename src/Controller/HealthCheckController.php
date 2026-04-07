@@ -30,6 +30,7 @@ class HealthCheckController extends AbstractController
 
         // Check Database
         try {
+            $entityManager->getConnection()->getNativeConnection();
             $status['services']['database'] = 'ok';
         } catch (\Throwable $e) {
             $status['services']['database'] = 'fail: ' . $e->getMessage();

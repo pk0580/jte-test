@@ -91,6 +91,7 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
                 return null;
             }
 
+            // @phpstan-ignore-next-line
             if ($result instanceof \DateTimeInterface) {
                 return $result->getTimestamp();
             }

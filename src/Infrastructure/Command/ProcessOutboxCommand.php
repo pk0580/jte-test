@@ -75,12 +75,9 @@ class ProcessOutboxCommand extends Command
                         OrderEventType::INDEXED => new IndexOrderMessage($payloadDto->id),
                         OrderEventType::DELETED => new DeleteOrderMessage($payloadDto->id),
                         OrderEventType::EMAIL_NOTIFICATION => new SendOrderEmailMessage($payloadDto->id),
-                        default => null
                     };
 
-                    if ($message) {
-                        $this->messageBus->dispatch($message);
-                    }
+                    $this->messageBus->dispatch($message);
 
                     $event->setProcessedAt(new \DateTimeImmutable());
                     $event->setLastError(null);

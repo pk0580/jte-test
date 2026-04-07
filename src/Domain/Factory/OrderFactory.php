@@ -49,7 +49,6 @@ class OrderFactory
             financialTerms: new FinancialTerms(),
             deliveryConfig: new DeliveryConfig(),
             locale: 'en',
-            currency: 'EUR',
             measure: 'unit'
         );
 

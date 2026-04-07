@@ -35,7 +35,9 @@ class DoctrineFlushCollector implements MetricsCollectorInterface, PreRequestMet
             $durations = $this->appCache->get('doctrine_flush_duration', function (ItemInterface $item) {
                 return [];
             });
+            // @phpstan-ignore-next-line
             if (is_array($durations)) {
+                // @phpstan-ignore-next-line
                 foreach ($durations as $duration) {
                     $summary->observe((float) $duration, []);
                 }

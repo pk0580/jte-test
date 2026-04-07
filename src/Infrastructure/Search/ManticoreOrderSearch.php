@@ -94,40 +94,6 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
         }
     }
 
-    private function fetchIds(ResultSet $resultSet): array
-    {
-        $ids = [];
-        foreach ($resultSet as $hit) {
-            $ids[] = (int)$hit->getId();
-        }
-        return $ids;
-    }
-
-    /**
-     * @param int[] $ids
-     * @return Order[]
-     */
-    private function hydrateOrders(array $ids): array
-    {
-        // Use findByIds to avoid N+1 and pre-fetch articles
-        $orders = $this->orderRepository->findByIds($ids);
-
-        // Sort by the order returned by search engine
-        $orderMap = [];
-        foreach ($orders as $order) {
-            $orderMap[$order->getId()] = $order;
-        }
-
-        $sortedOrders = [];
-        foreach ($ids as $id) {
-            if (isset($orderMap[$id])) {
-                $sortedOrders[] = $orderMap[$id];
-            }
-        }
-
-        return $sortedOrders;
-    }
-
     public function index(Order $order): void
     {
         try {
