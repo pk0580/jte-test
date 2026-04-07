@@ -9,7 +9,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class SoapControllerTest extends WebTestCase
 {
-    #[RunInSeparateProcess]
     public function testCreateOrderSoap(): void
     {
         $client = static::createClient();
@@ -51,7 +50,6 @@ XML;
         $this->assertStringContainsString('<orderId>', $client->getResponse()->getContent());
     }
 
-    #[RunInSeparateProcess]
     public function testGetWsdl(): void
     {
         $client = static::createClient();

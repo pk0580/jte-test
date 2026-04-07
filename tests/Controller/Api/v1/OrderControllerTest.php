@@ -90,7 +90,6 @@ class OrderControllerTest extends WebTestCase
         }
     }
 
-    #[RunInSeparateProcess]
     public function testGetStats(): void
     {
         $client = static::createClient();
