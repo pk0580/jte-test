@@ -1,0 +1,6 @@
+doctrine:
+    dbal:
+        connections:
+            default:
+                options:
+                    "PDO::ATTR_TIMEOUT": 5
