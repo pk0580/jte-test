@@ -16,26 +16,37 @@ if ($_SERVER['APP_DEBUG']) {
 
 $services = ['db:3306', 'redis:6379', 'manticore:9306'];
 
-foreach ($services as $host) {
-    $parts = explode(':', $host);
-    $hostname = $parts[0];
-    $port = (int) $parts[1];
-    $waitCount = 0;
+$skipWaiting = false;
+$argv = $_SERVER['argv'] ?? [];
+foreach ($argv as $key => $arg) {
+    if ($arg === '--testsuite' && isset($argv[$key + 1]) && $argv[$key + 1] === 'unit') {
+        $skipWaiting = true;
+        break;
+    }
+}
 
-    while ($waitCount < 60) {
-        $fp = @fsockopen($hostname, $port, $errno, $errstr, 1);
+if (!$skipWaiting) {
+    foreach ($services as $host) {
+        $parts = explode(':', $host);
+        $hostname = $parts[0];
+        $port = (int) $parts[1];
+        $waitCount = 0;
 
-        if ($fp) {
-            fclose($fp);
-            break;
-        }
+        while ($waitCount < 60) {
+            $fp = @fsockopen($hostname, $port, $errno, $errstr, 1);
 
-        $waitCount++;
-        sleep(1);
+            if ($fp) {
+                fclose($fp);
+                break;
+            }
 
-        if ($waitCount === 60) {
-            fwrite(STDERR, "Timeout waiting for $host\n");
-            exit(1);
+            $waitCount++;
+            sleep(1);
+
+            if ($waitCount === 60) {
+                fwrite(STDERR, "Timeout waiting for $host\n");
+                exit(1);
+            }
         }
     }
 }
