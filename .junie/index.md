@@ -59,6 +59,6 @@ context/ui.md
 
 advanced/idempotency.md
 advanced/outbox.md
-advanced/concurrency.md
+advanced/concurency.md
 advanced/cqrs.md
 advanced/resilience.md

@@ -54,7 +54,9 @@ Prefer:
 
 AI behavior
 
-Prefer maintainable architecture over shortcuts.
+- Prefer maintainable architecture over shortcuts.
+- Use `.junie/index.md` to find rules and context files for application work.
+- Always follow the rules specified in the files listed in `.junie/index.md`.
 
 ---
 
