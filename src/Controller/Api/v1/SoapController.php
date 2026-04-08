@@ -56,11 +56,15 @@ class SoapController extends AbstractController
                 'exception' => $e
             ]);
 
-            ob_start();
-            $soapServer->fault('Receiver', $e->getMessage());
-            $faultContent = ob_get_clean();
+            $faultXml = sprintf(
+                '<?xml version="1.0" encoding="UTF-8"?>' . "\n" .
+                '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">' .
+                '<SOAP-ENV:Body><SOAP-ENV:Fault><faultcode>Receiver</faultcode><faultstring>%s</faultstring></SOAP-ENV:Fault></SOAP-ENV:Body>' .
+                '</SOAP-ENV:Envelope>',
+                htmlspecialchars($e->getMessage(), ENT_QUOTES | ENT_XML1, 'UTF-8')
+            );
 
-            return new Response($faultContent, 500, ['Content-Type' => 'text/xml; charset=utf-8']);
+            return new Response($faultXml, 500, ['Content-Type' => 'text/xml; charset=utf-8']);
         }
     }
 }
