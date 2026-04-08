@@ -22,7 +22,7 @@ foreach ($services as $host) {
     $port = (int) $parts[1];
     $waitCount = 0;
 
-    while ($waitCount < 30) {
+    while ($waitCount < 60) {
         $fp = @fsockopen($hostname, $port, $errno, $errstr, 1);
 
         if ($fp) {
@@ -33,8 +33,9 @@ foreach ($services as $host) {
         $waitCount++;
         sleep(1);
 
-        if ($waitCount === 30) {
+        if ($waitCount === 60) {
             fwrite(STDERR, "Timeout waiting for $host\n");
+            exit(1);
         }
     }
 }
