@@ -1,5 +1,6 @@
 # --- Build Stage ---
 FROM php:8.4-fpm-alpine AS builder
+ENV APP_ENV=prod APP_DEBUG=0
 
 # Install system dependencies
 RUN apk add --no-cache \
@@ -45,6 +46,7 @@ RUN composer run-script post-install-cmd
 
 # --- Production Stage ---
 FROM php:8.4-fpm-alpine
+ENV APP_ENV=prod APP_DEBUG=0
 
 # Install production system dependencies
 RUN apk add --no-cache \
