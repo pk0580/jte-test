@@ -60,43 +60,29 @@
 
 ---
 
-## 📊 Мониторинг и логирование (Prometheus & Sentry)
+### 2. SOAP API (`src/Controller/Api/v1/SoapController.php`)
 
-В приложении реализована продвинутая система мониторинга на базе **Prometheus** (метрики) и **Sentry** (ошибки и трейсинг).
-
----
-
-## 🚀 CI/CD и Deployment
-
-Для обеспечения качества и автоматизации развертывания настроен CI/CD пайплайн через **GitHub Actions**.
-
-### Этапы CI/CD:
-1.  **Build & Test** (настройка в `.github/workflows/ci-cd.yml`):
-    *   Установка PHP зависимостей (`composer install`).
-    *   Статический анализ кода (`PHPStan`, конфиг `phpstan.neon`).
-    *   Проверка безопасности зависимостей (`Symfony Security Checker`).
-    *   Запуск Unit и Integration тестов (`PHPUnit`, конфиг `phpunit.dist.xml`).
-2.  **Package** (сборка Docker-образа):
-    *   Сборка оптимизированного Docker-образа для Production (`docker/php/Dockerfile.prod`).
-    *   Используется multi-stage build для минимизации размера образа и исключения dev-зависимостей.
-    *   Пуш образа в **GitHub Container Registry (GHCR)**.
-3.  **Deploy** (развертывание через Helm):
-    *   Развертывание в кластер **Kubernetes** с использованием **Helm** (конфигурация в `helm/charts/jte-test`).
-    *   Автоматическое обновление версии образа.
-    *   Обеспечение Zero Downtime Deployment.
-
-### Инфраструктура в Kubernetes (Helm):
-Все шаблоны и настройки инфраструктуры находятся в директории `helm/charts/jte-test`:
-*   **Deployment & Service** (`templates/deployment.yaml`, `templates/service.yaml`): Описание подов приложения и доступа к ним.
-*   **Horizontal Pod Autoscaler (HPA)** (`templates/hpa.yaml`): Автоматическое масштабирование количества подов (от 3 до 10) в зависимости от нагрузки на CPU и Memory.
-*   **Resource Quotas**: Четкие лимиты и запросы ресурсов для стабильности кластера (настроены в `values.yaml`).
-*   **Liveness & Readiness Probes**: Автоматическое обнаружение и перезапуск зависших контейнеров, а также исключение неготовых подов из балансировки трафика.
-*   **ConfigMaps & Secrets** (`templates/configmap.yaml`, `templates/secrets.yaml`): Разделение конфигурации и чувствительных данных (DB_URL).
-*   **Nginx Ingress** (`templates/ingress.yaml`): Управление входящим трафиком и TLS-терминация.
+*   **Endpoint**: `/soap`
+*   **WSDL**: Доступен по `GET /soap?wsdl`. Генерируется через `WsdlProvider`.
+*   **Метод `createOrder`**:
+    *   **Цепочка вызовов**: `SoapController::index` -> `SoapOrderService::createOrder` -> `CreateOrderUseCase::execute`.
+    *   **Логика обработки**:
+        1. `SoapServer` принимает XML, `SoapConverter` десериализует его в `CreateOrderSoapRequestDto`.
+        2. `SoapOrderService` валидирует входящие данные через `Symfony Validator`. В процессе валидации используется кастомное ограничение `BatchEntityExists`, которое эффективно (одним запросом) проверяет существование типов оплаты и товаров в БД. При ошибках выбрасывается `SoapFault` с детальным описанием полей (ключ `errors`).
+        3. `CreateOrderUseCase` выполняет создание заказа внутри **БД-транзакции** (`TransactionManagerInterface`):
+            - `OrderFactory` создает сущность `Order` и связанные объекты на основе доменного DTO.
+            - `OrderRepository::save($order)` сохраняет данные в MySQL.
+            - В этой же транзакции срабатывает `DomainEventListener`, который видит событие `OrderCreatedEvent` и создает запись в таблице `outbox_events` (паттерн **Transactional Outbox**).
+        4. Если транзакция успешна, возвращается `SoapOrderResponseDto` с ID нового заказа.
+        5. Фоновый процесс (описан в разделе "Технологии") позже обработает Outbox-запись и отправит Email.
 
 ---
 
-### 1. Prometheus: Написание новых метрик
+## 📊 Мониторинг (Prometheus, Grafana, Sentry)
+
+В приложении реализована продвинутая система мониторинга на базе **Prometheus** (метрики), **Grafana** (визуализация) и **Sentry** (ошибки и трейсинг).
+
+### 1. Prometheus: Сбор и написание метрик
 
 Для сбора метрик используется бандл `artprima/prometheus-metrics-bundle`.
 
@@ -146,14 +132,42 @@
 1. В коде: `$cache->get('my_counter', fn() => 0); $cache->delete('my_counter'); $cache->get('my_counter', fn() => $val + 1);`
 2. В коллекторе: считать значение из кэша, вызвать `$counter->incBy($val)`, очистить кэш.
 
-#### Grafana:
-- Метрики доступны по адресу `/metrics`.
-- Prometheus настроен на сбор данных с этого эндпоинта (см. `docker/prometheus/prometheus.yml`).
-- В Grafana используйте **PromQL** для построения графиков. Пример: `sum(rate(app_http_requests_total[5m])) by (status)`.
+#### Состав метрик:
+В приложении настроен сбор четырех групп метрик: **бизнес-метрики**, **производительность БД и очередей**, **системные метрики (Node)** и **статистика HTTP-трафика**.
+
+**Бизнес-метрики (Domain Metrics):**
+*   `app_orders_created_total` — Общее количество созданных заказов. Инкрементируется в `DomainEventListener` при успешном сохранении сущности `Order` в БД.
+*   `app_emails_sent_total` — Общее количество отправленных писем. Инкрементируется в `SendOrderEmailHandler` после успешного вызова `MailerInterface`.
+
+**Производительность БД и очередей (Infrastructure Metrics):**
+*   `app_database_response_time_seconds` — Время отклика соединения с БД (замер `SELECT 1`). Собирается `DatabasePerformanceCollector` при каждом запросе.
+*   `app_doctrine_flush_duration_seconds` — Время выполнения `EntityManager::flush()`. Позволяет выявлять "тяжелые" транзакции. Собирается `DoctrineFlushCollector`.
+*   `app_messenger_queue_messages` — Количество сообщений в очереди `messenger_messages`. Подсчитывается фоновой командой `CollectMessengerStatsCommand` и отдается через `MessengerQueueCollector`.
+
+**Статистика кэша и HTTP (Traffic Metrics):**
+*   `app_http_requests_total` — Счетчик всех входящих HTTP-запросов.
+*   `app_http_errors_total` — Счетчик запросов, завершившихся с ошибкой (код >= 400). Позволяет вычислять **Error Rate**.
+*   `app_http_request_duration_seconds` — Длительность обработки запросов (квантили p50, p95, p99).
+*   `app_redis_cache_hits_total` / `app_redis_cache_misses_total` — Статистика эффективности Redis.
+
+**Системные метрики (Node Metrics):**
+Мониторинг ресурсов контейнера без использования внешних агентов (node_exporter). Собираются `SystemMetricsCollector`.
+*   `app_node_cpu_seconds_total` — Потребление процессорного времени по режимам (user, system, idle и т.д.). Данные берутся из `/proc/stat`.
+*   `app_node_memory_available_bytes` — Объем доступной оперативной памяти в контейнере. Данные из `/proc/meminfo`.
 
 ---
 
-### 4. Мониторинг ошибок и производительности (Sentry)
+### 2. Grafana: Визуализация и трассировка
+
+- Метрики доступны по адресу `/metrics`.
+- Prometheus настроен на сбор данных с этого эндпоинта (см. `docker/prometheus/prometheus.yml`).
+- В Grafana используйте **PromQL** для построения графиков. Пример: `sum(rate(app_http_requests_total[5m])) by (status)`.
+- Все метрики выведены на дашборд `Extended Metrics`, включающий графики Error Rate, Latency (p99), интенсивность заказов и состояние очередей.
+- Уникальные `Trace ID` позволяют коррелировать аномалии на графиках (например, всплеск `doctrine_flush_duration`) с конкретными запросами в логах и ошибками в Sentry.
+
+---
+
+### 3. Мониторинг ошибок и производительности (Sentry)
 Приложение интегрировано с **Sentry** для автоматического отслеживания сбоев и анализа быстродействия.
 
 **Что можно проверять и отслеживать через Sentry:**
@@ -238,24 +252,6 @@
 ```bash
 docker-compose exec php bin/console sentry:test
 ```
-
----
-
-### 2. SOAP API (`src/Controller/Api/v1/SoapController.php`)
-
-*   **Endpoint**: `/soap`
-*   **WSDL**: Доступен по `GET /soap?wsdl`. Генерируется через `WsdlProvider`.
-*   **Метод `createOrder`**:
-    *   **Цепочка вызовов**: `SoapController::index` -> `SoapOrderService::createOrder` -> `CreateOrderUseCase::execute`.
-    *   **Логика обработки**:
-        1. `SoapServer` принимает XML, `SoapConverter` десериализует его в `CreateOrderSoapRequestDto`.
-        2. `SoapOrderService` валидирует входящие данные через `Symfony Validator`. В процессе валидации используется кастомное ограничение `BatchEntityExists`, которое эффективно (одним запросом) проверяет существование типов оплаты и товаров в БД. При ошибках выбрасывается `SoapFault` с детальным описанием полей (ключ `errors`).
-        3. `CreateOrderUseCase` выполняет создание заказа внутри **БД-транзакции** (`TransactionManagerInterface`):
-            - `OrderFactory` создает сущность `Order` и связанные объекты на основе доменного DTO.
-            - `OrderRepository::save($order)` сохраняет данные в MySQL.
-            - В этой же транзакции срабатывает `DomainEventListener`, который видит событие `OrderCreatedEvent` и создает запись в таблице `outbox_events` (паттерн **Transactional Outbox**).
-        4. Если транзакция успешна, возвращается `SoapOrderResponseDto` с ID нового заказа.
-        5. Фоновый процесс (описан в разделе "Технологии") позже обработает Outbox-запись и отправит Email.
 
 ---
 
@@ -356,47 +352,17 @@ docker-compose exec php bin/console sentry:test
 
 ---
 
-## 📊 Мониторинг и метрики
+## 🚀 CI/CD и автоматизация
 
-Для отслеживания состояния системы используются **Prometheus** и **Grafana**.
+В проекте настроен полный цикл непрерывной интеграции и доставки (CI/CD) на базе **GitHub Actions**. Это гарантирует качество кода и стабильность деплоя.
 
-### Используемые технологии:
-*   **Prometheus**: База данных временных рядов, которая собирает метрики.
-*   **Grafana**: Панель визуализации графиков.
-*   **Redis**: Используется как промежуточное хранилище для некоторых метрик.
+### Основные этапы:
+*   **Контроль качества**: Автоматический запуск статического анализа (`PHPStan`, `ECS`), проверка безопасности зависимостей и валидация конфигураций Symfony.
+*   **Тестирование**: Прогон Unit и Integration тестов в изолированных контейнерах с поднятием временных сервисов (MySQL, Redis).
+*   **Сборка и доставка**: Автоматическая сборка оптимизированных Docker-образов (multi-stage build) и их публикация в реестр.
+*   **Деплой**: Управление инфраструктурой через **Helm** в Kubernetes (K8s). Поддерживаются стратегии безопасного обновления с использованием Health Checks и автоматическим выполнением миграций БД.
 
-### Сбор и состав метрик:
-
-В приложении настроен сбор четырех групп метрик: **бизнес-метрики**, **производительность БД и очередей**, **системные метрики (Node)** и **статистика HTTP-трафика**.
-
-#### 1. Бизнес-метрики (Domain Metrics)
-Позволяют отслеживать активность пользователей и выполнение ключевых бизнес-процессов.
-*   `app_orders_created_total` — Общее количество созданных заказов. Инкрементируется в `DomainEventListener` при успешном сохранении сущности `Order` в БД.
-*   `app_emails_sent_total` — Общее количество отправленных писем. Инкрементируется в `SendOrderEmailHandler` после успешного вызова `MailerInterface`.
-
-#### 2. Производительность БД и очередей (Infrastructure Metrics)
-Критические показатели стабильности инфраструктуры.
-*   `app_database_response_time_seconds` — Время отклика соединения с БД (замер `SELECT 1`). Собирается `DatabasePerformanceCollector` при каждом запросе.
-*   `app_doctrine_flush_duration_seconds` — Время выполнения `EntityManager::flush()`. Позволяет выявлять "тяжелые" транзакции. Собирается `DoctrineFlushCollector`.
-*   `app_messenger_queue_messages` — Количество сообщений в очереди `messenger_messages`. Подсчитывается фоновой командой `CollectMessengerStatsCommand` и отдается через `MessengerQueueCollector`.
-
-#### 3. Статистика кэша и HTTP (Traffic Metrics)
-Позволяет оценивать эффективность кэширования и нагрузку на API.
-*   `app_http_requests_total` — Счетчик всех входящих HTTP-запросов.
-*   `app_http_errors_total` — Счетчик запросов, завершившихся с ошибкой (код >= 400). Позволяет вычислять **Error Rate**.
-*   `app_http_request_duration_seconds` — Длительность обработки запросов (квантили p50, p95, p99).
-    *   *Реализация*: Все три HTTP-метрики собираются через `HttpRequestSubscriber`, слушающий события `kernel.request` и `kernel.terminate`.
-*   `app_redis_cache_hits_total` / `app_redis_cache_misses_total` — Статистика эффективности Redis.
-    *   *Реализация*: Используется `CacheMetricsTrait`, интегрированный в декораторы репозиториев и парсер цен. Это гарантирует учет попаданий даже при использовании сложных цепочек декораторов или Sentry.
-
-#### 4. Системные метрики (Node Metrics)
-Мониторинг ресурсов контейнера без использования внешних агентов (node_exporter). Собираются `SystemMetricsCollector`.
-*   `app_node_cpu_seconds_total` — Потребление процессорного времени по режимам (user, system, idle и т.д.). Данные берутся из `/proc/stat`.
-*   `app_node_memory_available_bytes` — Объем доступной оперативной памяти в контейнере. Данные из `/proc/meminfo`.
-
-### Трассировка и визуализация:
-*   **Grafana**: Все метрики выведены на дашборд `Extended Metrics`, включающий графики Error Rate, Latency (p99), интенсивность заказов и состояние очередей.
-*   **Трассировка**: Уникальные `Trace ID` позволяют коррелировать аномалии на графиках (например, всплеск `doctrine_flush_duration`) с конкретными запросами в логах и ошибками в Sentry.
+Подробное описание процессов, настройки GitHub Actions и работы с Kubernetes приведено в документе [**CI/CD и развертывание**](CI_CD.md).
 
 ---
 
@@ -405,6 +371,13 @@ docker-compose exec php bin/console sentry:test
 *   **Symfony 8.0**: Основа приложения.
 *   **MySQL 8.0**: Основное хранилище данных.
 *   **Manticore Search 6.2**: Движок для быстрого полнотекстового поиска.
-*   **Redis**: Кэширование данных и метрик.
-*   **Mailpit**: Локальный SMTP-сервер с веб-интерфейсом для перехвата и просмотра исходящих писем. В разработке используется вместо реального почтового сервера (`MAILER_DSN=smtp://mailpit:1025`), чтобы письма не улетали реальным пользователям.
-*   **Docker**: Вся инфраструктура описана в `docker-compose.yml`, что гарантирует идентичность окружения на разработке и продакшене.
+*   **Redis**: Кэширование данных, метрик и хранилище для Circuit Breaker.
+*   **Nginx**: Высокопроизводительный веб-сервер и обратный прокси.
+*   **Docker**: Вся инфраструктура контейнеризирована для обеспечения идентичности окружения.
+*   **GitHub Actions**: Автоматизация CI/CD (Lint, Tests, Build, Deploy).
+*   **Kubernetes (K8s)**: Оркестрация контейнеров в продакшене.
+*   **Helm**: Менеджер пакетов для Kubernetes, используемый для управления деплоем.
+*   **Prometheus**: Сбор и хранение метрик производительности и бизнеса.
+*   **Grafana**: Визуализация метрик и мониторинг состояния системы.
+*   **Sentry**: Отслеживание ошибок и распределенная трассировка запросов.
+*   **Mailpit**: Локальный SMTP-сервер с веб-интерфейсом для тестирования отправки писем.
