@@ -116,6 +116,26 @@ docker-compose exec php composer arkitect
 
 ---
 
+## 🏗 CI/CD и развертывание
+
+Процесс автоматизации сборки и деплоя реализован с помощью **GitHub Actions** и **Helm**:
+
+1.  **CI (Continuous Integration)**:
+    - Статический анализ (`PHPStan`, `ECS`).
+    - Автоматический запуск Unit и Integration тестов.
+    - Проверка безопасности зависимостей (`composer audit`).
+    - Сборка и сканирование Docker-образов (`Trivy`).
+2.  **CD (Continuous Deployment)**:
+    - Автоматический деплой в **Kubernetes** (Staging) при пуше в `master`.
+    - Деплой на Production при создании тега версии (`v*.*.*`).
+    - Управление инфраструктурой через **Helm Charts**.
+    - Использование `Health Checks` для Smoke-тестов после деплоя.
+
+Подробное описание процессов и настройки окружения доступны в [документации по CI/CD](./docs/CI_CD.md).
+
+---
+
+
 ## 📊 Мониторинг и фоновые задачи
 
 ### Сбор метрик
@@ -169,3 +189,5 @@ docker-compose exec php bin/console app:collect-messenger-stats
 - **phpMyAdmin**: `http://localhost:8081` (Login: `root`, Password: `root`)
 - **Sentry**: Для работы мониторинга ошибок настройте `SENTRY_DSN` в `.env.local`. Отчеты доступны в вашем аккаунте Sentry.
     - Проверка конфигурации: `docker-compose exec php bin/console sentry:test`
+
+**Детальная документация** по основным аспектам приложения находится в директории [docs](./docs).
