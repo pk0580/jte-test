@@ -31,20 +31,27 @@ if (!$skipWaiting) {
         $hostname = $parts[0];
         $port = (int) $parts[1];
         $waitCount = 0;
+        $maxWait = 120;
 
-        while ($waitCount < 60) {
+        fwrite(STDOUT, "Waiting for $host...");
+
+        while ($waitCount < $maxWait) {
             $fp = @fsockopen($hostname, $port, $errno, $errstr, 1);
 
             if ($fp) {
                 fclose($fp);
+                fwrite(STDOUT, " OK\n");
                 break;
             }
 
             $waitCount++;
+            if ($waitCount % 10 === 0) {
+                fwrite(STDOUT, ".");
+            }
             sleep(1);
 
-            if ($waitCount === 60) {
-                fwrite(STDERR, "Timeout waiting for $host\n");
+            if ($waitCount === $maxWait) {
+                fwrite(STDERR, "\nTimeout waiting for $host after $maxWait seconds\n");
                 exit(1);
             }
         }
