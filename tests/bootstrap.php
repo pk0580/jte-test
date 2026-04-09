@@ -26,26 +26,31 @@ foreach ($argv as $key => $arg) {
 if (!$skipWaiting) {
     $services = [];
 
-    // Parse DATABASE_URL
+    // 🔥 Parse DATABASE_URL
     $databaseUrl = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? '';
     if ($databaseUrl && preg_match('/mysql:\/\/.*?@([^:\/?]+):(\d+)/i', $databaseUrl, $matches)) {
         $services[] = $matches[1] . ':' . $matches[2];
     }
 
-    // Parse REDIS_URL
+    // 🔥 Parse REDIS_URL
     $redisUrl = $_ENV['REDIS_URL'] ?? $_SERVER['REDIS_URL'] ?? '';
     if ($redisUrl && preg_match('/redis:\/\/([^:\/?]+):(\d+)/', $redisUrl, $matches)) {
         $services[] = $matches[1] . ':' . $matches[2];
     }
 
-    // Parse Manticore
-    $manticoreHost = $_ENV['MANTICORE_HOST'] ?? $_SERVER['MANTICORE_HOST'] ?? '';
-    $manticorePort = $_ENV['MANTICORE_PORT'] ?? $_SERVER['MANTICORE_PORT'] ?? '9306';
-    if ($manticoreHost) {
-        $services[] = $manticoreHost . ':' . $manticorePort;
+    // 🔥 Parse Manticore (НО ТОЛЬКО ЕСЛИ ВКЛЮЧЕН)
+    $manticoreEnabled = ($_ENV['MANTICORE_ENABLED'] ?? $_SERVER['MANTICORE_ENABLED'] ?? 'false') === 'true';
+
+    if ($manticoreEnabled) {
+        $manticoreHost = $_ENV['MANTICORE_HOST'] ?? $_SERVER['MANTICORE_HOST'] ?? '';
+        $manticorePort = $_ENV['MANTICORE_PORT'] ?? $_SERVER['MANTICORE_PORT'] ?? '9308';
+
+        if ($manticoreHost) {
+            $services[] = $manticoreHost . ':' . $manticorePort;
+        }
     }
 
-    // Deduplicate
+    // 🔥 Deduplicate
     $services = array_unique($services);
 
     foreach ($services as $host) {
