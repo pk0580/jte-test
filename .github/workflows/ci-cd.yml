@@ -185,90 +185,90 @@ jobs:
                   vuln-type: 'os,library'
                   severity: 'CRITICAL,HIGH'
 
-    deploy-staging:
-        name: Deploy to Staging
-        needs: package
-        runs-on: ubuntu-latest
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        environment:
-            name: staging
-
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Setup Helm
-              uses: azure/setup-helm@v3
-
-            - name: Deploy
-              env:
-                  KUBECONFIG: ${{ secrets.KUBECONFIG_STAGING }}
-              run: |
-                  helm upgrade --install jte-test ./helm/charts/jte-test \
-                    --set image.tag=${{ needs.package.outputs.image_tag }} \
-                    --set image.repository=ghcr.io/${{ github.repository }} \
-                    --values ./helm/charts/jte-test/values-staging.yaml \
-                    --namespace staging --create-namespace \
-                    --wait --atomic
-
-    smoke-tests:
-        name: Smoke Tests (Staging)
-        needs: deploy-staging
-        runs-on: ubuntu-latest
-
-        steps:
-            - name: Health Check
-              run: |
-                  LIVE_URL="https://staging.jte-test.local/api/v1/health/live"
-                  READY_URL="https://staging.jte-test.local/api/v1/health/ready"
-
-                  echo "Checking Liveness..."
-                  for i in {1..5}; do
-                    curl -f -k $LIVE_URL && break || true
-                    echo "Staging liveness check failed, retrying... ($i/5)"
-                    sleep 10
-                    if [ $i -eq 5 ]; then exit 1; fi
-                  done
-
-                  echo "Checking Readiness..."
-                  for i in {1..5}; do
-                    curl -f -k $READY_URL && exit 0 || true
-                    echo "Staging readiness check failed, retrying... ($i/5)"
-                    sleep 10
-                  done
-                  exit 1
-
-    deploy-production:
-        name: Deploy to Production
-        needs: [package, smoke-tests]
-        runs-on: ubuntu-latest
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        environment:
-            name: production
-
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Setup Helm
-              uses: azure/setup-helm@v3
-
-            - name: Deploy (Canary/Rolling)
-              env:
-                  KUBECONFIG: ${{ secrets.KUBECONFIG }}
-              run: |
-                  helm upgrade --install jte-test ./helm/charts/jte-test \
-                    --set image.tag=${{ needs.package.outputs.image_tag }} \
-                    --set image.repository=ghcr.io/${{ github.repository }} \
-                    --set podAnnotations.buildSha=${{ github.sha }} \
-                    --values ./helm/charts/jte-test/values-prod.yaml \
-                    --namespace production --create-namespace \
-                    --wait --atomic
-
-            - name: Post-deploy health check
-              run: |
-                  READY_URL="https://jte-test.local/api/v1/health/ready"
-                  for i in {1..5}; do
-                    curl -f -k $READY_URL && exit 0 || true
-                    echo "Production health check failed, retrying... ($i/5)"
-                    sleep 5
-                  done
-                  exit 1
+#    deploy-staging:
+#        name: Deploy to Staging
+#        needs: package
+#        runs-on: ubuntu-latest
+#        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+#        environment:
+#            name: staging
+#
+#        steps:
+#            - uses: actions/checkout@v4
+#
+#            - name: Setup Helm
+#              uses: azure/setup-helm@v3
+#
+#            - name: Deploy
+#              env:
+#                  KUBECONFIG: ${{ secrets.KUBECONFIG_STAGING }}
+#              run: |
+#                  helm upgrade --install jte-test ./helm/charts/jte-test \
+#                    --set image.tag=${{ needs.package.outputs.image_tag }} \
+#                    --set image.repository=ghcr.io/${{ github.repository }} \
+#                    --values ./helm/charts/jte-test/values-staging.yaml \
+#                    --namespace staging --create-namespace \
+#                    --wait --atomic
+#
+#    smoke-tests:
+#        name: Smoke Tests (Staging)
+#        needs: deploy-staging
+#        runs-on: ubuntu-latest
+#
+#        steps:
+#            - name: Health Check
+#              run: |
+#                  LIVE_URL="https://staging.jte-test.local/api/v1/health/live"
+#                  READY_URL="https://staging.jte-test.local/api/v1/health/ready"
+#
+#                  echo "Checking Liveness..."
+#                  for i in {1..5}; do
+#                    curl -f -k $LIVE_URL && break || true
+#                    echo "Staging liveness check failed, retrying... ($i/5)"
+#                    sleep 10
+#                    if [ $i -eq 5 ]; then exit 1; fi
+#                  done
+#
+#                  echo "Checking Readiness..."
+#                  for i in {1..5}; do
+#                    curl -f -k $READY_URL && exit 0 || true
+#                    echo "Staging readiness check failed, retrying... ($i/5)"
+#                    sleep 10
+#                  done
+#                  exit 1
+#
+#    deploy-production:
+#        name: Deploy to Production
+#        needs: [package, smoke-tests]
+#        runs-on: ubuntu-latest
+#        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+#        environment:
+#            name: production
+#
+#        steps:
+#            - uses: actions/checkout@v4
+#
+#            - name: Setup Helm
+#              uses: azure/setup-helm@v3
+#
+#            - name: Deploy (Canary/Rolling)
+#              env:
+#                  KUBECONFIG: ${{ secrets.KUBECONFIG }}
+#              run: |
+#                  helm upgrade --install jte-test ./helm/charts/jte-test \
+#                    --set image.tag=${{ needs.package.outputs.image_tag }} \
+#                    --set image.repository=ghcr.io/${{ github.repository }} \
+#                    --set podAnnotations.buildSha=${{ github.sha }} \
+#                    --values ./helm/charts/jte-test/values-prod.yaml \
+#                    --namespace production --create-namespace \
+#                    --wait --atomic
+#
+#            - name: Post-deploy health check
+#              run: |
+#                  READY_URL="https://jte-test.local/api/v1/health/ready"
+#                  for i in {1..5}; do
+#                    curl -f -k $READY_URL && exit 0 || true
+#                    echo "Production health check failed, retrying... ($i/5)"
+#                    sleep 5
+#                  done
+#                  exit 1
