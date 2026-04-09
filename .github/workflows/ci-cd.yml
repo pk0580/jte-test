@@ -26,7 +26,7 @@ jobs:
         run: vendor/bin/phpstan analyse src --level 5
 
       - name: Composer Audit
-        run: composer audit
+        run: composer audit --ignore-unreachable
 
       - name: Symfony container lint
         run: php bin/console lint:container
