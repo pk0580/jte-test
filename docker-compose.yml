@@ -1,135 +1,57 @@
 services:
-  php:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-    volumes:
-      - .:/var/www/html
-    environment:
-      DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}?serverVersion=8.0"
-      XDEBUG_CONFIG: "client_host=host.docker.internal"
-      PHP_IDE_CONFIG: "serverName=jte-test"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.50'
+    php:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        volumes:
+            - .:/var/www/html
+        environment:
+            DB_HOST: db
+            DB_PORT: 3306
+            DB_NAME: ${MYSQL_DATABASE}
+            DB_USER: ${MYSQL_USER}
+            DB_PASSWORD: ${MYSQL_PASSWORD}
+            REDIS_HOST: redis
+            MANTICORE_HOST: manticore
+            XDEBUG_CONFIG: "client_host=host.docker.internal"
+            PHP_IDE_CONFIG: "serverName=jte-test"
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
 
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "${NGINX_PORT}:80"
-    volumes:
-      - .:/var/www/html
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - php
+    nginx:
+        image: nginx:alpine
+        ports:
+            - "${NGINX_PORT}:80"
+        volumes:
+            - .:/var/www/html
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - php
 
-  db:
-    image: mysql:8.0
-    ports:
-      - "${MYSQL_PORT}:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
-      - db_data:/var/lib/mysql
+    db:
+        image: mysql:8.0
+        ports:
+            - "${MYSQL_PORT}:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+        volumes:
+            - db_data:/var/lib/mysql
 
-  manticore:
-    image: manticoresearch/manticore:latest
-    ports:
-      - "${MANTICORE_PORT}:9308"
-    volumes:
-      - manticore_data:/var/lib/manticore
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
+    redis:
+        image: redis:alpine
+        ports:
+            - "${REDIS_PORT:-6379}:6379"
 
-  phpmyadmin:
-    image: phpmyadmin:latest
-    restart: always
-    ports:
-      - "${PHPMYADMIN_PORT}:80"
-    environment:
-      PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    depends_on:
-      - db
-
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
-    depends_on:
-      - php
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "${GRAFANA_PORT:-3000}:3000"
-    volumes:
-      - ./docker/grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - prometheus
-
-  mysqld-exporter:
-    image: prom/mysqld-exporter:v0.14.0
-    environment:
-      DATA_SOURCE_NAME: "${MYSQL_USER}:${MYSQL_PASSWORD}@(db:3306)/"
-    ports:
-      - "${MYSQL_EXPORTER_PORT:-9104}:9104"
-    depends_on:
-      - db
-
-###> doctrine/doctrine-bundle ###
-  mailpit:
-    image: axllent/mailpit:latest
-    ports:
-      - "${MAILPIT_PORT:-8025}:8025"
-      - "${MAILPIT_SMTP_PORT:-1025}:1025"
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-
-  database:
-    image: postgres:${POSTGRES_VERSION:-16}-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-    healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}"]
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-    volumes:
-      - database_data:/var/lib/postgresql/data:rw
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-###< doctrine/doctrine-bundle ###
+    manticore:
+        image: manticoresearch/manticore:latest
+        ports:
+            - "${MANTICORE_PORT}:9308"
+        volumes:
+            - manticore_data:/var/lib/manticore
 
 volumes:
-  db_data:
-  manticore_data:
-
-###> doctrine/doctrine-bundle ###
-  database_data:
-###< doctrine/doctrine-bundle ###
+    db_data:
+    manticore_data:

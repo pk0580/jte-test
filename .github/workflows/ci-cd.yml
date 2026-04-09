@@ -77,46 +77,46 @@ jobs:
                     --health-start-period=30s
 
         steps:
-            - uses: actions/checkout@v4
-            - uses: ./.github/actions/php-setup
+            -   uses: actions/checkout@v4
+            -   uses: ./.github/actions/php-setup
 
-            - name: Install MySQL client
-              run: sudo apt-get update && sudo apt-get install -y mysql-client
+            -   name: Install MySQL client
+                run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-            # 🔥 Ждём не просто MySQL, а именно БД
-            - name: Wait for MySQL
-              run: |
-                  for i in {1..60}; do
-                      mysql -h 127.0.0.1 -uroot -proot -e "USE app_test" && break
-                      echo "Waiting for MySQL DB..."
+            # ✅ Ждём MySQL
+            -   name: Wait for MySQL
+                run: |
+                    for i in {1..60}; do
+                      mysql -h 127.0.0.1 -uroot -proot -e "SELECT 1" && break
+                      echo "Waiting for MySQL..."
                       sleep 2
-                  done
-                  mysql -h 127.0.0.1 -uroot -proot -e "USE app_test"
+                    done
 
-            # 🔥 Гарантируем наличие БД (иногда init не успевает)
-            - name: Ensure database exists
-              run: |
-                  mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS app_test;"
+            # ✅ На всякий случай создаём БД
+            -   name: Ensure database exists
+                run: |
+                    mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS app_test;"
 
-            - name: Debug MySQL
-              run: |
-                  mysql -h 127.0.0.1 -uroot -proot -e "SHOW DATABASES;"
+            # ✅ Debug (очень полезно)
+            -   name: Debug MySQL
+                run: |
+                    mysql -h 127.0.0.1 -uroot -proot -e "SHOW DATABASES;"
 
-            # 🔥 Миграции тоже могут падать → retry
-            - name: Run migrations (with retry)
-              uses: nick-fields/retry@v3
-              with:
-                  timeout_minutes: 5
-                  max_attempts: 3
-                  command: php bin/console doctrine:migrations:migrate --no-interaction --env=test
+            # ✅ Миграции
+            -   name: Run migrations (with retry)
+                uses: nick-fields/retry@v3
+                with:
+                    timeout_minutes: 5
+                    max_attempts: 3
+                    command: php bin/console doctrine:migrations:migrate --no-interaction --env=test
 
-            - name: Run Integration Tests
-              uses: nick-fields/retry@v3
-              with:
-                  timeout_minutes: 10
-                  max_attempts: 3
-                  command: vendor/bin/phpunit --testsuite integration --coverage-text
-
+            # ✅ Тесты
+            -   name: Run Integration Tests
+                uses: nick-fields/retry@v3
+                with:
+                    timeout_minutes: 10
+                    max_attempts: 3
+                    command: vendor/bin/phpunit --testsuite integration --coverage-text
     package:
         name: Build & Push Docker Image
         needs: [lint, unit-tests, integration-tests]
