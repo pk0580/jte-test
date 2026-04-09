@@ -96,11 +96,11 @@ jobs:
             # 🔥 Гарантируем наличие БД (иногда init не успевает)
             - name: Ensure database exists
               run: |
-                  mysql -h mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS app_test;"
+                  mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS app_test;"
 
             - name: Debug MySQL
               run: |
-                  mysql -h mysql -uroot -proot -e "SHOW DATABASES;"
+                  mysql -h 127.0.0.1 -uroot -proot -e "SHOW DATABASES;"
 
             # 🔥 Миграции тоже могут падать → retry
             - name: Run migrations (with retry)
