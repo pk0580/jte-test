@@ -1,0 +1,4 @@
+services:
+    # 🔥 глушим Manticore клиент полностью
+    App\Infrastructure\Manticore\ManticoreClient:
+        class: App\Infrastructure\Manticore\FakeManticoreClient
