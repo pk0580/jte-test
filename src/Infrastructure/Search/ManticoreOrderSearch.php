@@ -22,6 +22,7 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
     public function __construct(
         string $host,
         int $port,
+        private readonly bool $isEnabled,
         private readonly OrderSearchQueryBuilder $queryBuilder,
         private readonly LoggerInterface $logger,
         private readonly TraceIdContext $traceIdContext
@@ -93,6 +94,10 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
 
     public function index(Order $order): void
     {
+        if (!$this->isEnabled) {
+            return;
+        }
+
         try {
             $id = $order->getId();
             $doc = [
@@ -120,6 +125,10 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
 
     public function delete(int $orderId): void
     {
+        if (!$this->isEnabled) {
+            return;
+        }
+
         try {
             $this->client->sql("DELETE FROM " . self::INDEX . " WHERE id = :id", true, ['id' => $orderId]);
         } catch (Throwable $e) {
@@ -292,6 +301,10 @@ class ManticoreOrderSearch implements OrderSearchInterface, SearchIndexerInterfa
 
     public function ping(): bool
     {
+        if (!$this->isEnabled) {
+            return true;
+        }
+
         try {
             $this->client->sql('SELECT 1', true);
             return true;

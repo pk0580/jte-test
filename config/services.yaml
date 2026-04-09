@@ -139,6 +139,7 @@ services:
         arguments:
             $host: '%env(MANTICORE_HOST)%'
             $port: '%env(int:MANTICORE_PORT)%'
+            $isEnabled: '%env(bool:MANTICORE_ENABLED)%'
 
     App\Infrastructure\Soap\WsdlProvider:
         arguments:

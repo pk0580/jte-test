@@ -20,7 +20,7 @@ class ManticoreOrderSearchTest extends TestCase
         $traceIdContext = new TraceIdContext();
 
         // Pointing to a wrong port to ensure failure
-        $search = new ManticoreOrderSearch('localhost', 9307, $queryBuilder, $logger, $traceIdContext);
+        $search = new ManticoreOrderSearch('localhost', 9307, true, $queryBuilder, $logger, $traceIdContext);
 
         $query = 'test query';
         $page = 1;
@@ -36,7 +36,7 @@ class ManticoreOrderSearchTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $queryBuilder = new OrderSearchQueryBuilder();
         $traceIdContext = new TraceIdContext();
-        $search = new ManticoreOrderSearch('localhost', 9308, $queryBuilder, $logger, $traceIdContext);
+        $search = new ManticoreOrderSearch('localhost', 9308, true, $queryBuilder, $logger, $traceIdContext);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid tmp index name');
@@ -48,7 +48,7 @@ class ManticoreOrderSearchTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $queryBuilder = new OrderSearchQueryBuilder();
         $traceIdContext = new TraceIdContext();
-        $search = new ManticoreOrderSearch('localhost', 9308, $queryBuilder, $logger, $traceIdContext);
+        $search = new ManticoreOrderSearch('localhost', 9308, true, $queryBuilder, $logger, $traceIdContext);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid main index name');
@@ -63,7 +63,7 @@ class ManticoreOrderSearchTest extends TestCase
         $traceIdContext = new TraceIdContext();
 
         // We need to inject the client or use reflection because it's private
-        $search = new ManticoreOrderSearch('localhost', 9308, $queryBuilder, $logger, $traceIdContext);
+        $search = new ManticoreOrderSearch('localhost', 9308, true, $queryBuilder, $logger, $traceIdContext);
         $reflection = new \ReflectionClass($search);
         $property = $reflection->getProperty('client');
         $property->setAccessible(true);
