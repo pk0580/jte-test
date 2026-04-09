@@ -11,6 +11,10 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
+permissions:
+    contents: read
+    packages: write
+
 jobs:
     lint:
         name: Lint & Static Analysis
@@ -167,7 +171,6 @@ jobs:
                   context: .
                   file: docker/php/Dockerfile.prod
                   push: true
-                  load: true
                   tags: ${{ steps.meta.outputs.tags }}
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
