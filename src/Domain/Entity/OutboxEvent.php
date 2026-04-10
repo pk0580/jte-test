@@ -9,26 +9,26 @@ use App\Domain\Enum\OrderEventType;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-    #[ORM\Table(name: 'outbox_events')]
-    #[ORM\Index(columns: ['processed_at', 'attempts'], name: 'idx_outbox_process_lookup')]
-    #[ORM\Index(columns: ['scheduled_at'], name: 'idx_outbox_scheduled_at')]
-    #[ORM\Index(columns: ['created_at'], name: 'idx_outbox_created_at')]
-    #[ORM\UniqueConstraint(name: 'idx_outbox_unique_order_event', columns: ['event_type', 'order_id'])]
-    class OutboxEvent
-    {
-        #[ORM\Id]
-        #[ORM\GeneratedValue]
-        #[ORM\Column]
-        private ?int $id = null;
+#[ORM\Table(name: 'outbox_events')]
+#[ORM\Index(columns: ['processed_at', 'attempts'], name: 'idx_outbox_process_lookup')]
+#[ORM\Index(columns: ['scheduled_at'], name: 'idx_outbox_scheduled_at')]
+#[ORM\Index(columns: ['created_at'], name: 'idx_outbox_created_at')]
+#[ORM\UniqueConstraint(name: 'idx_outbox_unique_order_event', columns: ['event_type', 'order_id'])]
+class OutboxEvent
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
 
-        #[ORM\Column(length: 255, enumType: OrderEventType::class)]
-        private OrderEventType $eventType;
+    #[ORM\Column(length: 255, enumType: OrderEventType::class)]
+    private OrderEventType $eventType;
 
-        #[ORM\Column(type: 'integer')]
-        private int $orderId;
+    #[ORM\Column(type: 'integer')]
+    private int $orderId;
 
-        #[ORM\Column(type: 'json')]
-        private array $payload;
+    #[ORM\Column(type: 'json')]
+    private array $payload;
 
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;

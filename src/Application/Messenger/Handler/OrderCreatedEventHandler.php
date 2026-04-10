@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Application\Messenger\Handler;
 
-use App\Application\Messenger\Message\InvalidateStatsCacheMessage;
 use App\Domain\Enum\OrderEventType;
 use App\Domain\Event\OrderCreatedEvent;
 use App\Domain\Service\Cache\CacheInvalidatorInterface;

@@ -66,7 +66,8 @@ class DoctrineFlushMetricsListener
         private readonly CollectorRegistry $registry,
         private readonly RequestStack $requestStack,
         private readonly ?LoggerInterface $logger = null,
-    ) {}
+    ) {
+    }
 
     /**
      * Срабатывает перед выполнением flush.
@@ -158,7 +159,6 @@ class DoctrineFlushMetricsListener
                     'method' => $method,
                 ]);
             }
-
         } catch (\Throwable $e) {
             // 🛡 Fail-safe:
             // Метрики никогда не должны ломать приложение
