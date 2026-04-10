@@ -240,6 +240,7 @@ class Order implements HasDomainEventsInterface
     public function setName(string $name): self
     {
         $this->name = $name;
+        $this->recordEvent(new OrderUpdatedEvent($this));
         return $this;
     }
 

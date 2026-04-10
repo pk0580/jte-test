@@ -110,6 +110,15 @@ services:
     App\Domain\Repository\OrderStatsProviderInterface:
         alias: App\Infrastructure\Persistence\Doctrine\Repository\OrderStatsProvider
 
+    App\Domain\Service\Metrics\MetricsServiceInterface:
+        alias: App\Infrastructure\Service\Metrics\PrometheusMetricsService
+
+    App\Domain\Service\Outbox\OutboxServiceInterface:
+        alias: App\Infrastructure\Service\Outbox\OutboxService
+
+    App\Domain\Service\Cache\CacheInvalidatorInterface:
+        alias: App\Infrastructure\Service\Cache\CacheInvalidator
+
     # Decorators for reference repositories caching
     App\Infrastructure\Persistence\Doctrine\Repository\Decorator\ArticleRepositoryCacheDecorator:
         decorates: 'App\Domain\Repository\ArticleRepositoryInterface'
