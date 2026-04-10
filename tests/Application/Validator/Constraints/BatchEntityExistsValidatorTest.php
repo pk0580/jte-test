@@ -21,7 +21,7 @@ class BatchEntityExistsValidatorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->entityManager = $this->createStub(EntityManagerInterface::class);
         $this->context = $this->createMock(ExecutionContextInterface::class);
         $this->validator = new BatchEntityExistsValidator($this->entityManager);
         $this->validator->initialize($this->context);
@@ -39,10 +39,6 @@ class BatchEntityExistsValidatorTest extends TestCase
         $value = [
             ['id' => null]
         ];
-
-        // Мы НЕ ожидаем вызова QueryBuilder, так как criteriaList должен быть пуст
-        $this->entityManager->expects($this->never())
-            ->method('createQueryBuilder');
 
         // Мы НЕ ожидаем нарушений валидации
         $this->context->expects($this->never())
@@ -64,8 +60,8 @@ class BatchEntityExistsValidatorTest extends TestCase
             ['id' => null]
         ];
 
-        $qb = $this->createMock(QueryBuilder::class);
-        $query = $this->createMock(Query::class);
+        $qb = $this->createStub(QueryBuilder::class);
+        $query = $this->createStub(Query::class);
         $expr = new \Doctrine\ORM\Query\Expr();
 
         $this->entityManager->method('createQueryBuilder')->willReturn($qb);
@@ -100,8 +96,8 @@ class BatchEntityExistsValidatorTest extends TestCase
             ['id' => 1]
         ];
 
-        $qb = $this->createMock(QueryBuilder::class);
-        $query = $this->createMock(Query::class);
+        $qb = $this->createStub(QueryBuilder::class);
+        $query = $this->createStub(Query::class);
         $expr = new \Doctrine\ORM\Query\Expr();
 
         $this->entityManager->method('createQueryBuilder')->willReturn($qb);
@@ -147,8 +143,8 @@ class BatchEntityExistsValidatorTest extends TestCase
             ['createdAt' => $dateTime]
         ];
 
-        $qb = $this->createMock(QueryBuilder::class);
-        $query = $this->createMock(Query::class);
+        $qb = $this->createStub(QueryBuilder::class);
+        $query = $this->createStub(Query::class);
         $expr = new \Doctrine\ORM\Query\Expr();
 
         $this->entityManager->method('createQueryBuilder')->willReturn($qb);

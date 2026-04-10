@@ -15,7 +15,7 @@ class ManticoreOrderSearchTest extends TestCase
 {
     public function testSearchThrowsExceptionOnFailure(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
+        $logger = $this->createStub(LoggerInterface::class);
         $queryBuilder = new OrderSearchQueryBuilder();
         $traceIdContext = new TraceIdContext();
 
@@ -33,7 +33,7 @@ class ManticoreOrderSearchTest extends TestCase
 
     public function testSwapIndexValidation(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
+        $logger = $this->createStub(LoggerInterface::class);
         $queryBuilder = new OrderSearchQueryBuilder();
         $traceIdContext = new TraceIdContext();
         $search = new ManticoreOrderSearch('localhost', 9308, true, $queryBuilder, $logger, $traceIdContext);
@@ -45,7 +45,7 @@ class ManticoreOrderSearchTest extends TestCase
 
     public function testSwapIndexValidationMain(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
+        $logger = $this->createStub(LoggerInterface::class);
         $queryBuilder = new OrderSearchQueryBuilder();
         $traceIdContext = new TraceIdContext();
         $search = new ManticoreOrderSearch('localhost', 9308, true, $queryBuilder, $logger, $traceIdContext);
@@ -57,7 +57,7 @@ class ManticoreOrderSearchTest extends TestCase
 
     public function testBulkIndexChunking(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
+        $logger = $this->createStub(LoggerInterface::class);
         $client = $this->createMock(Client::class);
         $queryBuilder = new OrderSearchQueryBuilder();
         $traceIdContext = new TraceIdContext();

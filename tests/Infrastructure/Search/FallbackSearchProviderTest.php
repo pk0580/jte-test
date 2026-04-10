@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Infrastructure\Search;
 
 use App\Domain\Repository\OrderSearchInterface;
+use App\Domain\Repository\SearchResult;
 use App\Infrastructure\Monitoring\TraceIdContext;
 use App\Infrastructure\Search\FallbackSearchProvider;
 use PHPUnit\Framework\TestCase;
@@ -35,28 +36,42 @@ class FallbackSearchProviderTest extends TestCase
 
     public function testSearchUsesPrimary(): void
     {
-        $result = new \App\Domain\Repository\SearchResult([], 1);
+        $result = new SearchResult([], 1);
+        /** @var \PHPUnit\Framework\MockObject\MockObject&OrderSearchInterface $primary */
+        $primary = $this->primary;
+        /** @var \PHPUnit\Framework\MockObject\MockObject&OrderSearchInterface $fallback */
+        $fallback = $this->fallback;
+        /** @var \PHPUnit\Framework\MockObject\MockObject&LoggerInterface $logger */
+        $logger = $this->logger;
 
-        $this->primary->expects($this->once())
+        $primary->expects($this->once())
             ->method('search')
             ->willReturn($result);
 
-        $this->fallback->expects($this->never())->method('search');
+        $fallback->expects($this->never())->method('search');
+        $logger->expects($this->never())->method('warning');
 
         $this->provider->search('query');
     }
 
     public function testSearchFallsBackOnFailure(): void
     {
-        $this->primary->expects($this->once())
+        /** @var \PHPUnit\Framework\MockObject\MockObject&OrderSearchInterface $primary */
+        $primary = $this->primary;
+        /** @var \PHPUnit\Framework\MockObject\MockObject&OrderSearchInterface $fallback */
+        $fallback = $this->fallback;
+        /** @var \PHPUnit\Framework\MockObject\MockObject&LoggerInterface $logger */
+        $logger = $this->logger;
+
+        $primary->expects($this->once())
             ->method('search')
             ->willThrowException(new \Exception('fail'));
 
-        $this->fallback->expects($this->once())
+        $fallback->expects($this->once())
             ->method('search')
-            ->willReturn($this->createMock(\App\Domain\Repository\SearchResult::class));
+            ->willReturn(new SearchResult([], 0));
 
-        $this->logger->expects($this->once())->method('warning');
+        $logger->expects($this->once())->method('warning');
 
         $this->provider->search('query');
     }

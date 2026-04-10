@@ -7,6 +7,7 @@ namespace App\Infrastructure\Persistence\Doctrine\Listener;
 use App\Application\Service\DomainEventDispatcher;
 use App\Domain\Contract\HasDomainEventsInterface;
 use App\Domain\Entity\Order;
+use App\Domain\Entity\OutboxEvent;
 use App\Domain\Event\DomainEventInterface;
 use App\Domain\Event\OrderDeletedEvent;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
@@ -82,35 +83,20 @@ class DomainEventListener
 
                 $this->dispatcher->dispatch($eventsToProcess);
 
-                // Для обеспечения Transactional Outbox мы выполняем дополнительный flush здесь.
-                // Так как ID уже сгенерированы после первого flush, Outbox-события теперь
-                // могут ссылаться на корректные order_id.
-                // Чтобы избежать закрытия EntityManager в тестах, мы ПЕРЕД вызовом flush
-                // проверяем наличие событий в Identity Map и удаляем дубликаты.
+                // Для Transactional Outbox делаем дополнительный flush после диспетчеризации:
+                // на этом этапе у доменных сущностей уже есть сгенерированные ID.
                 $em = $args->getObjectManager();
                 $uow = $em->getUnitOfWork();
-
-                $insertions = $uow->getScheduledEntityInsertions();
-                if ($insertions) {
-                    $repository = $em->getRepository(OutboxEvent::class);
-                    foreach ($insertions as $entity) {
-                        if ($entity instanceof OutboxEvent) {
-                            $exists = $repository->findOneBy([
-                                'eventType' => $entity->getEventType(),
-                                'orderId' => $entity->getPayloadDto()->id,
-                                'processedAt' => null
-                            ]);
-                            if ($exists) {
-                                $uow->detach($entity);
-                            }
-                        }
+                $hasOutboxInsertions = false;
+                foreach ($uow->getScheduledEntityInsertions() as $entity) {
+                    if ($entity instanceof OutboxEvent) {
+                        $hasOutboxInsertions = true;
+                        break;
                     }
+                }
 
-                    try {
-                        $em->flush();
-                    } catch (\Throwable $e) {
-                        // Если всё же произошла ошибка, мы ничего не можем сделать в postFlush.
-                    }
+                if ($hasOutboxInsertions && $em->isOpen()) {
+                    $em->flush();
                 }
             } catch (\Exception $e) {
                 // Игнорируем ошибки диспетчеризации

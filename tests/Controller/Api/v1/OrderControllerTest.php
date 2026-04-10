@@ -370,7 +370,6 @@ class OrderControllerTest extends WebTestCase
         $newDates = $order->getDates()->withUpdateAt(new \DateTime('+1 second'));
         $order->setDates($newDates);
         $repository->save($order);
-        $repository->flush();
 
         // 4. Get order again, ETag should be different
         $client->request('GET', '/api/v1/orders/' . $orderId);
@@ -526,7 +525,6 @@ class OrderControllerTest extends WebTestCase
         $order->setDates($newDates);
 
         $repository->save($order);
-        $repository->flush();
         $em->clear();
 
         $cache = static::getContainer()->get(CacheInterface::class);

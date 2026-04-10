@@ -22,15 +22,18 @@ class SendOrderEmailHandlerTest extends TestCase
 
         $customerInfo = new CustomerInfo(email: $email);
 
-        $order = $this->createMock(Order::class);
+        $order = $this->createStub(Order::class);
         $order->method('getId')->willReturn($orderId);
         $order->method('getCustomerInfo')->willReturn($customerInfo);
 
         $repository = $this->createMock(OrderRepositoryInterface::class);
-        $repository->method('findById')->with($orderId)->willReturn($order);
+        $repository->expects($this->once())
+            ->method('findById')
+            ->with($orderId)
+            ->willReturn($order);
 
         $logger = $this->createMock(LoggerInterface::class);
-        $cache = $this->createMock(CacheInterface::class);
+        $cache = $this->createStub(CacheInterface::class);
         $handler = new SendOrderEmailHandler($repository, $logger, $cache);
 
         $message = new SendOrderEmailMessage($orderId);
@@ -53,14 +56,17 @@ class SendOrderEmailHandlerTest extends TestCase
     {
         $orderId = 999;
         $repository = $this->createMock(OrderRepositoryInterface::class);
-        $repository->method('findById')->with($orderId)->willReturn(null);
+        $repository->expects($this->once())
+            ->method('findById')
+            ->with($orderId)
+            ->willReturn(null);
 
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
             ->method('error')
             ->with($this->stringContains('not found'));
 
-        $cache = $this->createMock(CacheInterface::class);
+        $cache = $this->createStub(CacheInterface::class);
         $handler = new SendOrderEmailHandler($repository, $logger, $cache);
 
         $message = new SendOrderEmailMessage($orderId);
@@ -71,15 +77,18 @@ class SendOrderEmailHandlerTest extends TestCase
     {
         $orderId = 123;
         $customerInfo = new CustomerInfo(email: 'test@example.com');
-        $order = $this->createMock(Order::class);
+        $order = $this->createStub(Order::class);
         $order->method('getId')->willReturn($orderId);
         $order->method('getCustomerInfo')->willReturn($customerInfo);
 
         $repository = $this->createMock(OrderRepositoryInterface::class);
-        $repository->method('findById')->with($orderId)->willReturn($order);
+        $repository->expects($this->once())
+            ->method('findById')
+            ->with($orderId)
+            ->willReturn($order);
 
-        $logger = $this->createMock(LoggerInterface::class);
-        $cache = $this->createMock(CacheInterface::class);
+        $logger = $this->createStub(LoggerInterface::class);
+        $cache = $this->createStub(CacheInterface::class);
         $cache->method('get')->willThrowException(new \Exception('Cache error'));
 
         $handler = new SendOrderEmailHandler($repository, $logger, $cache);
